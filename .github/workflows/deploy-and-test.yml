@@ -10,11 +10,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      db:
-        image: sqlite3
-        # In-memory or file-based DB, configured via DATABASE_URL
-
     steps:
     - uses: actions/checkout@v3
 
