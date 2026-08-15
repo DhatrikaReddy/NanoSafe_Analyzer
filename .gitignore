@@ -14,3 +14,5 @@ reports/*
 .vscode/
 .idea/
 serviceAccountKey.json
+scratch/
+

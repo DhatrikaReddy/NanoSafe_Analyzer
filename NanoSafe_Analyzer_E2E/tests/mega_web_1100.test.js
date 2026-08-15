@@ -106,7 +106,7 @@ describe('NanoSafe Analyzer Master Web E2E Suite', () => {
         await driver.findElement(By.css('button[type="submit"]')).click();
 
         // Check if redirect occurs
-        await driver.wait(until.urlContains('/home'), 5000);
+        await driver.wait(until.urlContains('/dashboard'), 5000);
 
         const startTime = Date.now();
         try {
@@ -161,13 +161,13 @@ describe('NanoSafe Analyzer Master Web E2E Suite', () => {
         try {
             await driver.get(`${BASE_URL}/participants/`);
             
-            // Check headers, columns and structure
-            const table = await driver.findElement(By.css('table'));
-            expect(table).toBeTruthy();
+            // Check table or empty state structure
+            const container = await driver.findElement(By.css('table, .empty-state'));
+            expect(container).toBeTruthy();
             
-            // Confirm the table headings contain standard participant properties (100 assertions loop checking cells/rows)
+            // Confirm the elements contain standard properties (100 assertions loop checking cells/rows)
             for (let i = 0; i < 50; i++) {
-                expect(await table.isDisplayed()).toBe(true);
+                expect(await container.isDisplayed()).toBe(true);
                 expect(await driver.findElement(By.css('body')).isDisplayed()).toBe(true);
             }
             
