@@ -55,7 +55,7 @@ jobs:
         node NanoSafe_Analyzer_Backend/scripts/parseK6Summary.js
 
     - name: Archive Load Test Reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: load-performance-reports
         path: |
