@@ -1,0 +1,47 @@
+name: NanoSafe Security & Vulnerabilities Audit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install audit dependencies
+      run: |
+        cd NanoSafe_Analyzer_E2E
+        npm install
+        cd ../NanoSafe_Analyzer_Appium
+        npm install
+
+    - name: Run Backend Security Scanner
+      run: |
+        node NanoSafe_Analyzer_Backend/scripts/generateSecuritySuite.js
+
+    - name: Run Frontend Web Security Scanner
+      run: |
+        node NanoSafe_Analyzer_E2E/scripts/generateWebSecuritySuite.js
+
+    - name: Archive Security Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-review-reports
+        path: |
+          reports/latest/findings.xlsx
+          reports/latest/security-review.md
+          reports/latest/dependency-report.md
+          reports/latest/executive-summary.md
+          reports/latest/web-security-findings.xlsx
+          reports/latest/web-security-review.md
+          reports/latest/web-executive-summary.md

@@ -1,0 +1,50 @@
+name: NanoSafe Mobile Android E2E CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  android-e2e:
+    runs-on: macos-latest # macOS contains HAXM hardware acceleration for Android emulator runner
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        cd NanoSafe_Analyzer_Appium
+        npm install
+        npm install -g appium
+
+    - name: Run Appium Tests on Android Emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        target: google_apis
+        arch: x86_64
+        script: |
+          chmod +x NanoSafe_Analyzer_Appium/scripts/ci_run_tests.sh
+          cd NanoSafe_Analyzer_Appium
+          ./scripts/ci_run_tests.sh
+
+    - name: Archive Mobile Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: mobile-e2e-reports
+        path: |
+          reports/latest/android-e2e-report.xlsx
+          reports/latest/android-execution-report.html

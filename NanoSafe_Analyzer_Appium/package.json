@@ -1,0 +1,19 @@
+{
+  "name": "nanosafe-analyzer-appium",
+  "version": "1.0.0",
+  "description": "Appium E2E testing suite for NanoSafe mobile",
+  "main": "index.js",
+  "scripts": {
+    "test": "wdio run wdio.conf.js"
+  },
+  "dependencies": {
+    "webdriverio": "^8.27.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@wdio/cli": "^8.27.0",
+    "@wdio/local-runner": "^8.27.0",
+    "@wdio/mocha-framework": "^8.27.0",
+    "@wdio/spec-reporter": "^8.27.0"
+  }
+}
