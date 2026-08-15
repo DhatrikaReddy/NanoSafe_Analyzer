@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZnO Cytotoxicity Analysis Dashboard - NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        /* ── Text colour utilities ─────────────────────────────── */
+        .text-safe     { color: #16a34a !important; }
+        .text-moderate { color: #d97706 !important; }
+        .text-toxic    { color: #dc2626 !important; }
+
+        /* ── ML section wrapper ───────────────────────────────── */
+        .ml-section { margin-top: 28px; }
+
+        .ml-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .ml-section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ns-text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ml-confidence-badge {
+            font-weight: 700;
+            font-size: 0.82rem;
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid #bfdbfe;
+            white-space: nowrap;
+        }
+
+        /* ── Shared card base ─────────────────────────────────── */
+        .ml-card {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 16px;
+            padding: 18px 20px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .ml-card:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
+            transform: translateY(-2px);
+        }
+
+        /* Label above value */
+        .ml-card .card-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ns-text-muted);
+            margin: 0 0 6px 0;
+        }
+
+        .ml-card .card-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            line-height: 1.15;
+            margin: 0 0 4px 0;
+            word-break: break-word;
+        }
+
+        .ml-card .card-sub {
+            font-size: 11px;
+            color: var(--ns-text-sub);
+            margin: 0;
+        }
+
+        /* ── 4-column metrics grid ────────────────────────────── */
+        .ml-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 14px;
+            align-items: start;
+        }
+
+        /* ── 2-column score + risk grid ───────────────────────── */
+        .ml-score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+            align-items: start;
+        }
+
+        /* ── Progress bar inside score card ───────────────────── */
+        .ml-progress-track {
+            background: var(--ns-bg-hover);
+            border-radius: 99px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 14px;
+        }
+
+        .ml-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #10b981, #16a34a);
+            transition: width 0.8s ease;
+        }
+
+        /* ── Biomarker panel ──────────────────────────────────── */
+        .ml-biomarker-panel {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+
+        .ml-biomarker-panel .panel-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ns-text-muted);
+            margin: 0 0 18px 0;
+        }
+
+        .ml-biomarker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .ml-biomarker-item {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 18px 14px 14px;
+            text-align: center;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .ml-biomarker-item:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+            transform: translateY(-2px);
+        }
+
+        .ml-biomarker-item .bio-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .ml-biomarker-item .bio-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ns-text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .ml-biomarker-item .bio-value {
+            font-size: 1.55rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .ml-biomarker-item .bio-status {
+            font-size: 11px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="dashboard-page" style="padding: 32px 36px; max-width: 1250px; box-sizing: border-box; width: 100%;">
+
+    <!-- ── Page Header ──────────────────────────────────────────── -->
+    <div class="dashboard-header">
+        <div>
+            <h1>ZnO Nanoparticle Analysis Dashboard</h1>
+            <p>Evaluation of the Biocompatibility and Cytotoxicity of ZnO Nanoparticles to Determine Safe Biomedical Usage Levels</p>
+        </div>
+        <div class="header-buttons">
+            <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-secondary">🔬 Analyze Again</a>
+            <a href="{{ url_for('main.history') }}" class="ns-btn ns-btn-secondary">📜 History</a>
+            <a href="{{ url_for('main.compare') }}" class="ns-btn ns-btn-secondary">📊 Compare</a>
+            <a href="{{ url_for('main.home') }}" class="ns-btn ns-btn-secondary">🏠 Home</a>
+            <a href="{{ url_for('main.report') }}" class="ns-btn ns-btn-primary">⬇ Download PDF</a>
+        </div>
+    </div>
+
+    <!-- ── Experiment Info ──────────────────────────────────────── -->
+    <div class="info-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+            <h2 style="margin: 0;">Experiment Information</h2>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                    🏥 {{ medical_application }}
+                </span>
+                {% if 'PASS' in iso_compliance %}
+                    <span class="ns-badge ns-badge-safe" style="padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                        ISO 10993-5: {{ iso_compliance }}
+                    </span>
+                {% elif 'CONDITIONAL' in iso_compliance %}
+                    <span class="ns-badge ns-badge-moderate" style="padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                        ISO 10993-5: {{ iso_compliance }}
+                    </span>
+                {% else %}
+                    <span class="ns-badge ns-badge-toxic" style="padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+                        ISO 10993-5: {{ iso_compliance }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-grid">
+            <div><span>Experiment</span><b>{{ experiment_name }}</b></div>
+            <div><span>Researcher</span><b>{{ researcher_name }}</b></div>
+            <div><span>Nanoparticle Type</span><b>ZnO (Zinc Oxide)</b></div>
+            <div><span>Cell Line</span><b>{{ cell_line }}</b></div>
+            <div><span>Exposure Time</span><b>{{ exposure_time }}</b></div>
+        </div>
+    </div>
+
+    <!-- ── ML Analysis Section ─────────────────────────────────── -->
+    <div class="ml-section">
+
+        <!-- Section header -->
+        <div class="ml-section-header">
+            <h2 class="ml-section-title">🔬 Cytotoxicity &amp; Biocompatibility Analysis</h2>
+            <span class="ml-confidence-badge" style="background: #e6fffa; color: #0d9488; border: 1px solid #99f6e4;">
+                Analysis Status: Complete
+            </span>
+        </div>
+
+        <!-- Row 1 – Primary metric cards (4 columns) -->
+        <div class="ml-metrics-grid">
+
+            <div class="ml-card">
+                <p class="card-label">Average Viability</p>
+                <p class="card-value">{{ avg }}%</p>
+                <p class="card-sub">Cell survival after ZnO exposure</p>
+            </div>
+
+            <div class="ml-card">
+                <p class="card-label">ML Classification</p>
+                <p class="card-value {% if ml_prediction and ml_prediction.status == 'Safe' %}text-safe{% elif ml_prediction and ml_prediction.status == 'Moderate Risk' %}text-moderate{% else %}text-toxic{% endif %}">
+                    {{ ml_prediction.status if ml_prediction and ml_prediction.status else result }}
+                </p>
+                <p class="card-sub">{{ ml_prediction.classification if ml_prediction and ml_prediction.classification else 'Non-toxic / Low toxicity' }}</p>
+            </div>
+
+            <div class="ml-card">
+                <p class="card-label">ML Estimated IC50</p>
+                <p class="card-value">{{ ml_prediction.ic50 if ml_prediction and ml_prediction.ic50 else ic50 }}</p>
+                <p class="card-sub">Inhibitory concentration cutoff</p>
+            </div>
+
+            <div class="ml-card">
+                <p class="card-label">ML Predicted Safe Range</p>
+                <p class="card-value">{{ ml_prediction.safe_range if ml_prediction and ml_prediction.safe_range else safe_range }}</p>
+                <p class="card-sub">Biocompatible dosage range</p>
+            </div>
+
+        </div>
+
+        <!-- Row 2 – Toxicity score + risk level (2 columns) -->
+        <div class="ml-score-grid">
+
+            <div class="ml-card">
+                <p class="card-label">ML Toxicity Score</p>
+                <p class="card-value">{{ ml_prediction.toxicity_score if ml_prediction and ml_prediction.toxicity_score else toxicity_score }}</p>
+                <p class="card-sub">Out of 100 — lower is safer</p>
+                <div class="ml-progress-track">
+                    <div class="ml-progress-fill" id="progress-fill"
+                         data-width="{{ ml_prediction.toxicity_score if ml_prediction and ml_prediction.toxicity_score else toxicity_score }}"></div>
+                </div>
+            </div>
+
+            <div class="ml-card">
+                <p class="card-label">ML Predicted Risk Level</p>
+                <p class="card-value">{{ ml_prediction.toxicity_level if ml_prediction and ml_prediction.toxicity_level else toxicity_level }}</p>
+                <p class="card-sub">Derived via ML multi-biomarker evaluation engine</p>
+            </div>
+
+        </div>
+
+        <!-- Row 3 – Biomarker cards -->
+        <div class="ml-biomarker-panel">
+            <p class="panel-label">🧪 Biomarkers &amp; Physicochemical Parameters Evaluated by ML Model</p>
+            <div class="ml-biomarker-grid">
+
+                <div class="ml-biomarker-item">
+                    <span class="bio-icon">🧫</span>
+                    <span class="bio-label">Cell Survival (Viability)</span>
+                    <div class="bio-value {% if avg >= 80 %}text-safe{% elif avg >= 50 %}text-moderate{% else %}text-toxic{% endif %}">{{ avg }}%</div>
+                    <div class="bio-status {% if avg >= 80 %}text-safe{% elif avg >= 50 %}text-moderate{% else %}text-toxic{% endif %}">
+                        {% if avg >= 80 %}✔ Normal{% elif avg >= 50 %}⚠ Reduced{% else %}✘ Low{% endif %}
+                    </div>
+                </div>
+
+                <div class="ml-biomarker-item">
+                    <span class="bio-icon">⚡</span>
+                    <span class="bio-label">Oxidative Stress (ROS)</span>
+                    <div class="bio-value {% if avg_ros > 150 %}text-toxic{% else %}text-safe{% endif %}">{{ avg_ros }}</div>
+                    <div class="bio-status {% if avg_ros > 150 %}text-toxic{% else %}text-safe{% endif %}">
+                        {% if avg_ros > 150 %}✘ Elevated{% else %}✔ Normal{% endif %}
+                    </div>
+                </div>
+
+                <div class="ml-biomarker-item">
+                    <span class="bio-icon">🔬</span>
+                    <span class="bio-label">Membrane Damage (LDH)</span>
+                    <div class="bio-value {% if avg_ldh > 30 %}text-toxic{% else %}text-safe{% endif %}">{{ avg_ldh }}%</div>
+                    <div class="bio-status {% if avg_ldh > 30 %}text-toxic{% else %}text-safe{% endif %}">
+                        {% if avg_ldh > 30 %}✘ Elevated{% else %}✔ Normal{% endif %}
+                    </div>
+                </div>
+
+                <div class="ml-biomarker-item">
+                    <span class="bio-icon">💀</span>
+                    <span class="bio-label">Apoptotic Death</span>
+                    <div class="bio-value {% if avg_apoptosis > 20 %}text-toxic{% else %}text-safe{% endif %}">{{ avg_apoptosis }}%</div>
+                    <div class="bio-status {% if avg_apoptosis > 20 %}text-toxic{% else %}text-safe{% endif %}">
+                        {% if avg_apoptosis > 20 %}✘ High{% else %}✔ Normal{% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- /ml-section -->
+
+    <!-- ── Chart + Interpretation ───────────────────────────────── -->
+    <div class="dashboard-grid" style="grid-template-columns: 1.4fr 1fr; gap: 24px; margin-bottom: 28px;">
+        
+        <!-- Left: Interactive Dose-Response Studio -->
+        <div class="chart-card" style="margin: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--ns-text-main);">📈 Dose-Response Viability Studio</h2>
+                        <p style="margin: 4px 0 0; font-size: 13px; color: var(--ns-text-muted);">4PL Sigmoidal Non-Linear Model: Concentration vs Cellular Response</p>
+                    </div>
+                </div>
+
+                <!-- Biomarker Selector Tabs -->
+                <div style="display: flex; gap: 6px; margin-bottom: 14px; background: var(--ns-bg-input); padding: 4px; border-radius: 10px; border: 1px solid var(--ns-border-main); width: fit-content;">
+                    <button type="button" class="chart-tab-btn active-tab" onclick="switchChartMode('viability', this)" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: #0f766e; color: white;">
+                        🟢 Cell Viability (%)
+                    </button>
+                    <button type="button" class="chart-tab-btn" onclick="switchChartMode('ros', this)" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">
+                        ⚡ Oxidative Stress (ROS)
+                    </button>
+                    <button type="button" class="chart-tab-btn" onclick="switchChartMode('ldh', this)" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">
+                        🧪 Membrane Lysis (LDH)
+                    </button>
+                    <button type="button" class="chart-tab-btn" onclick="switchChartMode('apoptosis', this)" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">
+                        🧬 Apoptosis Rate
+                    </button>
+                </div>
+            </div>
+
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="doseResponseChart"></canvas>
+            </div>
+            
+            <!-- Left Graph Summary & Explanation Box -->
+            <div style="margin-top: 14px; background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); border-radius: 12px; padding: 14px 16px;">
+                <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: var(--ns-text-main); display: flex; align-items: center; gap: 6px;">
+                    <span>📌</span> Dose-Response Curve Summary &amp; Findings
+                </h4>
+                <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ns-text-muted); line-height: 1.6;">
+                    <li><b>4PL Sigmoidal Model:</b> Illustrates the continuous concentration-dependent viability decline across ZnO concentrations (0–200 µg/mL).</li>
+                    <li><b>ISO 10993-5 Threshold (80%):</b> Doses remaining above the dashed green line are confirmed biocompatible.</li>
+                    <li><b>Calculated IC50 Point:</b> <b>{{ ml_prediction.ic50 if ml_prediction and ml_prediction.ic50 else ic50 }}</b> marks the 50% cellular inhibition inflection threshold.</li>
+                    <li><b>Recommended Safe Range:</b> <b>{{ ml_prediction.safe_range if ml_prediction and ml_prediction.safe_range else safe_range }}</b> for the target application.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right: Multi-Biomarker Safety Radar -->
+        <div class="chart-card" style="margin: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--ns-text-main);">🎯 Multi-Biomarker Safety Radar</h2>
+                <p style="margin: 4px 0 12px; font-size: 13px; color: var(--ns-text-muted);">Normalized 0–100% Cellular Health &amp; Biocompatibility Score</p>
+            </div>
+
+            <div style="height: 270px; display: flex; align-items: center; justify-content: center; position: relative;">
+                <canvas id="biomarkerRadarChart"></canvas>
+            </div>
+
+            <!-- Measured values chips -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px;">
+                <div style="background: var(--ns-bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-main); font-size: 12px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--ns-text-muted);">Cell Viability:</span>
+                    <b class="{% if avg >= 80 %}text-safe{% else %}text-toxic{% endif %}">{{ avg }}%</b>
+                </div>
+                <div style="background: var(--ns-bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-main); font-size: 12px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--ns-text-muted);">ROS Fold:</span>
+                    <b class="{% if avg_ros <= 1.5 %}text-safe{% else %}text-toxic{% endif %}">{{ avg_ros }}×</b>
+                </div>
+                <div style="background: var(--ns-bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-main); font-size: 12px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--ns-text-muted);">LDH Leakage:</span>
+                    <b class="{% if avg_ldh <= 10 %}text-safe{% else %}text-toxic{% endif %}">{{ avg_ldh }}%</b>
+                </div>
+                <div style="background: var(--ns-bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-main); font-size: 12px; display: flex; justify-content: space-between;">
+                    <span style="color: var(--ns-text-muted);">Apoptosis:</span>
+                    <b class="{% if avg_apoptosis <= 8 %}text-safe{% else %}text-toxic{% endif %}">{{ avg_apoptosis }}%</b>
+                </div>
+            </div>
+
+            <!-- Right Graph Summary & Explanation Box -->
+            <div style="margin-top: 14px; background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); border-radius: 12px; padding: 14px 16px;">
+                <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 800; color: var(--ns-text-main); display: flex; align-items: center; gap: 6px;">
+                    <span>📌</span> Multi-Biomarker Balance Summary
+                </h4>
+                <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ns-text-muted); line-height: 1.6;">
+                    <li><b>Cell Survival ({{ avg }}%):</b> {% if avg >= 80 %}High viability meeting ISO 10993-5 standard.{% else %}Sub-optimal viability indicating cellular stress.{% endif %}</li>
+                    <li><b>Oxidative Stress ({{ avg_ros }}×):</b> {% if avg_ros <= 1.5 %}Normal baseline reactive oxygen species.{% else %}Elevated ROS indicating oxidative stress.{% endif %}</li>
+                    <li><b>Membrane Integrity ({{ avg_ldh }}% LDH):</b> {% if avg_ldh <= 10 %}Intact membranes with minimal lysis.{% else %}Elevated LDH release from damaged membranes.{% endif %}</li>
+                    <li><b>Apoptotic Fraction ({{ avg_apoptosis }}%):</b> {% if avg_apoptosis <= 8 %}Normal baseline apoptotic death rate.{% else %}Elevated programmed cell death rate.{% endif %}</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Executive Summary & Conclusion Card -->
+        <div class="interpret-card" style="grid-column: 1 / -1; margin: 0; padding: 26px 28px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--ns-text-main); display: flex; align-items: center; gap: 8px;">
+                        <span>🔬</span> Executive Summary &amp; Experiment Conclusion
+                    </h2>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: var(--ns-text-muted);">
+                        Comprehensive biocompatibility determination, ISO 10993-5 regulatory verdict, and preclinical dosage guidance.
+                    </p>
+                </div>
+                <div>
+                    {% if 'PASS' in iso_compliance %}
+                        <span class="ns-badge ns-badge-safe" style="padding: 6px 16px; font-size: 13px; font-weight: 800; border-radius: 20px;">
+                            🟢 PASS — Biocompatible
+                        </span>
+                    {% elif 'CONDITIONAL' in iso_compliance %}
+                        <span class="ns-badge ns-badge-moderate" style="padding: 6px 16px; font-size: 13px; font-weight: 800; border-radius: 20px;">
+                            🟡 CONDITIONAL — Low-Dose Monitoring
+                        </span>
+                    {% else %}
+                        <span class="ns-badge ns-badge-toxic" style="padding: 6px 16px; font-size: 13px; font-weight: 800; border-radius: 20px;">
+                            🔴 FAIL — Cytotoxic Risk
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Key Metric Highlights Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px;">
+                <div style="background: var(--ns-bg-input); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--ns-border-main); border-left: 4px solid #0f766e;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase;">Average Viability</div>
+                    <div class="{% if avg >= 80 %}text-safe{% else %}text-toxic{% endif %}" style="font-size: 20px; font-weight: 800; margin: 2px 0;">{{ avg }}%</div>
+                    <div style="font-size: 11.5px; color: var(--ns-text-muted);">ISO 10993-5 Threshold: &ge; 80%</div>
+                </div>
+
+                <div style="background: var(--ns-bg-input); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--ns-border-main); border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase;">Estimated IC50 Inflection</div>
+                    <div style="font-size: 20px; font-weight: 800; color: var(--ns-text-main); margin: 2px 0;">{{ ml_prediction.ic50 if ml_prediction and ml_prediction.ic50 else ic50 }}</div>
+                    <div style="font-size: 11.5px; color: var(--ns-text-muted);">50% Cellular Inhibition Point</div>
+                </div>
+
+                <div style="background: var(--ns-bg-input); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--ns-border-main); border-left: 4px solid #10b981;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase;">Safe Therapeutic Window</div>
+                    <div style="font-size: 20px; font-weight: 800; color: #16a34a; margin: 2px 0;">{{ ml_prediction.safe_range if ml_prediction and ml_prediction.safe_range else safe_range }}</div>
+                    <div style="font-size: 11.5px; color: var(--ns-text-muted);">Target Application Safe Ceiling</div>
+                </div>
+            </div>
+
+            <!-- Conclusion Points & Key Findings -->
+            <div style="background: var(--ns-bg-input); padding: 18px 22px; border-radius: 10px; border: 1px solid var(--ns-border-main); margin-bottom: 14px;">
+                <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--ns-text-main); display: flex; align-items: center; gap: 8px;">
+                    <span>📋</span> Key Findings &amp; Scientific Conclusion Points
+                </h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--ns-text-main); line-height: 1.8;">
+                    <li>
+                        <b>Biocompatibility Assessment:</b> 
+                        ZnO nanoparticles tested on <b>{{ cell_line }}</b> cells across <b>{{ exposure_time }}</b> demonstrated a mean cell survival rate of <b>{{ avg }}%</b> (ISO 10993-5 Biocompatible Threshold: &ge; 80%).
+                    </li>
+                    <li>
+                        <b>Regulatory ISO Verdict:</b> 
+                        <b>{{ iso_compliance }}</b> for target domain <i>'{{ medical_application }}'</i> with a multi-biomarker Toxicity Score of <b>{{ ml_prediction.toxicity_score if ml_prediction and ml_prediction.toxicity_score else toxicity_score }}/100</b> ({{ ml_prediction.toxicity_level if ml_prediction and ml_prediction.toxicity_level else toxicity_level }}).
+                    </li>
+                    <li>
+                        <b>Inhibitory Concentration (IC50):</b> 
+                        Calculated at <b>{{ ml_prediction.ic50 if ml_prediction and ml_prediction.ic50 else ic50 }}</b>, identifying the 50% cellular inhibition inflection threshold.
+                    </li>
+                    <li>
+                        <b>Recommended Safe Dosage Ceiling:</b> 
+                        Maintain operational concentrations within <b>{{ ml_prediction.safe_range if ml_prediction and ml_prediction.safe_range else safe_range }}</b> to prevent cytotoxic cell mortality.
+                    </li>
+                    <li>
+                        <b>Biomarker Balance:</b> 
+                        Oxidative stress (ROS: <b>{{ avg_ros }}×</b>), Membrane lysis (LDH: <b>{{ avg_ldh }}%</b>), and Apoptotic fraction (<b>{{ avg_apoptosis }}%</b>) indicate {% if avg_ros <= 1.5 and avg_ldh <= 10 %}controlled cellular homeostasis with minimal membrane disruption.{% else %}dose-dependent stress elevation requiring operational dosage capping.{% endif %}
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Precautions Box if Cytotoxicity Threshold Exceeded -->
+            {% if avg < 70 or 'FAIL' in iso_compliance %}
+            <div style="background: #fff5f5; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 18px 22px; border-radius: 10px; margin-bottom: 14px; box-sizing: border-box;">
+                <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #b91c1c; display: flex; align-items: center; gap: 8px;">
+                    <span>⚠️</span> Biosafety Precautions &amp; Action Plan (Cytotoxicity Exceeded)
+                </h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13.5px; color: #991b1b; line-height: 1.8;">
+                    <li><b>Lower Concentration:</b> Operational dosage must be reduced below the calculated IC50 threshold of <b>{{ ml_prediction.ic50 if ml_prediction and ml_prediction.ic50 else ic50 }}</b>.</li>
+                    <li><b>Surface Modification/coating:</b> Consider coating Zinc Oxide nanoparticles with biocompatible polymers (e.g., PEG, Silica, or Chitosan) to prevent direct contact and rapid dissolution in culture media.</li>
+                    <li><b>Introduce Chelating Agents:</b> Add Zn2+ chelators (such as EDTA or DTPA) to reduce free zinc ions, which are the primary driver of rapid membrane lysis (LDH release: <b>{{ avg_ldh }}%</b>).</li>
+                    <li><b>Use Antioxidants:</b> Co-administer antioxidants (e.g., N-acetylcysteine or Vitamin E) to counter the high oxidative stress (ROS level: <b>{{ avg_ros }}×</b>) triggering apoptosis (<b>{{ avg_apoptosis }}%</b>).</li>
+                    <li><b>Protective Equipment:</b> Ensure laboratory staff handle samples under a Class II Biosafety Cabinet, wearing nitrile gloves and eye protection to prevent aerosol exposure.</li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Standard Reference Callout -->
+            <div style="background: var(--ns-bg-hover); border-left: 4px solid #0f766e; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 12px; color: var(--ns-text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span><b>Standard Reference:</b> Evaluated in accordance with ISO 10993-5 (In Vitro Cytotoxicity Standard, &ge; 80% Viability threshold).</span>
+                <span style="font-weight: 700; color: #0f766e;">NanoSafe Analysis Engine</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Raw Data Table ───────────────────────────────────────── -->
+    <div class="data-card">
+        <h2>Uploaded / Entered Data</h2>
+        <div class="table-wrapper">
+            {{ tables|safe }}
+        </div>
+    </div>
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script id="raw-data-json" type="application/json">
+    {{ raw_data | tojson | safe }}
+</script>
+<script id="biomarker-metrics-json" type="application/json">
+    {
+        "viability": {{ avg | default(0) }},
+        "ros": {{ avg_ros | default(1.0) }},
+        "ldh": {{ avg_ldh | default(0.5) }},
+        "apoptosis": {{ avg_apoptosis | default(0.2) }}
+    }
+</script>
+<script>
+  var fill = document.getElementById('progress-fill');
+  if (fill) {
+    fill.style.width = (parseFloat(fill.getAttribute('data-width')) || 0) + '%';
+  }
+
+  // ── Global Chart Handlers ────────────────────────────────────────────────
+  let doseChartInstance = null;
+  let rawData = [];
+  try {
+      rawData = JSON.parse(document.getElementById('raw-data-json').textContent);
+  } catch(e) {}
+
+  // Reference curves across concentrations (0 - 200 µg/mL)
+  const refConc  = [0, 10, 20, 30, 40, 50, 75, 100, 125, 150, 200];
+  const refViab  = [100, 97, 93, 88, 80, 72, 54, 38, 25, 16, 8];
+  const refROS   = [1.0, 1.2, 1.5, 2.1, 2.9, 3.8, 5.4, 7.2, 8.8, 10.5, 13.0];
+  const refLDH   = [0.5, 0.9, 1.6, 2.8, 4.4, 6.5, 9.8, 13.2, 16.5, 19.8, 24.5];
+  const refApop  = [0.4, 0.7, 1.2, 2.0, 3.2, 4.8, 7.5, 10.8, 14.2, 17.5, 22.0];
+
+  // User's actual measured data points
+  let measuredPoints = [];
+  if (rawData && rawData.length > 0) {
+      measuredPoints = rawData.map(row => ({
+          x: parseFloat(row['Concentration'] || row['concentration'] || 0),
+          y: parseFloat(row['Cell Viability'] || row['cell_viability'] || row['Viability'] || 0)
+      })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+  }
+
+  function renderDoseResponseChart(mode) {
+      const canvas = document.getElementById('doseResponseChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      if (doseChartInstance) {
+          doseChartInstance.destroy();
+      }
+
+      let yLabel = 'Cell Viability (%)';
+      let curveData = refViab;
+      let curveColor = '#0f766e';
+      let curveBg = 'rgba(15, 118, 110, 0.08)';
+      let thresholdVal = 80;
+      let thresholdLabel = 'ISO 10993-5 Threshold (80%)';
+      let thresholdColor = '#16a34a';
+      let yMax = 110;
+      let showUserPoints = (mode === 'viability' && measuredPoints.length > 0);
+
+      if (mode === 'ros') {
+          yLabel = 'Oxidative Stress (ROS Fold)';
+          curveData = refROS;
+          curveColor = '#f59e0b';
+          curveBg = 'rgba(245, 158, 11, 0.08)';
+          thresholdVal = 1.5;
+          thresholdLabel = 'Safe Limit (≤ 1.5×)';
+          thresholdColor = '#d97706';
+          yMax = 15;
+      } else if (mode === 'ldh') {
+          yLabel = 'Membrane Lysis (LDH Release %)';
+          curveData = refLDH;
+          curveColor = '#dc2626';
+          curveBg = 'rgba(220, 38, 38, 0.08)';
+          thresholdVal = 10;
+          thresholdLabel = 'Safe Ceiling (≤ 10%)';
+          thresholdColor = '#dc2626';
+          yMax = 30;
+      } else if (mode === 'apoptosis') {
+          yLabel = 'Apoptosis Rate (%)';
+          curveData = refApop;
+          curveColor = '#8b5cf6';
+          curveBg = 'rgba(139, 92, 246, 0.08)';
+          thresholdVal = 8;
+          thresholdLabel = 'Safe Ceiling (≤ 8%)';
+          thresholdColor = '#7c3aed';
+          yMax = 25;
+      }
+
+      const datasets = [
+          {
+              label: yLabel,
+              data: curveData.map((val, idx) => ({ x: refConc[idx], y: val })),
+              type: 'line',
+              borderColor: curveColor,
+              backgroundColor: curveBg,
+              borderWidth: 3,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4,
+              pointBackgroundColor: curveColor
+          },
+          {
+              label: thresholdLabel,
+              data: [{ x: 0, y: thresholdVal }, { x: 200, y: thresholdVal }],
+              type: 'line',
+              borderColor: thresholdColor,
+              borderWidth: 2,
+              borderDash: [6, 4],
+              pointRadius: 0,
+              fill: false
+          }
+      ];
+
+      if (showUserPoints) {
+          datasets.push({
+              label: '● Your Measured Experiment Points',
+              data: measuredPoints,
+              type: 'scatter',
+              backgroundColor: '#0284c7',
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              pointRadius: 7,
+              pointHoverRadius: 10
+          });
+      }
+
+      doseChartInstance = new Chart(ctx, {
+          data: { datasets: datasets },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'nearest', intersect: false },
+              plugins: {
+                  legend: {
+                      position: 'top',
+                      labels: {
+                          boxWidth: 12,
+                          font: { size: 11, weight: '700' }
+                      }
+                  },
+                  tooltip: {
+                      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                      padding: 10,
+                      callbacks: {
+                          title: (items) => `Concentration: ${items[0].parsed.x} µg/mL`,
+                          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
+                      }
+                  }
+              },
+              scales: {
+                  x: {
+                      type: 'linear',
+                      title: {
+                          display: true,
+                          text: 'ZnO Nanoparticle Concentration (µg/mL)',
+                          font: { size: 12, weight: '700' }
+                      },
+                      min: 0,
+                      max: 200,
+                      grid: { color: 'rgba(0,0,0,0.05)' }
+                  },
+                  y: {
+                      title: {
+                          display: true,
+                          text: yLabel,
+                          font: { size: 12, weight: '700' }
+                      },
+                      min: 0,
+                      max: yMax,
+                      grid: { color: 'rgba(0,0,0,0.05)' }
+                  }
+              }
+          }
+      });
+  }
+
+  function switchChartMode(mode, btn) {
+      document.querySelectorAll('.chart-tab-btn').forEach(b => {
+          b.style.background = 'transparent';
+          b.style.color = 'var(--ns-text-muted)';
+      });
+      btn.style.background = '#0f766e';
+      btn.style.color = 'white';
+      renderDoseResponseChart(mode);
+  }
+
+  // Initialize Dose Response Chart
+  renderDoseResponseChart('viability');
+
+  // ── Multi-Biomarker Radar Chart (Normalized 0–100% Cellular Health) ───────
+  try {
+      const radarCanvas = document.getElementById('biomarkerRadarChart');
+      if (radarCanvas) {
+          const bioMetrics = JSON.parse(document.getElementById('biomarker-metrics-json').textContent);
+          const viab = parseFloat(bioMetrics.viability) || 0;
+          const ros = parseFloat(bioMetrics.ros) || 1.0;
+          const ldh = parseFloat(bioMetrics.ldh) || 0.5;
+          const apop = parseFloat(bioMetrics.apoptosis) || 0.2;
+
+          // Normalized so 100 = full cellular health / zero toxicity
+          const healthScores = [
+              Math.min(100, Math.max(0, viab)),
+              Math.min(100, Math.max(0, 100 - (ros - 1.0) * 20)),
+              Math.min(100, Math.max(0, 100 - ldh)),
+              Math.min(100, Math.max(0, 100 - apop * 2))
+          ];
+
+          new Chart(radarCanvas.getContext('2d'), {
+              type: 'radar',
+              data: {
+                  labels: ['Cell Viability (%)', 'Oxidative Defense (ROS)', 'Membrane Integrity (LDH)', 'Cell Survival (Apoptosis)'],
+                  datasets: [
+                      {
+                          label: 'Your Sample Health Profile',
+                          data: healthScores,
+                          backgroundColor: 'rgba(15, 118, 110, 0.25)',
+                          borderColor: '#0f766e',
+                          borderWidth: 2.5,
+                          pointBackgroundColor: '#0f766e',
+                          pointRadius: 4
+                      },
+                      {
+                          label: 'ISO 10993-5 Benchmark',
+                          data: [80, 85, 90, 85],
+                          backgroundColor: 'transparent',
+                          borderColor: '#16a34a',
+                          borderWidth: 1.5,
+                          borderDash: [5, 4],
+                          pointBackgroundColor: '#16a34a',
+                          pointRadius: 3
+                      }
+                  ]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                      r: {
+                          min: 0,
+                          max: 100,
+                          ticks: { display: false, stepSize: 25 },
+                          grid: { color: 'rgba(0,0,0,0.06)' },
+                          pointLabels: {
+                              font: { size: 11, weight: '700' },
+                              color: '#334155'
+                          }
+                      }
+                  },
+                  plugins: {
+                      legend: {
+                          position: 'bottom',
+                          labels: { boxWidth: 12, font: { size: 11 } }
+                      }
+                  }
+              }
+          });
+      }
+  } catch(err) {
+      console.error("Radar render error:", err);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — NanoSafe Analyzer</title>
+    <meta name="description" content="NanoSafe Analyzer Research Workspace — manage your profile, experiments, reports, and research preferences.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        /* ── Profile page layout ───────────────────────────── */
+        body { font-family: 'Inter', sans-serif; background: var(--ns-bg-main); margin: 0; }
+
+        .ns-workspace { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        @media (max-width: 960px) { .ns-workspace { grid-template-columns: 1fr; } }
+
+        /* ── Main content area ─────────────────────────────── */
+        .ns-main { flex: 1; overflow-y: auto; padding: 32px 36px; max-width: 1100px; }
+
+        /* ── Page header ───────────────────────────────────── */
+        .ns-page-header { margin-bottom: 28px; }
+        .ns-page-header h1 { font-size: 1.6rem; font-weight: 800; color: var(--ns-text-main); margin: 0 0 4px; }
+        .ns-page-header p  { color: var(--ns-text-muted); font-size: 0.9rem; margin: 0; }
+
+        /* ── Tabs ──────────────────────────────────────────── */
+        .ns-tabs {
+            display: flex; gap: 4px; background: #e2e8f0;
+            border-radius: 14px; padding: 4px; margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .ns-tab {
+            padding: 9px 18px; border-radius: 10px; font-size: 0.85rem;
+            font-weight: 600; color: var(--ns-text-muted); cursor: pointer;
+            text-decoration: none; transition: all 0.15s ease; white-space: nowrap;
+        }
+        .ns-tab:hover { color: var(--ns-text-main); background: rgba(255,255,255,0.6); }
+        .ns-tab.active { background: var(--ns-bg-card); color: var(--ns-text-main); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+        /* ── Flash messages ────────────────────────────────── */
+        .ns-flash { padding: 12px 18px; border-radius: 10px; margin-bottom: 20px; font-size: 0.875rem; font-weight: 500; }
+        .ns-flash.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .ns-flash.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .ns-flash.info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+        /* ── Panel card ────────────────────────────────────── */
+        .ns-panel {
+            background: var(--ns-bg-card); border: 1px solid var(--ns-border-main); border-radius: 20px;
+            padding: 28px 30px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .ns-panel h2 { font-size: 1rem; font-weight: 700; color: var(--ns-text-main); margin: 0 0 20px; }
+        .ns-panel-sub { font-size: 12px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--ns-text-sub); margin: 0 0 14px; }
+
+        /* ── Avatar + profile header ───────────────────────── */
+        .ns-profile-hero {
+            display: flex; align-items: center; gap: 24px; margin-bottom: 28px;
+        }
+        .ns-avatar-ring {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: 800; color: white;
+            flex-shrink: 0; box-shadow: 0 4px 18px rgba(99,102,241,0.3);
+        }
+        .ns-profile-meta h3 { font-size: 1.25rem; font-weight: 800; color: var(--ns-text-main); margin: 0 0 4px; }
+        .ns-profile-meta p  { color: var(--ns-text-muted); font-size: 0.875rem; margin: 0 0 8px; }
+        .ns-verified-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0;
+            border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 700;
+        }
+
+        /* ── Info grid ─────────────────────────────────────── */
+        .ns-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .ns-info-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--ns-text-sub); margin-bottom: 4px; }
+        .ns-info-value { font-size: 0.9rem; font-weight: 600; color: var(--ns-text-main); }
+
+        /* ── Stat row ──────────────────────────────────────── */
+        .ns-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+        .ns-stat-box {
+            background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); border-radius: 16px;
+            padding: 18px 16px; text-align: center;
+        }
+        .ns-stat-box .val { font-size: 1.6rem; font-weight: 800; color: var(--ns-text-main); line-height: 1; }
+        .ns-stat-box .lbl { font-size: 11px; color: var(--ns-text-sub); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+        .ns-stat-box.safe-box .val  { color: #16a34a; }
+        .ns-stat-box.mod-box .val   { color: #d97706; }
+        .ns-stat-box.tox-box .val   { color: #dc2626; }
+
+        /* ── Experiment mini table ─────────────────────────── */
+        .ns-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+        .ns-table th {
+            background: var(--ns-bg-input); color: var(--ns-text-muted); font-weight: 700;
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+            padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: left;
+        }
+        .ns-table td { padding: 12px 14px; border-bottom: 1px solid var(--ns-border-main); color: var(--ns-text-main); }
+        .ns-table tr:last-child td { border-bottom: none; }
+        .ns-table tr:hover td { background: var(--ns-bg-input); }
+
+        /* Local badge override if any */
+        .ns-badge-low { background: #dcfce7; color: #16a34a; }
+        .ns-badge-high { background: #fee2e2; color: #dc2626; }
+
+        /* ── Settings form ─────────────────────────────────── */
+        .ns-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .ns-form-group { display: flex; flex-direction: column; gap: 6px; }
+        .ns-form-group.full { grid-column: 1 / -1; }
+        .ns-form-group label { font-size: 12px; font-weight: 700; color: var(--ns-text-main);
+            text-transform: uppercase; letter-spacing: 0.04em; }
+        .ns-form-group input,
+        .ns-form-group select {
+            padding: 10px 14px; border: 1.5px solid var(--ns-border-main); border-radius: 10px;
+            font-size: 0.875rem; color: var(--ns-text-main); background: var(--ns-bg-input);
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.15s ease;
+        }
+        .ns-form-group input:focus,
+        .ns-form-group select:focus {
+            outline: none; border-color: #38bdf8; background: #fff;
+        }
+
+        /* Toggle switch */
+        .ns-toggle-row { display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid var(--ns-border-main); }
+        .ns-toggle-row:last-child { border-bottom: none; }
+        .ns-toggle-label { font-size: 0.875rem; font-weight: 600; color: var(--ns-text-main); }
+        .ns-toggle-sub { font-size: 12px; color: var(--ns-text-sub); margin-top: 2px; }
+        .ns-toggle {
+            position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;
+        }
+        .ns-toggle input { opacity: 0; width: 0; height: 0; }
+        .ns-toggle-slider {
+            position: absolute; cursor: pointer; inset: 0;
+            background: #e2e8f0; border-radius: 24px; transition: 0.2s;
+        }
+        .ns-toggle-slider:before {
+            content: ""; position: absolute;
+            width: 18px; height: 18px; left: 3px; bottom: 3px;
+            background: var(--ns-bg-card); border-radius: 50%; transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .ns-toggle input:checked + .ns-toggle-slider { background: #0ea5e9; }
+        .ns-toggle input:checked + .ns-toggle-slider:before { transform: translateX(20px); }
+
+        /* ── Security panel ────────────────────────────────── */
+        .ns-security-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 0; border-bottom: 1px solid var(--ns-border-main);
+        }
+        .ns-security-row:last-child { border-bottom: none; }
+        .ns-security-label { font-size: 0.875rem; font-weight: 600; color: var(--ns-text-main); }
+        .ns-security-sub { font-size: 12px; color: var(--ns-text-sub); margin-top: 3px; }
+        .ns-security-value { font-size: 0.875rem; font-weight: 700; color: var(--ns-text-main); text-align: right; }
+
+        /* ── Danger zone ───────────────────────────────────── */
+        .ns-danger-zone { border: 1.5px solid #fca5a5; border-radius: 16px; padding: 20px 24px; margin-top: 20px; }
+        .ns-danger-zone h3 { color: #dc2626; font-size: 0.9rem; font-weight: 700; margin: 0 0 8px; }
+        .ns-danger-zone p { color: var(--ns-text-muted); font-size: 0.85rem; margin: 0 0 14px; }
+        .ns-btn-danger {
+            background: #dc2626; color: white; border: none; padding: 10px 22px;
+            border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .ns-btn-danger:hover { background: #b91c1c; }
+
+        /* ── Primary save button ───────────────────────────── */
+        .ns-btn-save {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white; border: none; padding: 11px 28px;
+            border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: opacity 0.15s ease; margin-top: 22px;
+        }
+        .ns-btn-save:hover { opacity: 0.9; }
+
+        /* ── Reports list ──────────────────────────────────── */
+        .ns-report-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid var(--ns-border-main);
+        }
+        .ns-report-item:last-child { border-bottom: none; }
+        .ns-report-icon { font-size: 1.4rem; margin-right: 14px; }
+        .ns-report-name { font-size: 0.875rem; font-weight: 600; color: var(--ns-text-main); }
+        .ns-report-meta { font-size: 12px; color: var(--ns-text-sub); margin-top: 2px; }
+        .ns-btn-dl {
+            background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;
+            padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            text-decoration: none; white-space: nowrap; transition: background 0.15s ease;
+        }
+        .ns-btn-dl:hover { background: #dbeafe; }
+
+        .ns-empty { text-align: center; color: var(--ns-text-sub); padding: 40px 20px; font-size: 0.9rem; }
+
+        /* ── Quick start button ────────────────────────────── */
+        .ns-quickstart {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white; padding: 12px 24px; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 700; text-decoration: none;
+            transition: opacity 0.15s ease; margin-top: 18px;
+        }
+        .ns-quickstart:hover { opacity: 0.9; }
+
+        @media (max-width: 768px) {
+            .ns-sidebar { display: none; }
+            .ns-main { padding: 20px 16px; }
+            .ns-stat-row { grid-template-columns: repeat(2, 1fr); }
+            .ns-info-grid { grid-template-columns: 1fr; }
+            .ns-form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="ns-workspace">
+
+    {% include '_sidebar.html' %}
+
+    <main class="ns-main">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="ns-flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Page header -->
+        <div class="ns-page-header">
+            <h1>Research Workspace</h1>
+            <p>Manage your profile, experiments, reports, and research preferences.</p>
+        </div>
+
+        <div class="ns-tabs">
+            <a href="{{ url_for('main.profile', tab='profile') }}"   class="ns-tab {% if active_tab == 'profile' %}active{% endif %}">👤 Profile</a>
+            <a href="{{ url_for('main.profile', tab='dashboard') }}" class="ns-tab {% if active_tab == 'dashboard' %}active{% endif %}">📊 Dashboard</a>
+            <a href="{{ url_for('main.profile', tab='experiments') }}" class="ns-tab {% if active_tab == 'experiments' %}active{% endif %}">🧪 Experiments</a>
+            <a href="{{ url_for('main.profile', tab='reports') }}"   class="ns-tab {% if active_tab == 'reports' %}active{% endif %}">📄 Reports</a>
+            <a href="{{ url_for('main.profile', tab='settings') }}"  class="ns-tab {% if active_tab == 'settings' %}active{% endif %}">⚙️ Settings</a>
+            <a href="{{ url_for('main.profile', tab='security') }}"  class="ns-tab {% if active_tab == 'security' %}active{% endif %}">🔐 Security</a>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 1 — PROFILE
+        ═════════════════════════════════════════════════════ -->
+        {% if active_tab == 'profile' %}
+
+        <div class="ns-panel">
+            <div class="ns-profile-hero">
+                <div class="ns-avatar-ring">{{ (user.full_name or user.username or 'U')[0].upper() }}</div>
+                <div class="ns-profile-meta">
+                    <h3>{{ user.full_name or user.username }}</h3>
+                    <p>@{{ user.username }}{% if user.research_role %} · {{ user.research_role }}{% endif %}</p>
+                    {% if user.is_verified %}
+                        <span class="ns-verified-badge">✅ Email Verified</span>
+                    {% else %}
+                        <span class="ns-verified-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a;">⚠️ Not Verified</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="ns-panel-sub">Personal Details</p>
+            <div class="ns-info-grid">
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Full Name</div>
+                    <div class="ns-info-value">{{ user.full_name or '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Username</div>
+                    <div class="ns-info-value">@{{ user.username }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Email Address</div>
+                    <div class="ns-info-value">{{ user.email or '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Research Role</div>
+                    <div class="ns-info-value">{{ user.research_role or '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Institution</div>
+                    <div class="ns-info-value">{{ user.institution or '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Department</div>
+                    <div class="ns-info-value">{{ user.department or '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Account Created</div>
+                    <div class="ns-info-value">{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</div>
+                </div>
+                <div class="ns-info-item">
+                    <div class="ns-info-label">Last Login</div>
+                    <div class="ns-info-value">{{ user.last_login.strftime('%d %b %Y, %H:%M') if user.last_login else '—' }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('main.profile', tab='settings') }}" class="ns-quickstart" style="margin-top: 20px;">✏️ Edit Profile</a>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 2 — RESEARCH DASHBOARD
+        ═════════════════════════════════════════════════════ -->
+        {% elif active_tab == 'dashboard' %}
+
+        <!-- Stat overview -->
+        <div class="ns-stat-row">
+            <div class="ns-stat-box">
+                <div class="val">{{ analytics.total_experiments }}</div>
+                <div class="lbl">Total Experiments</div>
+            </div>
+            <div class="ns-stat-box safe-box">
+                <div class="val">{{ analytics.low_risk_count }}</div>
+                <div class="lbl">Safe Results</div>
+            </div>
+            <div class="ns-stat-box mod-box">
+                <div class="val">{{ analytics.moderate_risk_count }}</div>
+                <div class="lbl">Moderate Risk</div>
+            </div>
+            <div class="ns-stat-box tox-box">
+                <div class="val">{{ analytics.high_risk_count }}</div>
+                <div class="lbl">Toxic Results</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div class="ns-panel" style="margin-bottom:0;">
+                <p class="ns-panel-sub">Avg Toxicity Score</p>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--ns-text-main);">{{ analytics.avg_toxicity_score }}</div>
+                <div style="font-size: 12px; color: var(--ns-text-sub); margin-top: 4px;">Out of 100</div>
+            </div>
+            <div class="ns-panel" style="margin-bottom:0;">
+                <p class="ns-panel-sub">Average IC50</p>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--ns-text-main);">{{ analytics.avg_ic50 }} {% if analytics.avg_ic50 != 'N/A' %}µg/mL{% endif %}</div>
+                <div style="font-size: 12px; color: var(--ns-text-sub); margin-top: 4px;">Inhibitory concentration</div>
+            </div>
+        </div>
+
+        <div class="ns-panel">
+            <h2>Recent Experiments</h2>
+            {% if recent_experiments %}
+            <table class="ns-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Sample</th>
+                        <th>Cell Line</th>
+                        <th>Risk</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for h in recent_experiments %}
+                    <tr>
+                        <td style="color: var(--ns-text-sub);">#{{ h.id }}</td>
+                        <td style="font-weight:600;">{{ h.sample_name or 'Untitled' }}</td>
+                        <td>{{ h.cell_line or '—' }}</td>
+                        <td>
+                            {% if h.risk_level == 'Low' %}<span class="ns-badge ns-badge-safe">Safe</span>
+                            {% elif h.risk_level == 'Moderate' %}<span class="ns-badge ns-badge-moderate">Moderate</span>
+                            {% else %}<span class="ns-badge ns-badge-toxic">Toxic</span>{% endif %}
+                        </td>
+                        <td style="color: var(--ns-text-sub); white-space:nowrap;">{{ (h.date_time or '')[:10] }}</td>
+                        <td><a href="{{ url_for('main.history_detail', history_id=h.id) }}" style="color:#2563eb; font-size:12px; font-weight:600; text-decoration:none;">View →</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <div class="ns-empty">No experiments yet. <a href="{{ url_for('main.upload') }}" style="color:#2563eb;">Start your first analysis →</a></div>
+            {% endif %}
+
+            <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                {% if last_analysis %}
+                <span style="font-size:12px; color: var(--ns-text-sub);">Last analysis: <b style="color: var(--ns-text-main);">{{ last_analysis[:10] }}</b></span>
+                {% endif %}
+                <a href="{{ url_for('main.upload') }}" class="ns-quickstart" style="margin-top:0; padding: 9px 20px; font-size: 0.82rem;">🧪 Start New Analysis</a>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 3 — MY EXPERIMENTS
+        ═════════════════════════════════════════════════════ -->
+        {% elif active_tab == 'experiments' %}
+
+        <div class="ns-panel">
+            <h2>All Experiments ({{ all_history | length }})</h2>
+            {% if all_history %}
+            <div style="overflow-x: auto;">
+            <table class="ns-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sample Name</th>
+                        <th>Date</th>
+                        <th>Cell Line</th>
+                        <th>Conc. (µg/mL)</th>
+                        <th>IC50</th>
+                        <th>Tox Score</th>
+                        <th>Risk</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for h in all_history %}
+                    <tr>
+                        <td style="color: var(--ns-text-sub); font-size:12px;">#{{ h.id }}</td>
+                        <td style="font-weight:600;">{{ h.sample_name or 'Untitled' }}</td>
+                        <td style="color: var(--ns-text-sub); white-space:nowrap;">{{ (h.date_time or '')[:10] }}</td>
+                        <td>{{ h.cell_line or '—' }}</td>
+                        <td>{{ h.concentration or '—' }}</td>
+                        <td style="font-size:12px;">{{ h.estimated_ic50 or '—' }}</td>
+                        <td>{{ h.toxicity_score or '—' }}</td>
+                        <td>
+                            {% if h.risk_level == 'Low' %}<span class="ns-badge ns-badge-safe">Safe</span>
+                            {% elif h.risk_level == 'Moderate' %}<span class="ns-badge ns-badge-moderate">Moderate</span>
+                            {% else %}<span class="ns-badge ns-badge-toxic">Toxic</span>{% endif %}
+                        </td>
+                        <td style="white-space:nowrap;">
+                            <a href="{{ url_for('main.history_detail', history_id=h.id) }}" style="color:#2563eb; font-size:12px; font-weight:600; text-decoration:none; margin-right:10px;">View</a>
+                            <a href="{{ url_for('main.download_history_report', history_id=h.id) }}" style="color:#16a34a; font-size:12px; font-weight:600; text-decoration:none;">PDF</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+                <div class="ns-empty">No experiments yet. <a href="{{ url_for('main.upload') }}" style="color:#2563eb;">Run your first analysis →</a></div>
+            {% endif %}
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 4 — MY REPORTS
+        ═════════════════════════════════════════════════════ -->
+        {% elif active_tab == 'reports' %}
+
+        <div class="ns-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+                <div>
+                    <h2 style="margin:0 0 4px;">Generated PDF Reports ({{ reports | length }})</h2>
+                    <p style="margin:0; font-size:13px; color:var(--ns-text-sub);">All reports are automatically named after their respective experiments and formatted for ISO 10993-5 compliance.</p>
+                </div>
+                <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-primary" style="font-size:12.5px; padding:8px 16px; background:#0f766e; color:white; border-radius:8px; text-decoration:none; font-weight:700;">+ Run New Experiment</a>
+            </div>
+
+            {% if reports %}
+            <div style="display:flex; flex-direction:column; gap:12px;">
+            {% for r in reports %}
+                <div class="ns-report-card-modern" style="background:var(--ns-bg-card); border:1px solid var(--ns-border-main); border-radius:14px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; box-shadow:0 2px 6px rgba(0,0,0,0.02);">
+                    <div style="display:flex; align-items:center; gap:14px; min-width:280px; flex:1;">
+                        <div style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;">
+                            📄
+                        </div>
+                        <div>
+                            <div style="font-size:15px; font-weight:700; color:var(--ns-text-main); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span>{{ r.experiment.sample_name if (r.experiment and r.experiment.sample_name) else (r.pdf_filename or 'Cytotoxicity Report') }}</span>
+                                <span style="font-size:11px; font-weight:600; background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    PDF Report
+                                </span>
+                            </div>
+                            <div style="font-size:12.5px; color:var(--ns-text-sub); margin-top:4px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                {% if r.experiment %}
+                                    <span>🧫 <b>{{ r.experiment.cell_line or 'ZnO' }}</b></span>
+                                    <span>⏱️ <b>{{ r.experiment.exposure_time or '24h' }}</b></span>
+                                {% endif %}
+                                <span>📅 {{ r.generated_at.strftime('%d %b %Y, %H:%M') if r.generated_at else '—' }}</span>
+                                <span style="font-family:monospace; font-size:11px; opacity:0.75;">📁 {{ r.pdf_filename }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="openRenameModal('{{ r.id }}', '{{ (r.experiment.sample_name if r.experiment else r.pdf_filename)|replace('\'', '\\\'') }}')" style="background:var(--ns-bg-input); color:var(--ns-text-main); border:1px solid var(--ns-border-input); padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                            ✏️ Rename
+                        </button>
+                        {% if r.experiment_id %}
+                        <a href="{{ url_for('main.history_detail', history_id=r.experiment_id) }}" style="background:var(--ns-bg-input); color:#0f766e; border:1px solid var(--ns-border-input); padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                            👁️ View
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('main.download_history_report', history_id=r.experiment_id) }}" class="ns-btn-dl" style="display:inline-flex; align-items:center; gap:6px;">
+                            ⬇ Download
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+            {% else %}
+                <div class="ns-empty">No reports generated yet. Run an analysis to generate an experiment report.</div>
+            {% endif %}
+        </div>
+
+        <!-- Rename Modal -->
+        <div id="renameModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+            <div style="background:var(--ns-bg-card); border:1px solid var(--ns-border-main); border-radius:16px; padding:28px; width:90%; max-width:440px; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+                <h3 style="margin:0 0 8px; font-size:18px; color:var(--ns-text-main);">✏️ Rename Experiment &amp; Report</h3>
+                <p style="margin:0 0 18px; font-size:13px; color:var(--ns-text-sub);">Changing the name will update the experiment record and future report downloads.</p>
+                <form id="renameForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="margin-bottom:18px;">
+                        <label style="display:block; font-size:12.5px; font-weight:700; color:var(--ns-text-main); margin-bottom:6px;">New Name</label>
+                        <input type="text" id="renameInput" name="new_name" required style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid var(--ns-border-input); border-radius:8px; background:var(--ns-bg-input); color:var(--ns-text-main); font-size:14px;">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" onclick="closeRenameModal()" style="background:var(--ns-bg-input); color:var(--ns-text-main); border:1px solid var(--ns-border-input); padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;">Cancel</button>
+                        <button type="submit" style="background:#0f766e; color:white; border:none; padding:9px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+        function openRenameModal(reportId, currentName) {
+            const form = document.getElementById('renameForm');
+            form.action = '/reports/rename/' + reportId;
+            document.getElementById('renameInput').value = currentName;
+            const modal = document.getElementById('renameModal');
+            modal.style.display = 'flex';
+        }
+        function closeRenameModal() {
+            document.getElementById('renameModal').style.display = 'none';
+        }
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('renameModal');
+            if (e.target === modal) {
+                closeRenameModal();
+            }
+        });
+        </script>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 5 — SETTINGS
+        ═════════════════════════════════════════════════════ -->
+        {% elif active_tab == 'settings' %}
+
+        <div class="ns-panel">
+            <h2>Settings</h2>
+            
+            <form method="POST" action="{{ url_for('main.profile_update') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- 1. Profile -->
+                <p class="ns-panel-sub">Profile</p>
+                <div class="ns-form-grid">
+                    <div class="ns-form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" value="{{ user.full_name or '' }}" placeholder="Dr. Jane Smith">
+                    </div>
+                    <div class="ns-form-group">
+                        <label>Research Role</label>
+                        <input type="text" name="research_role" value="{{ user.research_role or '' }}" placeholder="e.g. Principal Investigator">
+                    </div>
+                    <div class="ns-form-group">
+                        <label>Institution</label>
+                        <input type="text" name="institution" value="{{ user.institution or '' }}" placeholder="University / Hospital">
+                    </div>
+                    <div class="ns-form-group">
+                        <label>Department</label>
+                        <input type="text" name="department" value="{{ user.department or '' }}" placeholder="e.g. Biomedical Engineering">
+                    </div>
+                </div>
+
+                <!-- 2. Research Preferences -->
+                <p class="ns-panel-sub" style="margin-top: 24px;">Research Preferences</p>
+                <div class="ns-form-grid">
+                    <div class="ns-form-group">
+                        <label>Default Cell Line</label>
+                        <select name="default_cell_line">
+                            {% for line in ['HeLa','MCF-7','A549','HEK293','NIH-3T3','HepG2','Caco-2','CHO','Jurkat','PC12'] %}
+                            <option value="{{ line }}" {% if (user.default_cell_line or 'HeLa') == line %}selected{% endif %}>{{ line }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ns-form-group">
+                        <label>Default Exposure Time</label>
+                        <select name="default_exposure_time">
+                            {% for t in ['6h','12h','24h','48h','72h','96h'] %}
+                            <option value="{{ t }}" {% if (user.default_exposure_time or '24h') == t %}selected{% endif %}>{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="ns-form-group">
+                        <label>Preferred Report Format</label>
+                        <select name="preferred_report_format">
+                            <option value="pdf"   {% if (user.preferred_report_format or 'pdf') == 'pdf'   %}selected{% endif %}>PDF</option>
+                            <option value="excel" {% if (user.preferred_report_format or 'pdf') == 'excel' %}selected{% endif %}>Excel</option>
+                            <option value="csv"   {% if (user.preferred_report_format or 'pdf') == 'csv'   %}selected{% endif %}>CSV</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Notifications -->
+                <p class="ns-panel-sub" style="margin-top: 24px;">Notifications</p>
+                <div class="ns-toggle-row">
+                    <div>
+                        <div class="ns-toggle-label">Analysis Completed</div>
+                        <div class="ns-toggle-sub">Receive an email when a large dataset analysis completes</div>
+                    </div>
+                    <label class="ns-toggle">
+                        <input type="checkbox" name="notify_analysis_completed" {% if user.notify_analysis_completed %}checked{% endif %}>
+                        <span class="ns-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="ns-toggle-row">
+                    <div>
+                        <div class="ns-toggle-label">Report Generated</div>
+                        <div class="ns-toggle-sub">Get notified when your PDF report is ready</div>
+                    </div>
+                    <label class="ns-toggle">
+                        <input type="checkbox" name="notify_report_generated" {% if user.notify_report_generated %}checked{% endif %}>
+                        <span class="ns-toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="ns-toggle-row">
+                    <div>
+                        <div class="ns-toggle-label">Security Alerts</div>
+                        <div class="ns-toggle-sub">Get alerts for new logins or password changes</div>
+                    </div>
+                    <label class="ns-toggle">
+                        <input type="checkbox" name="notify_security_alerts" {% if user.notify_security_alerts %}checked{% endif %}>
+                        <span class="ns-toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- 4. Appearance -->
+                <p class="ns-panel-sub" style="margin-top: 24px;">Appearance</p>
+                <div class="ns-toggle-row">
+                    <div>
+                        <div class="ns-toggle-label">Dark Mode</div>
+                        <div class="ns-toggle-sub">Apply dark theme globally across all pages</div>
+                    </div>
+                    <label class="ns-toggle">
+                        <input type="checkbox" name="dark_mode" {% if user.dark_mode %}checked{% endif %}>
+                        <span class="ns-toggle-slider"></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="ns-btn-save">💾 Save Settings</button>
+            </form>
+        </div>
+
+        <!-- 5. Data & Privacy -->
+        <div class="ns-panel">
+            <p class="ns-panel-sub">Data &amp; Privacy</p>
+            
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Download My Data</div>
+                    <div class="ns-security-sub">Export your profile and experiment history (JSON)</div>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.download_data') }}" class="ns-btn-dl">⬇ Download Data</a>
+                </div>
+            </div>
+            
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Clear Experiment History</div>
+                    <div class="ns-security-sub">Delete all past experiments and reports</div>
+                </div>
+                <div>
+                    <form method="POST" action="{{ url_for('main.clear_history') }}" onsubmit="return confirm('Are you sure you want to delete all experiment history? This cannot be undone.');" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="ns-btn-dl" style="background:#fef3c7;color:#b45309;border-color:#fde68a;cursor:pointer;">🗑️ Clear History</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════════
+             TAB 6 — SECURITY
+        ═════════════════════════════════════════════════════ -->
+        {% elif active_tab == 'security' %}
+
+        <!-- Account Security -->
+        <div class="ns-panel">
+            <h2>Security &amp; Privacy</h2>
+            <p class="ns-panel-sub">Account Security</p>
+            
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Email Address</div>
+                    <div class="ns-security-sub">{{ user.email }}</div>
+                </div>
+                <div class="ns-security-value">
+                    {% if user.is_verified %}
+                        <span class="ns-verified-badge">✅ Verified</span>
+                    {% else %}
+                        <span class="ns-verified-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a;">⚠️ Not Verified</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Firebase Authentication</div>
+                    <div class="ns-security-sub">Cloud identity provider status</div>
+                </div>
+                <div class="ns-security-value">
+                    {% if user.firebase_uid %}
+                        <span class="badge ns-badge-safe" style="font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;">🔥 Linked</span>
+                    {% else %}
+                        <span class="badge" style="background: var(--ns-bg-hover);color: var(--ns-text-muted);font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;">Not linked</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Account Created</div>
+                    <div class="ns-security-sub">Registration date</div>
+                </div>
+                <div class="ns-security-value">
+                    {{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}
+                </div>
+            </div>
+
+            <!-- Authentication -->
+            <p class="ns-panel-sub" style="margin-top:24px;">Authentication</p>
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Change Password</div>
+                    <div class="ns-security-sub">Update your account password safely</div>
+                </div>
+                <div>
+                    <a href="{{ url_for('auth.change_password') }}" class="ns-btn-dl">🔑 Change Password</a>
+                </div>
+            </div>
+
+            <!-- Session Security -->
+            <p class="ns-panel-sub" style="margin-top:24px;">Session Security</p>
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Last Login</div>
+                    <div class="ns-security-sub">Most recent successful authentication</div>
+                </div>
+                <div class="ns-security-value">
+                    {{ user.last_login.strftime('%d %b %Y, %H:%M') if user.last_login else 'Not recorded' }}
+                </div>
+            </div>
+
+            <div class="ns-security-row">
+                <div>
+                    <div class="ns-security-label">Log Out of All Devices</div>
+                    <div class="ns-security-sub">End all active sessions immediately</div>
+                </div>
+                <div>
+                    <form method="POST" action="{{ url_for('auth.logout_all_devices') }}" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="ns-btn-dl" style="background:#fee2e2;color:#dc2626;border-color:#fca5a5;cursor:pointer;">🚪 Log Out All</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Security Activity -->
+        <div class="ns-panel">
+            <p class="ns-panel-sub">Recent Security Activity</p>
+            
+            {% if audit_logs or login_logs %}
+            <table class="ns-table" style="margin-bottom:20px;">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Event</th>
+                        <th>IP Address</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr>
+                        <td style="color: var(--ns-text-muted);font-size:12px;white-space:nowrap;">{{ log.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td style="font-weight:600;">{{ log.action }} <span style="font-weight:400;color: var(--ns-text-sub);font-size:12px;display:block;">{{ log.details }}</span></td>
+                        <td style="color: var(--ns-text-sub);font-size:12px;">{{ log.ip_address or '—' }}</td>
+                        <td><span style="background:#eff6ff;color:#1d4ed8;padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700;">System</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% for log in login_logs %}
+                    <tr>
+                        <td style="color: var(--ns-text-muted);font-size:12px;white-space:nowrap;">{{ log.timestamp.strftime('%d %b %Y, %H:%M') }}</td>
+                        <td style="font-weight:600;">Login Attempt <span style="font-weight:400;color: var(--ns-text-sub);font-size:12px;display:block;">User: {{ log.username_attempted }}</span></td>
+                        <td style="color: var(--ns-text-sub);font-size:12px;">{{ log.ip_address or '—' }}</td>
+                        <td>
+                            {% if log.success %}
+                                <span style="background:#dcfce7;color:#16a34a;padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700;">Success</span>
+                            {% else %}
+                                <span style="background:#fee2e2;color:#dc2626;padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700;">Failed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="ns-empty" style="padding:20px;">No recent security activity found.</div>
+            {% endif %}
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="ns-danger-zone">
+            <h3>🗑️ Delete Account</h3>
+            <p>This will permanently delete your account, experiments, reports, and associated data. This action cannot be undone.</p>
+            <form method="POST" action="{{ url_for('main.delete_account') }}" onsubmit="var conf = prompt('Type DELETE to confirm account deletion:'); return conf === 'DELETE';">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="confirm_delete" value="" id="confirmDeleteInput">
+                <button type="submit" class="ns-btn-danger" onclick="document.getElementById('confirmDeleteInput').value = prompt('Type DELETE to confirm account deletion:'); return document.getElementById('confirmDeleteInput').value === 'DELETE';">Delete My Account</button>
+            </form>
+        </div>
+
+        {% endif %}
+
+    </main>
+</div>
+
+<script id="user-prefs" type="application/json">
+{
+  "darkMode": {{ 'true' if user.dark_mode else 'false' }}
+}
+</script>
+<script>
+  // Sync server preference with local storage
+  const prefs = JSON.parse(document.getElementById('user-prefs').textContent);
+  if (prefs.darkMode) {
+      localStorage.setItem('ns_theme', 'dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+      localStorage.setItem('ns_theme', 'light');
+      document.documentElement.removeAttribute('data-theme');
+  }
+  
+  // Instant visual toggle
+  const dmToggle = document.querySelector('input[name="dark_mode"]');
+  if (dmToggle) {
+      dmToggle.addEventListener('change', function() {
+          if (this.checked) {
+              document.documentElement.setAttribute('data-theme', 'dark');
+              localStorage.setItem('ns_theme', 'dark');
+          } else {
+              document.documentElement.removeAttribute('data-theme');
+              localStorage.setItem('ns_theme', 'light');
+          }
+      });
+  }
+</script>
+</body>
+</html>

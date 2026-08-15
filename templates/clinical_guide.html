@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Standards &amp; Bio-Reference — NanoSafe Analyzer</title>
+    <meta name="description" content="ISO 10993-5 biocompatibility standards, biomedical application profiles, and mechanistic cytotoxicity guidelines for ZnO nanoparticles.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') + '?v=6' }}">
+    <style>
+        .guide-main-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .guide-content-area {
+            padding: 32px 36px;
+            max-width: 1300px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        /* Hero Banner */
+        .guide-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: var(--ns-radius-lg);
+            padding: 28px 34px;
+            margin-bottom: 28px;
+            box-shadow: 0 10px 30px rgba(15, 118, 110, 0.18);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .guide-hero h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 0 6px;
+            color: #ffffff !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .guide-hero p {
+            margin: 0;
+            font-size: 14px;
+            max-width: 720px;
+            color: #f1f5f9 !important;
+            opacity: 0.95;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Sections */
+        .guide-section {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-lg);
+            padding: 26px 30px;
+            margin-bottom: 28px;
+            box-shadow: var(--ns-shadow-sm);
+        }
+        .guide-section-header {
+            margin-bottom: 20px;
+        }
+        .guide-section-header h2 {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 4px;
+        }
+        .guide-section-header p {
+            font-size: 13px;
+            color: var(--ns-text-muted);
+            margin: 0;
+        }
+
+        /* Standards Table */
+        .standards-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: var(--ns-radius-sm);
+            overflow: hidden;
+            border: 1px solid var(--ns-border-main);
+        }
+        .standards-table th {
+            background: var(--ns-bg-hover);
+            color: var(--ns-text-main) !important;
+            font-size: 12.5px;
+            font-weight: 800;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ns-border-main);
+            text-align: left;
+        }
+        .standards-table td {
+            padding: 13px 16px;
+            font-size: 13.5px;
+            border-bottom: 1px solid var(--ns-border-main);
+            color: var(--ns-text-main);
+        }
+        .standards-table tr:last-child td { border-bottom: none; }
+        .standards-table tr:hover td { background: var(--ns-bg-hover); }
+
+        /* Application Profiles Grid */
+        .app-profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        .app-spec-card {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-md);
+            padding: 22px 24px;
+            border-left: 4px solid #0f766e;
+        }
+        .app-spec-card h3 {
+            margin: 0 0 8px;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-spec-card p {
+            margin: 0 0 14px;
+            font-size: 13px;
+            color: var(--ns-text-muted);
+            line-height: 1.5;
+        }
+        .spec-meta-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .spec-pill {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+        }
+
+        /* Toxicology Principles Grid */
+        .mech-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .mech-card {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-md);
+            padding: 20px;
+        }
+        .mech-card h4 {
+            margin: 0 0 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+        }
+        .mech-card p {
+            margin: 0;
+            font-size: 12.5px;
+            color: var(--ns-text-muted);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 900px) {
+            .app-profiles-grid { grid-template-columns: 1fr; }
+            .mech-grid { grid-template-columns: 1fr; }
+            .guide-content-area { padding: 20px 16px; }
+        }
+
+        /* Expert Q&A Accordion Style */
+        .faq-section {
+            margin-top: 28px;
+        }
+        .faq-item {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-lg);
+            margin-bottom: 14px;
+            overflow: hidden;
+            box-shadow: var(--ns-shadow-sm);
+        }
+        .faq-question {
+            padding: 18px 24px;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            cursor: pointer;
+            background: var(--ns-bg-input);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+        .faq-question:hover {
+            background: var(--ns-bg-hover);
+        }
+        .faq-question::after {
+            content: '▼';
+            font-size: 10px;
+            color: var(--ns-text-muted);
+            transition: transform 0.2s ease;
+        }
+        .faq-item.active .faq-question::after {
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            padding: 0 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+            font-size: 13.5px;
+            color: var(--ns-text-muted);
+            line-height: 1.6;
+            text-align: left;
+        }
+        .faq-item.active .faq-answer {
+            padding: 16px 24px 20px;
+            max-height: 1000px;
+            border-top: 1px solid var(--ns-border-main);
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <div class="guide-main-wrapper">
+        {% set page_title = "Clinical Standards & Bio-Reference" %}
+        {% include '_topbar.html' %}
+
+        <main class="guide-content-area">
+
+            <!-- Hero Banner -->
+            <div class="guide-hero">
+                <div>
+                    <h1>Clinical Standards &amp; Bio-Reference</h1>
+                    <p>
+                        ISO 10993-5 regulatory evaluation framework, clinical therapeutic windows, 
+                        and cytotoxicity safety thresholds for Zinc Oxide (ZnO) nanoparticles.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-primary" style="background: white; color: #0f766e; font-weight: 800;">
+                        🔬 New Experiment
+                    </a>
+                </div>
+            </div>
+
+            <!-- 1. ISO 10993-5 Standards Table -->
+            <div class="guide-section">
+                <div class="guide-section-header">
+                    <h2>📋 ISO 10993-5 Biological Evaluation Framework</h2>
+                    <p>International standard criteria for in vitro cytotoxicity testing of medical devices and nanomaterials.</p>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="standards-table">
+                        <thead>
+                            <tr>
+                                <th>Classification Tier</th>
+                                <th>Cell Viability (%)</th>
+                                <th>ROS Fold Threshold</th>
+                                <th>LDH Release (%)</th>
+                                <th>Apoptosis (%)</th>
+                                <th>Regulatory Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="ns-badge ns-badge-safe">🟢 Low Risk (Safe)</span></td>
+                                <td><b>&ge; 80.0%</b></td>
+                                <td>&le; 1.5× Baseline</td>
+                                <td>&le; 10.0%</td>
+                                <td>&le; 8.0%</td>
+                                <td><b>PASS:</b> Biocompatible for biomedical applications.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="ns-badge ns-badge-moderate">🟡 Moderate Risk</span></td>
+                                <td><b>70.0% – 79.9%</b></td>
+                                <td>1.5× – 3.0×</td>
+                                <td>10.0% – 20.0%</td>
+                                <td>8.0% – 15.0%</td>
+                                <td><b>CONDITIONAL:</b> Low-dose surveillance required.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="ns-badge ns-badge-toxic">🔴 High Risk (Toxic)</span></td>
+                                <td><b>&lt; 70.0%</b></td>
+                                <td>&gt; 3.0× Baseline</td>
+                                <td>&gt; 20.0%</td>
+                                <td>&gt; 15.0%</td>
+                                <td><b>FAIL:</b> Cytotoxic; exceeding cellular tolerance.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Biomedical Application Profiles -->
+            <div class="guide-section">
+                <div class="guide-section-header">
+                    <h2>🏥 Clinical Application Therapeutic Windows</h2>
+                    <p>Target biocompatibility thresholds and therapeutic dosage ceilings across specific clinical domains.</p>
+                </div>
+
+                <div class="app-profiles-grid">
+                    <!-- Wound Care -->
+                    <div class="app-spec-card">
+                        <h3>🩹 Wound Dressings &amp; Topical Antimicrobial</h3>
+                        <p>
+                            ZnO nanoparticles act as an active antimicrobial barrier, promoting re-epithelialization and collagen synthesis 
+                            while inhibiting Staphylococcus aureus and Pseudomonas aeruginosa colonization.
+                        </p>
+                        <div class="spec-meta-row">
+                            <span class="spec-pill">Target Viability: &ge; 80%</span>
+                            <span class="spec-pill">Therapeutic Range: 10 – 30 µg/mL</span>
+                            <span class="spec-pill">Target Cell: Fibroblasts / Keratinocytes</span>
+                        </div>
+                    </div>
+
+                    <!-- Dental -->
+                    <div class="app-spec-card" style="border-left-color: #3b82f6;">
+                        <h3>🦷 Dental Biomaterials &amp; Endodontic Cements</h3>
+                        <p>
+                            Used in root canal sealers, composite resins, and restorative liners to prevent secondary caries and biofilm formation 
+                            without triggering gingival necrosis or periodontal ligament cell death.
+                        </p>
+                        <div class="spec-meta-row">
+                            <span class="spec-pill">Target Viability: &ge; 75%</span>
+                            <span class="spec-pill">Therapeutic Range: 15 – 40 µg/mL</span>
+                            <span class="spec-pill">Target Cell: Gingival Fibroblasts</span>
+                        </div>
+                    </div>
+
+                    <!-- Drug Delivery -->
+                    <div class="app-spec-card" style="border-left-color: #8b5cf6;">
+                        <h3>💊 Targeted Drug Delivery &amp; Nanocarriers</h3>
+                        <p>
+                            Formulated as pH-sensitive nanocarriers for targeted chemotherapeutic or antibacterial delivery. 
+                            Demands highest safety margins to prevent vascular endothelial cell lysis and reactive oxygen stress.
+                        </p>
+                        <div class="spec-meta-row">
+                            <span class="spec-pill">Target Viability: &ge; 90%</span>
+                            <span class="spec-pill">Therapeutic Range: 5 – 15 µg/mL</span>
+                            <span class="spec-pill">Target Cell: Endothelial / Epithelial Lines</span>
+                        </div>
+                    </div>
+
+                    <!-- Tissue Engineering -->
+                    <div class="app-spec-card" style="border-left-color: #10b981;">
+                        <h3>🧫 Tissue Engineering &amp; Bone Scaffolds</h3>
+                        <p>
+                            Incorporated into bioactive glass, polymeric matrices, and hydroxyapatite scaffolds to stimulate osteoblast proliferation, 
+                            alkaline phosphatase activity, and extracellular matrix mineralization.
+                        </p>
+                        <div class="spec-meta-row">
+                            <span class="spec-pill">Target Viability: &ge; 85%</span>
+                            <span class="spec-pill">Therapeutic Range: 10 – 25 µg/mL</span>
+                            <span class="spec-pill">Target Cell: Osteoblasts / Stem Cells</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Mechanistic Toxicology Principles -->
+            <div class="guide-section">
+                <div class="guide-section-header">
+                    <h2>🧬 Mechanistic Principles of ZnO Cytotoxicity</h2>
+                    <p>Physicochemical drivers influencing biocompatibility and cellular survival.</p>
+                </div>
+
+                <div class="mech-grid">
+                    <div class="mech-card">
+                        <h4>⚡ Particle Size &amp; Surface Area</h4>
+                        <p>
+                            Nanoparticles &lt;30 nm exhibit increased surface reactivity and rapid cellular uptake, leading to higher dissolution rates compared to larger &gt;50 nm particles.
+                        </p>
+                    </div>
+
+                    <div class="mech-card" style="border-left: 3px solid #0f766e;">
+                        <h4>🧪 Zn²⁺ Ion Release &amp; ROS Cascade</h4>
+                        <p>
+                            Intracellular dissolution of Zn²⁺ ions disrupts mitochondrial membrane potential, triggering oxidative stress and caspase-mediated apoptotic cascades.
+                        </p>
+                    </div>
+
+                    <div class="mech-card" style="border-left: 3px solid #10b981;">
+                        <h4>⏱️ Exposure Time Dynamics</h4>
+                        <p>
+                            Prolonged exposure (48h–72h) shifts the effective IC50 threshold downward due to cumulative intracellular zinc ion accumulation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Expert Q&A Accordion -->
+            <div class="guide-section faq-section">
+                <div class="guide-section-header">
+                    <h2>💬 Expert Q&amp;A: Safety &amp; Biocompatibility of ZnO</h2>
+                    <p>Factual responses regarding clinical translation, safety profiles, and testing methodologies.</p>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">1. In what medical applications are ZnO nanoparticles typically considered, and why is their safety evaluation important?</div>
+                    <div class="faq-answer">
+                        <p>Zinc oxide nanoparticles are commonly considered for wound dressings, antimicrobial coatings, dental materials, drug delivery systems, and tissue engineering applications, because they possess strong antibacterial activity and can promote healing responses.</p>
+                        <p>However, despite these benefits, their small size allows them to easily interact with cells and even enter intracellular compartments. If not carefully controlled, this can trigger oxidative stress, inflammation, or cell death. That is why safety evaluation is essential.</p>
+                        <p>From a clinical standpoint, biocompatibility and cytotoxicity studies help us determine the safe concentration range, exposure duration, and particle characteristics that support healing without harming healthy tissues. These assessments directly guide biomedical usage levels, ensuring that ZnO nanoparticles provide therapeutic benefit while minimizing adverse effects.</p>
+                        <p style="margin-bottom:0;">In simple terms, toxicity testing protects patients by defining where ZnO nanoparticles act as helpful biomaterials—and where they become biologically harmful.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">2. What is the main difficulty in determining whether these nanoparticles are safe for use in biomedical applications?</div>
+                    <div class="faq-answer">
+                        <p>The main difficulty in determining nanoparticle safety is that their biological behavior changes with size, concentration, surface chemistry, and exposure time. A dose that appears biocompatible in one cell type or short-term assay may become cytotoxic in another tissue or with prolonged exposure.</p>
+                        <p>Additionally, ZnO nanoparticles can release zinc ions and generate reactive oxygen species, making it challenging to distinguish whether observed toxicity is due to the particles themselves or their ionic by-products. In vitro results also do not always translate directly to in vivo responses.</p>
+                        <p style="margin-bottom:0;">From a clinical standpoint, the key challenge is defining a clear therapeutic window—a concentration range where nanoparticles provide antimicrobial or regenerative benefits without inducing oxidative stress, inflammation, or cell death. This uncertainty defines the engineering focus: developing standardized testing models and predictive tools to reliably establish safe biomedical usage levels.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">3. If cytotoxicity occurs, how does it affect patient safety or treatment outcomes?</div>
+                    <div class="faq-answer">
+                        <p>If cytotoxicity occurs, it directly compromises patient safety. Instead of supporting healing or therapy, the nanoparticles can damage healthy cells, triggering inflammation, delayed wound repair, tissue necrosis, or organ toxicity. Clinically, this may present as poor treatment response, prolonged recovery, infection risk, or even systemic side effects if particles enter circulation.</p>
+                        <p style="margin-bottom:0;">In practical terms, cytotoxicity narrows the therapeutic window—forcing us to reduce doses or discontinue treatment—thereby limiting clinical effectiveness. That’s why rigorous safety evaluation is essential: it ensures nanoparticles deliver benefit without harming surrounding tissues, ultimately protecting patients and improving treatment outcomes.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">4. In an ideal scenario, what evidence would clearly indicate that a nanoparticle concentration is safe?</div>
+                    <div class="faq-answer">
+                        <p>In an ideal scenario, a nanoparticle concentration is considered safe when we see high cell viability (typically ≥80–90%), normal cell morphology, and sustained proliferation comparable to untreated controls. There should be no significant increase in oxidative stress, inflammatory markers, or apoptosis, and cells should retain their normal functional behavior.</p>
+                        <p>From a tissue standpoint, we would also expect proper cell attachment, migration, and extracellular matrix production, with no evidence of membrane damage or DNA injury. If tested in vivo, this would translate to absence of local irritation, normal tissue integration, and no systemic toxicity.</p>
+                        <p style="margin-bottom:0;">In measurable terms, ‘biocompatible’ means the nanoparticles support cellular health and function while producing no statistically significant cytotoxic or inflammatory response across relevant doses and exposure times—clearly defining a safe therapeutic window.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">5. What measurements or laboratory observations are typically used to assess cytotoxicity or biocompatibility?</div>
+                    <div class="faq-answer">
+                        <p>To assess cytotoxicity and biocompatibility, we rely on both quantitative assays and morphological observations.</p>
+                        <p style="margin-bottom:0; font-weight:600;">Common laboratory measurements include:</p>
+                        <ul style="margin-top:6px; margin-bottom:0; padding-left:20px;">
+                            <li>Cell viability percentage (MTT, XTT, Alamar Blue assays)</li>
+                            <li>Dose–response curves to determine IC₅₀ or safe concentration ranges</li>
+                            <li>Live–dead staining to visualize membrane integrity</li>
+                            <li>Apoptosis and necrosis markers (Annexin V, caspase activity assays)</li>
+                            <li>Reactive oxygen species (ROS) levels to assess oxidative stress</li>
+                            <li>Lactate dehydrogenase (LDH) release to detect membrane damage</li>
+                            <li>Inflammatory cytokine expression (e.g., IL-6, TNF-α)</li>
+                            <li>Microscopic evaluation of cell morphology and attachment</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">6. How are these experimental results currently recorded, analysed, and compared across different nanoparticle concentrations?</div>
+                    <div class="faq-answer">
+                        <p>Currently, experimental results are recorded using a combination of microscopy images, plate-reader outputs (for viability or ROS assays), and flow cytometry data, which are then exported into spreadsheets or basic statistical software. Cell viability percentages, dose–response values, and standard deviations are calculated manually, and graphs are typically generated using Excel or similar tools.</p>
+                        <p>Comparisons across different nanoparticle concentrations are performed using conventional statistical tests (such as t-tests or ANOVA), and results are interpreted visually through plots and tables. Much of this workflow is still semi-manual, involving separate files for images, assay data, and statistics.</p>
+                        <p style="margin-bottom:0;">This creates gaps in integration and efficiency, highlighting a clear opportunity for centralized digital platforms, automated data processing, and visualization tools that can directly link concentration-dependent toxicity with biological outcomes—improving reproducibility, saving time, and supporting predictive safety modeling.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">7. If we were to develop an engineering support tool, which would be most useful: a system to analyze dose–response data automatically, a model that predicts cytotoxicity based on nanoparticle characteristics, or a dashboard to organize and compare experimental safety results?</div>
+                    <div class="faq-answer">
+                        <p>All three tools would be valuable, but from a practical laboratory and clinical translation standpoint, the most immediately useful would be a system to automatically analyze dose–response data. This would save significant time, reduce manual errors, and help us rapidly define safe concentration ranges and IC₅₀ values.</p>
+                        <p>Next in importance would be a dashboard to organize and compare experimental safety results, because it allows us to integrate cell viability, ROS, morphology, and inflammatory markers across multiple nanoparticle concentrations and experiments—making trends clearer and decisions more data-driven.</p>
+                        <p>A predictive cytotoxicity model becomes most powerful once we already have standardized, high-quality experimental datasets.</p>
+                        <p style="margin-bottom:0;">So, in sequence: automated dose–response analysis first, safety-result dashboard second, and predictive modeling third. Together, these tools would create a strong interdisciplinary workflow linking nanoparticle properties directly to biological safety and helping us establish reliable biomedical usage levels faster.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const item = question.parentElement;
+            item.classList.toggle('active');
+        });
+    });
+</script>
+
+</body>
+</html>

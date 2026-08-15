@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "../../project/.venv"
+		},
+		{
+			"path": "../../project/.venv-1"
+		},
+		{
+			"path": "../../project/.venv-2"
+		},
+		{
+			"path": "../../project/__pycache__"
+		},
+		{
+			"path": "../../project/static"
+		},
+		{
+			"path": "../../project/templates"
+		},
+		{
+			"path": "../../project/venv"
+		}
+	]
+}

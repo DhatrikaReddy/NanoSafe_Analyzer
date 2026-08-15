@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if action == 'edit' %}Edit Participant{% else %}New Participant{% endif %} — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        body { background: var(--ns-bg-main); }
+        .ns-sidebar-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        @media (max-width: 900px) { .ns-sidebar-layout { grid-template-columns: 1fr; } .ns-sidebar { display: none; } }
+        .form-page { padding: 32px 36px; max-width: 900px; }
+
+        .form-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: white; padding: 24px 32px; border-radius: 18px;
+            margin-bottom: 26px; box-shadow: 0 8px 24px rgba(15,118,110,0.2);
+        }
+        .form-hero h1 { margin: 0 0 4px; font-size: 22px; font-weight: 800; }
+        .form-hero p { margin: 0; opacity: 0.88; font-size: 13px; }
+
+        .form-card {
+            background: var(--ns-bg-card); border-radius: 18px; padding: 30px;
+            border: 1px solid var(--ns-border-main); box-shadow: 0 4px 16px rgba(15,118,110,0.06);
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label {
+            font-size: 12px; font-weight: 700; color: var(--ns-text-muted);
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .form-group .required-star { color: #dc2626; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 12px 14px; border-radius: 10px;
+            border: 1px solid var(--ns-border-input); background: var(--ns-bg-input);
+            font-size: 14px; color: var(--ns-text-main); width: 100%; box-sizing: border-box;
+            font-family: 'Inter', Arial, sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #0f766e;
+            box-shadow: 0 0 0 3px rgba(15,118,110,0.12);
+        }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-span-2 { grid-column: 1 / -1; }
+
+        .privacy-notice {
+            background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px;
+            padding: 14px 18px; margin-bottom: 22px; display: flex; gap: 10px;
+            align-items: flex-start; font-size: 13px; color: #0f766e;
+        }
+        .privacy-notice b { display: block; margin-bottom: 3px; }
+
+        .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+
+        .flash-msg { padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-weight: 600; font-size: 13.5px; }
+        .flash-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .flash-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    </style>
+</head>
+<body>
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="form-page">
+
+        <div class="form-hero">
+            <h1>{% if action == 'edit' %}✏️ Edit Participant: {{ participant.participant_id }}{% else %}➕ New Study Participant{% endif %}</h1>
+            <p>ZnO Biocompatibility Study — Anonymized Research Participant Registry</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Clinical Patient Registry Header & Notice -->
+        <div class="privacy-notice" style="background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); color: var(--ns-text-main);">
+            <span style="font-size:22px;">👤</span>
+            <div>
+                <b style="color: #0f766e; font-size: 14px;">Clinical Patient &amp; Experiment Registry</b>
+                Register complete patient details and biological sample origins. All cytotoxicity experiments, 4PL curves, and ISO biocompatibility runs performed for this patient will be automatically aggregated on their clinical profile.
+            </div>
+        </div>
+
+        <div class="form-card">
+            <form method="POST"
+                  action="{% if action == 'edit' %}{{ url_for('participants.participant_edit', participant_pk=participant.id) }}{% else %}{{ url_for('participants.participant_new') }}{% endif %}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-grid">
+                    <!-- Patient Full Name -->
+                    <div class="form-group">
+                        <label>Patient / Participant Full Name <span class="required-star">*</span></label>
+                        <input type="text" name="name" required
+                               placeholder="e.g. Johnathan Doe, Sarah Connor"
+                               value="{% if action=='edit' %}{{ participant.name or '' }}{% else %}{{ form_data.get('name','') }}{% endif %}">
+                    </div>
+
+                    <!-- Participant ID / Record # -->
+                    <div class="form-group">
+                        <label>Patient Code / Participant ID <span class="required-star">*</span></label>
+                        <input type="text" name="participant_id" required
+                               placeholder="e.g. PAT-101, P-001, BIO-2026-004"
+                               value="{% if action=='edit' %}{{ participant.participant_id }}{% else %}{{ form_data.get('participant_id','') }}{% endif %}">
+                    </div>
+
+                    <!-- Blood Group -->
+                    <div class="form-group">
+                        <label>Blood Group</label>
+                        <select name="blood_group">
+                            {% set bg = participant.blood_group if action=='edit' else form_data.get('blood_group','') %}
+                            <option value="">— Select Blood Group —</option>
+                            <option value="O+"  {% if bg=='O+' %}selected{% endif %}>O+ (Positive)</option>
+                            <option value="O-"  {% if bg=='O-' %}selected{% endif %}>O- (Negative)</option>
+                            <option value="A+"  {% if bg=='A+' %}selected{% endif %}>A+ (Positive)</option>
+                            <option value="A-"  {% if bg=='A-' %}selected{% endif %}>A- (Negative)</option>
+                            <option value="B+"  {% if bg=='B+' %}selected{% endif %}>B+ (Positive)</option>
+                            <option value="B-"  {% if bg=='B-' %}selected{% endif %}>B- (Negative)</option>
+                            <option value="AB+" {% if bg=='AB+' %}selected{% endif %}>AB+ (Positive)</option>
+                            <option value="AB-" {% if bg=='AB-' %}selected{% endif %}>AB- (Negative)</option>
+                        </select>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" placeholder="patient@hospital.org or personal email"
+                               value="{% if action=='edit' %}{{ participant.email or '' }}{% else %}{{ form_data.get('email','') }}{% endif %}">
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-group">
+                        <label>Phone / Contact Number</label>
+                        <input type="tel" name="phone" placeholder="+1 (555) 019-2834"
+                               value="{% if action=='edit' %}{{ participant.phone or '' }}{% else %}{{ form_data.get('phone','') }}{% endif %}">
+                    </div>
+
+                    <!-- Age -->
+                    <div class="form-group">
+                        <label>Age (years)</label>
+                        <input type="number" name="age" min="0" max="150" placeholder="e.g. 34"
+                               value="{% if action=='edit' and participant.age %}{{ participant.age }}{% else %}{{ form_data.get('age','') }}{% endif %}">
+                    </div>
+
+                    <!-- Sex / Gender -->
+                    <div class="form-group">
+                        <label>Sex / Gender</label>
+                        <select name="sex">
+                            {% set sv = participant.sex if action=='edit' else form_data.get('sex','') %}
+                            <option value="">— Select —</option>
+                            <option value="Male"              {% if sv=='Male' %}selected{% endif %}>Male</option>
+                            <option value="Female"            {% if sv=='Female' %}selected{% endif %}>Female</option>
+                            <option value="Other"             {% if sv=='Other' %}selected{% endif %}>Other</option>
+                            <option value="Prefer not to say" {% if sv=='Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                        </select>
+                    </div>
+
+                    <!-- Consent Status -->
+                    <div class="form-group">
+                        <label>Consent Status <span class="required-star">*</span></label>
+                        <select name="consent_status">
+                            {% set cs = participant.consent_status if action=='edit' else form_data.get('consent_status','Consented') %}
+                            <option value="Consented" {% if cs=='Consented' %}selected{% endif %}>✅ Consented</option>
+                            <option value="Pending"   {% if cs=='Pending' %}selected{% endif %}>⏳ Pending</option>
+                            <option value="Withdrawn" {% if cs=='Withdrawn' %}selected{% endif %}>❌ Withdrawn</option>
+                        </select>
+                    </div>
+
+                    <!-- Consent Date -->
+                    <div class="form-group">
+                        <label>Consent Date</label>
+                        <input type="date" name="consent_date"
+                               value="{% if action=='edit' and participant.consent_date %}{{ participant.consent_date.strftime('%Y-%m-%d') }}{% else %}{{ form_data.get('consent_date','') }}{% endif %}">
+                    </div>
+
+                    <!-- Study Group / Cohort -->
+                    <div class="form-group">
+                        <label>Study Group / Protocol Cohort</label>
+                        <input type="text" name="study_group" placeholder="e.g. Wound Care Cohort A, Dental Scaffolds"
+                               value="{% if action=='edit' %}{{ participant.study_group or '' }}{% else %}{{ form_data.get('study_group','') }}{% endif %}">
+                    </div>
+
+                    <!-- Medical History & Clinical Indications -->
+                    <div class="form-group form-span-2">
+                        <label>Medical History &amp; Clinical Indications</label>
+                        <textarea name="medical_history" style="min-height: 70px;" placeholder="Relevant clinical history, allergies, existing dermal / tissue conditions, previous treatments…">{% if action=='edit' %}{{ participant.medical_history or '' }}{% else %}{{ form_data.get('medical_history','') }}{% endif %}</textarea>
+                    </div>
+
+                    {% if action == 'edit' %}
+                    <!-- Consent Change Reason (Audit Trail) -->
+                    <div class="form-group form-span-2" style="background:var(--ns-bg-input); border:1px dashed var(--ns-border-input); border-radius:10px; padding:14px;">
+                        <label style="color:#0f766e;">📝 Consent Audit Log Reason (Optional)</label>
+                        <input type="text" name="consent_reason" placeholder="e.g. Annual re-consent signed / Subject updated clinical protocol..."
+                               value="{{ form_data.get('consent_reason','') }}">
+                        <small style="color:var(--ns-text-muted); font-size:11px; margin-top:4px; display:block;">
+                            This reason will be logged in the permanent participant consent audit trail.
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Research Notes -->
+                    <div class="form-group form-span-2">
+                        <label>Laboratory &amp; Research Notes</label>
+                        <textarea name="research_notes" style="min-height: 70px;" placeholder="Any internal laboratory notes, sample storage instructions, or specific experimental criteria…">{% if action=='edit' %}{{ participant.research_notes or '' }}{% else %}{{ form_data.get('research_notes','') }}{% endif %}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="ns-btn ns-btn-primary" style="padding:12px 28px; font-size:15px;">
+                        {% if action == 'edit' %}💾 Save Changes{% else %}➕ Add Participant{% endif %}
+                    </button>
+                    <a href="{{ url_for('participants.participants_list') }}" class="ns-btn ns-btn-secondary" style="padding:12px 22px;">
+                        Cancel
+                    </a>
+                    {% if action == 'edit' %}
+                    <a href="{{ url_for('participants.participant_detail', participant_pk=participant.id) }}" class="ns-btn ns-btn-secondary" style="padding:12px 22px;">
+                        👁 View Details
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

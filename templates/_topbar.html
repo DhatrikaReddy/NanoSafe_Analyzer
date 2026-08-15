@@ -1,0 +1,45 @@
+<!-- _topbar.html — Pro Enterprise Top Navigation Bar -->
+<header class="ns-topbar">
+    <div class="ns-topbar-left">
+        <div class="ns-breadcrumb">
+            <span>🧬 NanoSafe</span>
+            <span style="opacity: 0.4;">/</span>
+            <span>Workspace</span>
+            <span style="opacity: 0.4;">/</span>
+            <span style="color: #0f766e;">{{ page_title or 'Dashboard' }}</span>
+        </div>
+    </div>
+
+    <div class="ns-topbar-center">
+        <div class="ns-search-bar">
+            <span class="ns-search-icon">🔍</span>
+            <input type="text" class="ns-search-input" placeholder="Quick search experiments, cell lines, IC50... (Press /)" id="globalSearchInput" onkeydown="if(event.key==='Enter'){ window.location.href='/history?sample_name=' + encodeURIComponent(this.value); }">
+            <span class="ns-search-kbd">⌘K</span>
+        </div>
+    </div>
+
+    <div class="ns-topbar-right">
+        <!-- Theme Switcher Button -->
+        <button type="button" class="ns-icon-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme" id="topbarThemeBtn">
+            🌓
+        </button>
+    </div>
+</header>
+
+<script>
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('ns_theme', newTheme);
+}
+
+// Global shortcut key '/' or 'Ctrl+K' focuses search
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const search = document.getElementById('globalSearchInput');
+        if (search) search.focus();
+    }
+});
+</script>

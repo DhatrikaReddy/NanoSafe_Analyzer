@@ -1,0 +1,41 @@
+{
+    "numerical_features": [
+        "Concentration",
+        "Exposure_Time",
+        "ROS",
+        "LDH",
+        "Apoptosis",
+        "Cell_Viability"
+    ],
+    "scaler_mean": [
+        100.440206,
+        32.3856,
+        58.992488,
+        52.212998000000006,
+        48.709674,
+        34.066010000000006
+    ],
+    "scaler_scale": [
+        57.26596669207256,
+        24.474348053421156,
+        27.296795748399774,
+        24.362514624561975,
+        22.709376683513884,
+        26.962797636371118
+    ],
+    "categorical_features": [
+        "Cell_Line"
+    ],
+    "cell_lines": [
+        "A549",
+        "CHO",
+        "Caco-2",
+        "HEK293",
+        "HeLa",
+        "HepG2",
+        "Jurkat",
+        "MCF-7",
+        "NIH-3T3",
+        "PC12"
+    ]
+}

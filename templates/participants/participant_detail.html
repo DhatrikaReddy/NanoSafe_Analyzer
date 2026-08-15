@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ participant.participant_id }} — Participant Detail — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: var(--ns-bg-main); }
+        .ns-sidebar-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        @media (max-width: 900px) { .ns-sidebar-layout { grid-template-columns: 1fr; } .ns-sidebar { display: none; } }
+        .detail-page { padding: 32px 36px; max-width: 1300px; }
+
+        .detail-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: white; padding: 28px 36px; border-radius: 20px;
+            margin-bottom: 28px; display: flex; justify-content: space-between;
+            align-items: flex-start; flex-wrap: wrap; gap: 16px;
+            box-shadow: 0 10px 28px rgba(15,118,110,0.22);
+        }
+        .detail-hero h1 { margin: 0 0 6px; font-size: 24px; font-weight: 800; }
+        .detail-hero p { margin: 0; opacity: 0.88; font-size: 13.5px; }
+
+        .info-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 26px; }
+        @media (max-width: 900px) { .info-grid-2 { grid-template-columns: 1fr; } }
+
+        .chart-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 22px; margin-bottom: 26px; }
+        @media (max-width: 960px) { .chart-grid-2 { grid-template-columns: 1fr; } }
+
+        .chart-box {
+            background: var(--ns-bg-input); border-radius: 14px; padding: 18px;
+            border: 1px solid var(--ns-border-main);
+        }
+
+        .detail-card {
+            background: var(--ns-bg-card); border-radius: 18px; padding: 24px;
+            border: 1px solid var(--ns-border-main); box-shadow: 0 3px 14px rgba(15,118,110,0.06);
+        }
+        .detail-card h2 { font-size: 16px; font-weight: 800; color: #0f766e;
+            margin: 0 0 18px; display: flex; align-items: center; gap: 8px; }
+
+        .info-row { display: flex; justify-content: space-between; align-items: center;
+            padding: 9px 0; border-bottom: 1px solid var(--ns-border-main); font-size: 13.5px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-row span { color: var(--ns-text-muted); font-weight: 600; }
+        .info-row b { color: var(--ns-text-main); }
+
+        /* Consent badges */
+        .badge-consented { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-pending   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-withdrawn { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+        /* Sample status */
+        .badge-active     { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-processing { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-completed  { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-archived   { background: var(--ns-bg-hover); color: var(--ns-text-muted); border: 1px solid var(--ns-border-main); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+        /* Risk badges */
+        .badge-safe     { background: #dcfce7; color: #166534; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-moderate { background: #fef3c7; color: #92400e; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-high     { background: #fee2e2; color: #991b1b; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+        /* Chain flow */
+        .chain-block {
+            background: var(--ns-bg-card); border-radius: 18px; border: 1px solid var(--ns-border-main);
+            padding: 22px; margin-bottom: 22px; box-shadow: 0 3px 12px rgba(15,118,110,0.05);
+        }
+        .chain-block h3 { font-size: 15px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 16px; }
+        .chain-header {
+            display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+            border: 1px solid #99f6e4; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+        }
+        .chain-header .chain-icon { font-size: 22px; }
+        .chain-header b { color: #0f766e; font-size: 15px; }
+        .chain-header small { color: var(--ns-text-muted); font-size: 12px; display: block; margin-top: 2px; }
+
+        .chain-arrow { text-align: center; color: #0f766e; font-size: 18px; margin: 6px 0; font-weight: 700; }
+
+        .exp-card {
+            background: var(--ns-bg-input); border-radius: 12px; border: 1px solid var(--ns-border-main);
+            padding: 16px; margin-bottom: 14px;
+        }
+        .exp-card-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+        .exp-meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+        @media (max-width: 900px) { .exp-meta-grid { grid-template-columns: repeat(2, 1fr); } }
+        .exp-meta-item { background: var(--ns-bg-card); border-radius: 8px; padding: 8px 10px; border: 1px solid var(--ns-border-main); }
+        .exp-meta-item span { font-size: 10px; font-weight: 700; color: var(--ns-text-muted); display: block; }
+        .exp-meta-item b { font-size: 13px; color: var(--ns-text-main); }
+
+        .btn-act { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+            margin: 2px; border: none; cursor: pointer; }
+        .btn-view   { background: #0f766e; color: white; }
+        .btn-pdf    { background: #2563eb; color: white; }
+        .btn-edit   { background: #f59e0b; color: white; }
+    </style>
+</head>
+<body>
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="detail-page">
+
+        <!-- Hero -->
+        <div class="detail-hero">
+            <div>
+                <h1>👤 Patient: {{ participant.name if participant.name else participant.participant_id }}</h1>
+                <p>
+                    <b>ID:</b> {{ participant.participant_id }} &nbsp;|&nbsp;
+                    {% if participant.blood_group %}<b>Blood Group:</b> 🩸 {{ participant.blood_group }} &nbsp;|&nbsp;{% endif %}
+                    <b>Study Group:</b> {{ participant.study_group or '—' }} &nbsp;|&nbsp;
+                    <b>Consent:</b> <span class="badge-{{ participant.consent_status.lower() }}">{{ participant.consent_status }}</span>
+                </p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('main.upload') }}?participant_id={{ participant.id }}" class="ns-btn ns-btn-primary" style="background: linear-gradient(135deg, #0f766e, #0d9488); font-weight: 800;">
+                    🧪 Run New Experiment for this Patient
+                </a>
+                <a href="{{ url_for('participants.sample_new') }}?participant_fk={{ participant.id }}" class="ns-btn ns-btn-secondary">
+                    🧫 Register Biological Sample
+                </a>
+                <a href="{{ url_for('participants.participant_edit', participant_pk=participant.id) }}" class="ns-btn ns-btn-secondary">
+                    ✏️ Edit Patient
+                </a>
+                <a href="{{ url_for('participants.participants_list') }}" class="ns-btn ns-btn-secondary">
+                    ← Back to Registry
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom:18px;">
+            {% for category, message in messages %}
+            <div style="padding:12px 16px; border-radius:10px; margin-bottom:8px; font-weight:600; font-size:13.5px;
+                background:{% if category=='success' %}#dcfce7{% elif category=='danger' %}#fee2e2{% else %}#fef3c7{% endif %};
+                color:{% if category=='success' %}#166534{% elif category=='danger' %}#991b1b{% else %}#92400e{% endif %};
+                border:1px solid {% if category=='success' %}#bbf7d0{% elif category=='danger' %}#fca5a5{% else %}#fde68a{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Patient Profile & Clinical Indications Grid -->
+        <div class="info-grid-2">
+            <div class="detail-card">
+                <h2>👤 Patient &amp; Clinical Information</h2>
+                <div class="info-row"><span>Patient Full Name</span><b>{{ participant.name if participant.name else '—' }}</b></div>
+                <div class="info-row"><span>Participant / Patient ID</span><b>{{ participant.participant_id }}</b></div>
+                <div class="info-row"><span>Blood Group</span>
+                    <b>
+                        {% if participant.blood_group %}
+                        <span style="background: rgba(220, 38, 38, 0.1); color: #dc2626; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 12px; border: 1px solid rgba(220, 38, 38, 0.2);">
+                            🩸 {{ participant.blood_group }}
+                        </span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </b>
+                </div>
+                <div class="info-row"><span>Email Address</span><b>{{ participant.email if participant.email else '—' }}</b></div>
+                <div class="info-row"><span>Contact Phone</span><b>{{ participant.phone if participant.phone else '—' }}</b></div>
+                <div class="info-row"><span>Age &amp; Gender</span><b>{{ participant.age ~ ' years' if participant.age else '—' }} / {{ participant.sex if participant.sex else '—' }}</b></div>
+                <div class="info-row"><span>Study Cohort</span><b>{{ participant.study_group or '—' }}</b></div>
+                <div class="info-row"><span>Consent Status</span>
+                    <b><span class="badge-{{ participant.consent_status.lower() }}">{{ participant.consent_status }}</span></b></div>
+                <div class="info-row"><span>Consent Date</span><b>{{ participant.consent_date.strftime('%Y-%m-%d') if participant.consent_date else '—' }}</b></div>
+                <div class="info-row"><span>Enrolled On</span><b>{{ participant.created_at.strftime('%Y-%m-%d %H:%M') }}</b></div>
+            </div>
+
+            <div class="detail-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h2>🩺 Clinical Indications &amp; Medical History</h2>
+                    {% if participant.medical_history %}
+                    <div style="background: var(--ns-bg-input); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--ns-border-main); color: var(--ns-text-main); font-size: 13.5px; line-height: 1.6; margin-bottom: 16px;">
+                        {{ participant.medical_history }}
+                    </div>
+                    {% else %}
+                    <p style="color:var(--ns-text-muted); font-style:italic; font-size:13.5px; margin-bottom: 16px;">No pre-existing clinical conditions or medical history recorded.</p>
+                    {% endif %}
+
+                    <h2>📝 Laboratory &amp; Research Notes</h2>
+                    {% if participant.research_notes %}
+                    <div style="background: var(--ns-bg-input); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--ns-border-main); color: var(--ns-text-muted); font-size: 13px; line-height: 1.6;">
+                        {{ participant.research_notes }}
+                    </div>
+                    {% else %}
+                    <p style="color:var(--ns-text-muted); font-style:italic; font-size:13.5px; margin: 0;">No internal laboratory notes recorded.</p>
+                    {% endif %}
+                </div>
+
+                <div style="margin-top: 18px; background: var(--ns-bg-hover); padding: 12px 16px; border-radius: 10px; border-left: 4px solid #0f766e; display: flex; justify-content: space-between; align-items: center; font-size: 12.5px;">
+                    <span><b>Registered Samples:</b> {{ samples|length }}</span>
+                    <a href="{{ url_for('main.upload') }}?participant_id={{ participant.id }}" style="color: #0f766e; font-weight: 700; text-decoration: none;">
+                        + Launch Cytotoxicity Experiment →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Consent Audit Trail Section -->
+        <div class="detail-card" style="margin-bottom:26px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+                <h2 style="margin:0;">📋 Consent Audit Trail &amp; Compliance History</h2>
+                <span style="font-size:12px; color:var(--ns-text-muted); font-weight:600;">
+                    {{ consent_logs|length }} event{% if consent_logs|length != 1 %}s{% endif %} logged
+                </span>
+            </div>
+
+            {% if consent_logs %}
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                {% for log in consent_logs %}
+                <div style="display:flex; gap:14px; align-items:flex-start; background:var(--ns-bg-input); border:1px solid var(--ns-border-main); border-radius:12px; padding:14px 18px;">
+                    <div style="font-size:22px; margin-top:2px;">
+                        {% if log.new_status == 'Consented' %}✅{% elif log.new_status == 'Withdrawn' %}❌{% else %}⏳{% endif %}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <span class="badge-{{ log.new_status.lower() }}">{{ log.new_status }}</span>
+                                {% if log.old_status and log.old_status != log.new_status %}
+                                <span style="font-size:12px; color:var(--ns-text-muted); margin-left:6px;">
+                                    (Transitioned from <span class="badge-{{ log.old_status.lower() }}">{{ log.old_status }}</span>)
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span style="font-size:12px; color:var(--ns-text-muted); font-family:monospace;">
+                                🕒 {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                            </span>
+                        </div>
+                        <div style="margin-top:8px; font-size:13.5px; color:var(--ns-text-main);">
+                            <b>Reason / Note:</b> {{ log.reason or 'No additional notes provided.' }}
+                        </div>
+                        <div style="margin-top:4px; font-size:11.5px; color:var(--ns-text-muted);">
+                            Changed by: <b>{{ log.changed_by or 'System' }}</b> {% if log.ip_address %} · IP: {{ log.ip_address }}{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="padding:16px; background:var(--ns-bg-input); border-radius:10px; color:var(--ns-text-muted); font-size:13px; font-style:italic;">
+                Initial enrollment log recorded on registration.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Cytotoxicity & Biomarker Analytics Charts -->
+        <div class="detail-card" style="margin-bottom:26px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+                <h2 style="margin:0;">📊 Cytotoxicity &amp; Biomarker Analytics</h2>
+                {% if chart_data.has_experiment_data %}
+                <span style="font-size:12.5px; color:#0f766e; font-weight:700; background:#f0fdfa; padding:4px 10px; border-radius:12px; border:1px solid #99f6e4;">
+                    {{ chart_data.exp_labels|length }} Experiment{{ 's' if chart_data.exp_labels|length != 1 else '' }} Profiled
+                </span>
+                {% endif %}
+            </div>
+
+            {% if chart_data.has_experiment_data %}
+            <div class="chart-grid-2">
+                <!-- Grouped Biomarkers Chart -->
+                <div class="chart-box">
+                    <canvas id="participantBiomarkersChart" style="max-height:280px;"></canvas>
+                </div>
+                <!-- ML Toxicity Scores Chart -->
+                <div class="chart-box">
+                    <canvas id="participantToxicityChart" style="max-height:280px;"></canvas>
+                </div>
+            </div>
+            {% else %}
+            <div style="padding:24px; text-align:center; background:var(--ns-bg-input); border-radius:12px; color:var(--ns-text-muted);">
+                <div style="font-size:32px; margin-bottom:8px;">📈</div>
+                <b style="color:var(--ns-text-main);">No Experiment Data Available for Visual Analytics</b>
+                <p style="font-size:13px; margin:4px 0 0;">
+                    Link ZnO experiments to this participant's biological samples to view cytotoxicity biomarker trends and ML toxicity score comparisons.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Full Research Chain -->
+        <div class="detail-card" style="margin-bottom:26px;">
+            <h2>🔬 Complete Research Chain: Participant → Sample → Experiment → Analysis → Report</h2>
+
+            {% if chain_data %}
+                {% for entry in chain_data %}
+                <div class="chain-block">
+                    <!-- Sample -->
+                    <div class="chain-header">
+                        <span class="chain-icon">🧫</span>
+                        <div>
+                            <b>Sample: {{ entry.sample.sample_id }}</b>
+                            <small>
+                                Type: {{ entry.sample.sample_type or '—' }} &nbsp;|&nbsp;
+                                Cell: {{ entry.sample.cell_type or '—' }} &nbsp;|&nbsp;
+                                Collected: {{ entry.sample.collection_date.strftime('%Y-%m-%d') if entry.sample.collection_date else '—' }} &nbsp;|&nbsp;
+                                <span class="badge-{{ entry.sample.sample_status.lower() }}">{{ entry.sample.sample_status }}</span>
+                            </small>
+                        </div>
+                        <div style="margin-left:auto; display:flex; gap:6px;">
+                            <a href="{{ url_for('participants.sample_edit', sample_pk=entry.sample.id) }}" class="btn-act btn-edit">✏️ Edit</a>
+                        </div>
+                    </div>
+
+                    {% if entry.experiments %}
+                    <div class="chain-arrow">↓</div>
+                    {% for exp_entry in entry.experiments %}
+                    <div class="exp-card">
+                        <div class="exp-card-header">
+                            <div>
+                                <b style="font-size:15px; color:var(--ns-text-main);">
+                                    🧪 {{ exp_entry.experiment.sample_name }}
+                                </b>
+                                <small style="color:var(--ns-text-muted); display:block; margin-top:3px;">
+                                    ZnO Experiment #{{ exp_entry.experiment.id }} &nbsp;·&nbsp;
+                                    Linked: {{ exp_entry.linked_at.strftime('%Y-%m-%d') }}
+                                </small>
+                            </div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                {% if exp_entry.history %}
+                                <a href="{{ url_for('main.history_detail', history_id=exp_entry.history.id) }}" class="btn-act btn-view">👁 View Result</a>
+                                {% endif %}
+                                {% if exp_entry.report %}
+                                <a href="{{ url_for('main.download_history_report', history_id=exp_entry.history.id) }}" class="btn-act btn-pdf">📄 PDF Report</a>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if exp_entry.result %}
+                        <div class="exp-meta-grid">
+                            <div class="exp-meta-item">
+                                <span>Cell Line</span>
+                                <b>{{ exp_entry.experiment.cell_line or '—' }}</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>ZnO Concentration (avg)</span>
+                                <b>{{ exp_entry.result.avg_concentration }} µg/mL</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Cell Viability</span>
+                                <b>{{ exp_entry.result.cell_viability }}%</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Toxicity Score</span>
+                                <b>{{ exp_entry.result.toxicity_score }}</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Risk Level (ML)</span>
+                                <b>
+                                    <span class="badge-{% if exp_entry.result.risk_level == 'Low' %}safe{% elif exp_entry.result.risk_level == 'Moderate' %}moderate{% else %}high{% endif %}">
+                                        {{ exp_entry.result.risk_level }}
+                                    </span>
+                                </b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Est. IC50</span>
+                                <b>{{ exp_entry.result.estimated_ic50 }}</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Safe Range</span>
+                                <b>{{ exp_entry.result.safe_range or '—' }}</b>
+                            </div>
+                            <div class="exp-meta-item">
+                                <span>Exposure Time</span>
+                                <b>{{ exp_entry.experiment.exposure_time or '—' }}</b>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if exp_entry.report %}
+                        <div style="margin-top:10px; padding:8px 12px; background:#f0fdfa; border-radius:8px; border:1px solid #99f6e4; font-size:12px; color:#0f766e; font-weight:700;">
+                            📄 Report generated: {{ exp_entry.report.generated_at.strftime('%Y-%m-%d %H:%M') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color:var(--ns-text-muted); font-size:13px; margin:8px 0 0; font-style:italic;">
+                        No experiments linked to this sample yet.
+                        <a href="{{ url_for('participants.sample_edit', sample_pk=entry.sample.id) }}" style="color:#0f766e;">Link an experiment →</a>
+                    </p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align:center; padding:40px; color:var(--ns-text-muted);">
+                    <div style="font-size:48px; margin-bottom:12px;">🧫</div>
+                    <h4 style="color:var(--ns-text-main);">No samples recorded yet</h4>
+                    <p>Add a biological sample to begin tracking ZnO experiments for this participant.</p>
+                    <a href="{{ url_for('participants.sample_new') }}" class="ns-btn ns-btn-primary">🧫 Add First Sample</a>
+                </div>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+
+{% if chart_data.has_experiment_data %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const rawData = {{ chart_data|tojson }};
+
+    // 1. Grouped Biomarkers Bar Chart
+    const ctxBio = document.getElementById('participantBiomarkersChart');
+    if (ctxBio) {
+        new Chart(ctxBio, {
+            type: 'bar',
+            data: {
+                labels: rawData.exp_labels,
+                datasets: [
+                    {
+                        label: 'Cell Viability (%)',
+                        data: rawData.viability,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'ROS Level',
+                        data: rawData.ros,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'LDH Leakage (%)',
+                        data: rawData.ldh,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Apoptosis (%)',
+                        data: rawData.apoptosis,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Experimental Biomarker Comparisons', font: { weight: 'bold' } },
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Metric Value' } }
+                }
+            }
+        });
+    }
+
+    // 2. ML Toxicity Scores Chart
+    const ctxTox = document.getElementById('participantToxicityChart');
+    if (ctxTox) {
+        new Chart(ctxTox, {
+            type: 'bar',
+            data: {
+                labels: rawData.exp_labels,
+                datasets: [{
+                    label: 'ML Toxicity Score (0-100)',
+                    data: rawData.toxicity_scores,
+                    backgroundColor: rawData.risk_colors,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'ML Cytotoxicity Risk Scores', font: { weight: 'bold' } },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Toxicity Score' }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <title>Verify Email - NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+    <style>
+        .auth-card {
+            display: block;
+            max-width: 400px;
+            margin: 80px auto;
+            padding: 30px;
+            background: var(--ns-bg-card);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .auth-card h2 { color: #0f766e; margin-bottom: 20px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-group label { font-weight: bold; font-size: 14px; color: var(--ns-text-main); }
+        .form-group input { margin-top: 5px; width: 100%; box-sizing: border-box; text-align: center; letter-spacing: 5px; font-size: 20px; }
+        .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; text-align: left; font-size: 14px; display: none; }
+        .alert.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .alert.success { background: #dcfce3; color: #166534; border: 1px solid #86efac; }
+        .alert.warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .resend-link-btn {
+            background: none;
+            border: none;
+            color: #0f766e;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            margin-top: 15px;
+        }
+        .resend-link-btn:disabled { color: var(--ns-text-sub); cursor: not-allowed; text-decoration: none; }
+    </style>
+</head>
+<body style="background: var(--ns-bg-main);">
+
+<div class="auth-card">
+    <h2>Verify Your Email</h2>
+    <p style="color: var(--ns-text-muted); margin-bottom: 25px;">A 6-digit verification code has been sent to <strong>{{ email }}</strong>. Please check your inbox (and spam folder).</p>
+
+    {% if error %}
+    <div class="alert error" style="display: block;">{{ error }}</div>
+    {% endif %}
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ category }}" style="display: block;">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('auth.verify_otp') }}">
+        <input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group">
+            <input type="text" id="otp" name="otp" required autofocus placeholder="------" maxlength="6" pattern="\d{6}" autocomplete="one-time-code">
+        </div>
+        
+        <button type="submit" id="submit-btn" class="ns-btn ns-btn-primary" style="width: 100%; margin-top: 10px;">Verify & Continue</button>
+    </form>
+
+    <button id="resend-otp-btn" class="resend-link-btn">Resend Verification Code</button>
+</div>
+
+<script>
+    const resendBtn = document.getElementById('resend-otp-btn');
+    const alertBox = document.getElementById('alert-box');
+    const csrfToken = document.getElementById('csrf_token').value;
+
+    function showAlert(msg, type = 'error') {
+        alertBox.textContent = msg;
+        alertBox.className = 'alert ' + type;
+        alertBox.style.display = 'block';
+    }
+
+    resendBtn.addEventListener('click', async () => {
+        try {
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Sending...';
+            alertBox.style.display = 'none';
+
+            const res = await fetch('/auth/resend-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                showAlert(data.message || 'Verification email resent successfully!', 'success');
+                // Optional: Start a cooldown timer
+                let cooldown = 60;
+                const timer = setInterval(() => {
+                    resendBtn.textContent = `Resend available in ${cooldown}s`;
+                    cooldown--;
+                    if (cooldown < 0) {
+                        clearInterval(timer);
+                        resendBtn.disabled = false;
+                        resendBtn.textContent = 'Resend Verification Code';
+                    }
+                }, 1000);
+            } else {
+                showAlert(data.error || 'Failed to resend verification email.', 'error');
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend Verification Code';
+            }
+        } catch (err) {
+            showAlert('An error occurred while resending the code.', 'error');
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend Verification Code';
+        }
+    });
+</script>
+
+</body>
+</html>

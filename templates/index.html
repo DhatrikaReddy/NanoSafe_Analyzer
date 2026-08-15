@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NanoSafe Analyzer — Research Workspace</title>
+    <meta name="description" content="Evaluation of the Biocompatibility and Cytotoxicity of ZnO Nanoparticles to Determine Safe Biomedical Usage Levels.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') + '?v=6' }}">
+    <style>
+        .home-main-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .home-content-area {
+            padding: 32px 36px;
+            max-width: 1250px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        /* Hero Welcome Header */
+        .welcome-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: #ffffff;
+            border-radius: var(--ns-radius-lg);
+            padding: 36px 40px;
+            margin-bottom: 32px;
+            box-shadow: 0 10px 30px rgba(15, 118, 110, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .welcome-hero h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            color: #ffffff !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            letter-spacing: -0.5px;
+        }
+        .welcome-hero p {
+            margin: 0 0 20px;
+            font-size: 15px;
+            color: #f1f5f9 !important;
+            opacity: 0.95;
+            max-width: 760px;
+            line-height: 1.6;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        .welcome-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Section Titles */
+        .section-heading {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 6px;
+        }
+        .section-desc {
+            font-size: 13.5px;
+            color: var(--ns-text-muted);
+            margin: 0 0 20px;
+        }
+
+        /* Continue Research Launcher Grid */
+        .launcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 36px;
+        }
+        .launcher-card {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-lg);
+            padding: 26px 28px;
+            box-shadow: var(--ns-shadow-sm);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .launcher-card:hover {
+            transform: translateY(-3px);
+            border-color: #99f6e4;
+            box-shadow: var(--ns-shadow-md);
+        }
+        .launcher-icon-box {
+            font-size: 32px;
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .launcher-info h3 {
+            margin: 0 0 6px;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+        }
+        .launcher-info p {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: var(--ns-text-muted);
+            line-height: 1.5;
+        }
+        .launcher-link-text {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0f766e;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Workflow Step Cards (How it Works) */
+        .pipeline-card {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-lg);
+            padding: 28px 32px;
+            margin-bottom: 36px;
+            box-shadow: var(--ns-shadow-sm);
+        }
+        .pipeline-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 18px;
+        }
+        .step-box {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-md);
+            padding: 20px;
+            position: relative;
+        }
+        .step-number {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f766e;
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .step-box h4 {
+            margin: 0 0 6px;
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+        }
+        .step-box p {
+            margin: 0;
+            font-size: 12.5px;
+            color: var(--ns-text-muted);
+            line-height: 1.5;
+        }
+
+        /* Quick Stat Summary Tiles */
+        .stat-tiles-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        .stat-tile {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: var(--ns-radius-md);
+            padding: 18px 20px;
+            box-shadow: var(--ns-shadow-xs);
+        }
+        .stat-tile-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--ns-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .stat-tile-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin-bottom: 2px;
+        }
+        .stat-safe { color: #16a34a; }
+        .stat-warning { color: #d97706; }
+        .stat-tile-sub {
+            font-size: 12px;
+            color: var(--ns-text-muted);
+            margin: 0;
+        }
+
+        @media (max-width: 900px) {
+            .launcher-grid { grid-template-columns: 1fr; }
+            .pipeline-steps { grid-template-columns: 1fr; }
+            .stat-tiles-row { grid-template-columns: repeat(2, 1fr); }
+            .home-content-area { padding: 20px 16px; }
+        }
+        @media (max-width: 500px) {
+            .stat-tiles-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <div class="home-main-wrapper">
+        {% set page_title = "Research Overview" %}
+        {% include '_topbar.html' %}
+
+        <main class="home-content-area">
+
+            <!-- Hero Platform Description & Welcome -->
+            <div class="welcome-hero">
+                <h1>Welcome to NanoSafe Analyzer 👋</h1>
+                <p>
+                    NanoSafe Analyzer is a specialized biomedical research platform designed to evaluate the 
+                    <b>Biocompatibility and Cytotoxicity of Zinc Oxide (ZnO) Nanoparticles</b>. Using 4PL sigmoidal Hill
+                    equation modeling, the platform determines safe therapeutic dosage ceilings and 
+                    evaluates compliance with ISO 10993-5 standards across 10 distinct cell line models.
+                </p>
+                <div class="welcome-actions">
+                    <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-primary" style="background: #ffffff; color: #0f766e; font-weight: 800; padding: 12px 22px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        🔬 Start New Experiment
+                    </a>
+                    <a href="{{ url_for('main.history') }}" class="ns-btn ns-btn-secondary" style="background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.3); font-weight: 700; padding: 12px 18px; font-size: 14px;">
+                        📜 View Past Experiments
+                    </a>
+                </div>
+            </div>
+
+            <!-- "Continue Your Research" Launcher Grid -->
+            <div>
+                <h2 class="section-heading">🚀 Continue Your Research</h2>
+                <p class="section-desc">Select a research module to run experiments, explore what-if scenarios, or review clinical standards.</p>
+
+                <div class="launcher-grid">
+                    <!-- 1. New Experiment -->
+                    <a href="{{ url_for('main.upload') }}" class="launcher-card">
+                        <div class="launcher-icon-box">🧪</div>
+                        <div class="launcher-info">
+                            <h3>New Experiment</h3>
+                            <p>Upload dose-response CSV/Excel spreadsheets or enter measurements manually for cytotoxicity prediction.</p>
+                            <span class="launcher-link-text">Launch Experiment Input →</span>
+                        </div>
+                    </a>
+
+                    <!-- 2. Experiment History & Reports -->
+                    <a href="{{ url_for('main.history') }}" class="launcher-card">
+                        <div class="launcher-icon-box">📜</div>
+                        <div class="launcher-info">
+                            <h3>Experiment History &amp; Reports</h3>
+                            <p>Browse all past experiment runs, review 4PL dose-response curves, compare runs, and download PDF reports.</p>
+                            <span class="launcher-link-text">Open Experiment Archive →</span>
+                        </div>
+                    </a>
+
+                    <!-- 3. Dose Simulator (What-If Sandbox) -->
+                    <a href="{{ url_for('main.simulator') }}" class="launcher-card">
+                        <div class="launcher-icon-box">🎛️</div>
+                        <div class="launcher-info">
+                            <h3>Live Dose Simulator</h3>
+                            <p>Test hypothetical ZnO concentrations (0–200 µg/mL), exposure times, and cell sensitivities in real time.</p>
+                            <span class="launcher-link-text">Open What-If Simulator →</span>
+                        </div>
+                    </a>
+
+                    <!-- 4. Clinical Standards Hub -->
+                    <a href="{{ url_for('main.clinical_guide') }}" class="launcher-card">
+                        <div class="launcher-icon-box">📚</div>
+                        <div class="launcher-info">
+                            <h3>Clinical Standards &amp; FAQs</h3>
+                            <p>Review ISO 10993-5 biocompatibility criteria, medical application thresholds, and expert clinical Q&amp;As.</p>
+                            <span class="launcher-link-text">Explore Clinical Guidelines →</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+
+        </main>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Sample Import — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        body { background: var(--ns-bg-main); }
+        .ns-sidebar-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        @media (max-width: 900px) { .ns-sidebar-layout { grid-template-columns: 1fr; } .ns-sidebar { display: none; } }
+        .import-page { padding: 32px 36px; max-width: 1000px; }
+
+        .import-hero {
+            background: linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%);
+            color: white; padding: 24px 32px; border-radius: 18px;
+            margin-bottom: 26px; box-shadow: 0 8px 24px rgba(29,78,216,0.2);
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+        }
+        .import-hero h1 { margin: 0 0 4px; font-size: 22px; font-weight: 800; }
+        .import-hero p { margin: 0; opacity: 0.88; font-size: 13px; }
+
+        .import-card {
+            background: var(--ns-bg-card); border-radius: 18px; padding: 30px;
+            border: 1px solid var(--ns-border-main); box-shadow: 0 4px 16px rgba(15,118,110,0.06);
+            margin-bottom: 22px;
+        }
+        .import-card h3 { font-size: 16px; font-weight: 800; color: #0f766e; margin: 0 0 16px; }
+
+        .drop-box {
+            border: 2px dashed #0f766e; border-radius: 14px; padding: 32px 20px;
+            text-align: center; background: var(--ns-bg-input); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-box:hover { background: var(--ns-bg-hover); border-color: #2563eb; }
+        .drop-box input[type=file] { display: none; }
+
+        .guideline-table {
+            width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 18px;
+        }
+        .guideline-table th {
+            background: var(--ns-bg-input); padding: 9px 12px; text-align: left;
+            border-bottom: 2px solid var(--ns-border-main); color: var(--ns-text-main); font-weight: 700;
+        }
+        .guideline-table td {
+            padding: 9px 12px; border-bottom: 1px solid var(--ns-border-main); color: var(--ns-text-muted);
+        }
+
+        .consent-callout {
+            background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px;
+            padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #0f766e;
+        }
+
+        .error-box {
+            background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px;
+            padding: 16px; margin-bottom: 20px; color: #991b1b; font-size: 13px;
+        }
+        .error-box ul { margin: 8px 0 0 18px; padding: 0; }
+    </style>
+</head>
+<body>
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="import-page">
+
+        <div class="import-hero">
+            <div>
+                <h1>📤 Bulk Import Biological Samples</h1>
+                <p>Upload a CSV or Excel spreadsheet to register multiple samples simultaneously</p>
+            </div>
+            <div>
+                <a href="{{ url_for('participants.sample_import_template') }}" class="ns-btn ns-btn-secondary" style="font-size:13px;">
+                    📥 Download CSV Template
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom:18px;">
+            {% for category, message in messages %}
+            <div style="padding:12px 16px; border-radius:10px; margin-bottom:8px; font-weight:600; font-size:13.5px;
+                background:{% if category=='success' %}#dcfce7{% elif category=='danger' %}#fee2e2{% else %}#fef3c7{% endif %};
+                color:{% if category=='success' %}#166534{% elif category=='danger' %}#991b1b{% else %}#92400e{% endif %};
+                border:1px solid {% if category=='success' %}#bbf7d0{% elif category=='danger' %}#fca5a5{% else %}#fde68a{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% if errors %}
+        <div class="error-box">
+            <b>⚠️ Some rows had validation issues:</b>
+            <ul>
+                {% for err in errors %}
+                <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Compliance / Consent notice -->
+        <div class="consent-callout">
+            <b>🔒 Consent &amp; Privacy Compliance Rule:</b>
+            If linking samples to participants, the participant must already exist in your registry with 
+            <b>Consented</b> status. Samples linked to un-consented or non-existent IDs will be safely flagged or imported as unassigned laboratory reference samples.
+        </div>
+
+        <form method="POST" action="{{ url_for('participants.sample_bulk_import') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="import-card">
+                <h3>📁 Select Spreadsheet File</h3>
+                
+                <label for="csv_file_input" class="drop-box" id="drop_zone">
+                    <div style="font-size:38px; margin-bottom:8px;">📊</div>
+                    <b style="font-size:15px; color:var(--ns-text-main);" id="file_label">Click to select CSV or Excel (.xlsx) file</b>
+                    <p style="margin:6px 0 0; color:var(--ns-text-muted); font-size:12px;">Supported: .csv, .xlsx, .xls</p>
+                    <input type="file" name="file" id="csv_file_input" accept=".csv,.xlsx,.xls">
+                </label>
+
+                <div style="margin-top:20px;">
+                    <label style="font-size:12px; font-weight:700; color:var(--ns-text-muted); text-transform:uppercase;">Or Paste CSV Text Directly</label>
+                    <textarea name="csv_text" rows="5" placeholder="Sample_ID,Participant_ID,Sample_Type,Cell_Type,Collection_Date,Sample_Status,Notes&#10;S-101,P-001,Cell Culture,HeLa,2024-03-15,Active,Batch 1"
+                              style="width:100%; box-sizing:border-box; padding:12px; border-radius:10px; border:1px solid var(--ns-border-input); background:var(--ns-bg-input); color:var(--ns-text-main); font-family:monospace; font-size:12.5px; margin-top:6px;"></textarea>
+                </div>
+            </div>
+
+            <div class="import-card">
+                <h3>📋 Expected CSV Column Format</h3>
+                <table class="guideline-table">
+                    <thead>
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Required?</th>
+                            <th>Example</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>Sample_ID</b></td>
+                            <td><span style="color:#dc2626; font-weight:700;">Required</span></td>
+                            <td><code>S-001</code></td>
+                            <td>Unique identifier for the biological sample</td>
+                        </tr>
+                        <tr>
+                            <td><b>Participant_ID</b></td>
+                            <td>Optional</td>
+                            <td><code>P-001</code></td>
+                            <td>Anonymized ID of a consented study participant</td>
+                        </tr>
+                        <tr>
+                            <td><b>Sample_Type</b></td>
+                            <td>Optional</td>
+                            <td><code>Cell Culture</code></td>
+                            <td>e.g. Cell Culture, Blood, Tissue, Serum</td>
+                        </tr>
+                        <tr>
+                            <td><b>Cell_Type</b></td>
+                            <td>Optional</td>
+                            <td><code>HeLa</code></td>
+                            <td>e.g. HeLa, MCF-7, A549, HEK293, NIH-3T3</td>
+                        </tr>
+                        <tr>
+                            <td><b>Collection_Date</b></td>
+                            <td>Optional</td>
+                            <td><code>2024-03-15</code></td>
+                            <td>Date format: YYYY-MM-DD</td>
+                        </tr>
+                        <tr>
+                            <td><b>Sample_Status</b></td>
+                            <td>Optional</td>
+                            <td><code>Active</code></td>
+                            <td>Active, Processing, Completed, or Archived</td>
+                        </tr>
+                        <tr>
+                            <td><b>Notes</b></td>
+                            <td>Optional</td>
+                            <td><code>Passage 4 isolate</code></td>
+                            <td>Observations and storage conditions</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                {% if consented_participants %}
+                <div style="background:var(--ns-bg-input); border-radius:10px; padding:12px 16px; font-size:12.5px;">
+                    <b style="color:#0f766e;">Available Consented Participants:</b>
+                    <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:6px;">
+                        {% for p in consented_participants %}
+                        <span style="background:var(--ns-bg-card); border:1px solid var(--ns-border-main); padding:2px 8px; border-radius:12px; font-family:monospace;">
+                            {{ p.participant_id }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button type="submit" class="ns-btn ns-btn-primary" style="padding:12px 30px; font-size:15px;">
+                    📤 Start Bulk Import
+                </button>
+                <a href="{{ url_for('participants.samples_list') }}" class="ns-btn ns-btn-secondary" style="padding:12px 22px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+    </main>
+</div>
+
+<script>
+document.getElementById('csv_file_input').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        document.getElementById('file_label').textContent = 'Selected: ' + this.files[0].name + ' (' + Math.round(this.files[0].size / 1024) + ' KB)';
+        document.getElementById('drop_zone').style.borderColor = '#22c55e';
+    }
+});
+</script>
+
+</body>
+</html>

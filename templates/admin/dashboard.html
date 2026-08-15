@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <title>Admin Dashboard - NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-subnav {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+            background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px;
+            border: 1px solid var(--ns-border-main);
+        }
+        .admin-subnav a {
+            color: var(--ns-text-muted); text-decoration: none; padding: 7px 14px;
+            border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.15s;
+        }
+        .admin-subnav a:hover { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .admin-subnav a.active { background: #f0fdfa; color: #0f766e; font-weight: 700; }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 24px 0 30px;
+        }
+        
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(45%, 1fr));
+            gap: 20px;
+            margin: 24px 0 30px;
+        }
+        .chart-box {
+            background: var(--ns-bg-card);
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid var(--ns-border-main);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
+        .stat-box {
+            background: var(--ns-bg-card);
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+            border: 1px solid var(--ns-border-main);
+            border-top: 4px solid #0f766e;
+        }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 13px; color: var(--ns-text-muted); text-transform: uppercase; }
+        .stat-box p { margin: 0; font-size: 30px; font-weight: 800; color: var(--ns-text-main); }
+        
+        .risk-high { border-top-color: #ef4444; }
+        .risk-high p { color: #ef4444; }
+        .risk-mod { border-top-color: #eab308; }
+        .risk-mod p { color: #eab308; }
+        .risk-low { border-top-color: #22c55e; }
+        .risk-low p { color: #22c55e; }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: var(--ns-bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--ns-border-main);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
+        .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
+        .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); padding: 10px 14px; }
+        .log-table tr:last-child td { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+
+        <div class="admin-subnav">
+            <a href="{{ url_for('admin.dashboard') }}" class="active">📊 Overview</a>
+            <a href="{{ url_for('admin.users') }}">👥 User Accounts</a>
+            <a href="{{ url_for('admin.all_experiments') }}">🧪 All Experiments</a>
+            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
+            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
+            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
+            <a href="{{ url_for('admin.ml_models') }}">🤖 ML Diagnostics</a>
+        </div>
+
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">System Overview</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Welcome back, <b>{{ username }}</b> (Administrator)</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}" style="text-align: left; margin: 20px 0; padding: 15px; background: #dcfce3; color: #166534; border-radius: 8px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <h3>Total Users</h3>
+            <p>{{ stats.total_users }}</p>
+            <div style="font-size: 12px; color: var(--ns-text-muted); margin-top: 10px;">
+                {{ stats.active_users }} active, {{ stats.verified_users }} verified, {{ stats.unverified_users }} unverified
+            </div>
+        </div>
+        <div class="stat-box" style="border-top-color: #0f766e;">
+            <h3>Study Participants</h3>
+            <p>{{ stats.total_participants }}</p>
+            <div style="font-size: 12px; color: var(--ns-text-muted); margin-top: 10px;">
+                {{ stats.consented_participants }} consented ({{ stats.consent_rate }}%), {{ stats.pending_participants }} pending
+            </div>
+        </div>
+        <div class="stat-box" style="border-top-color: #2563eb;">
+            <h3>Biological Samples</h3>
+            <p>{{ stats.total_samples }}</p>
+            <div style="font-size: 12px; color: var(--ns-text-muted); margin-top: 10px;">
+                {{ stats.active_samples }} active, {{ stats.linked_samples }} linked to experiments
+            </div>
+        </div>
+        <div class="stat-box">
+            <h3>Total Experiments</h3>
+            <p>{{ stats.total_experiments }}</p>
+        </div>
+        <div class="stat-box" style="border-top-color: #3b82f6;">
+            <h3>Total Reports</h3>
+            <p>{{ stats.total_reports }}</p>
+        </div>
+        <div class="stat-box risk-high">
+            <h3>High Risk Results</h3>
+            <p>{{ stats.high_risk }}</p>
+        </div>
+        <div class="stat-box risk-mod">
+            <h3>Moderate Risk</h3>
+            <p>{{ stats.moderate_risk }}</p>
+        </div>
+        <div class="stat-box risk-low">
+            <h3>Low Risk (Safe)</h3>
+            <p>{{ stats.low_risk }}</p>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 15px;">
+        <h2 style="margin: 0; text-align: left;">Recent Activity</h2>
+        <a href="{{ url_for('admin.audit_log') }}" style="color: #0f766e; font-weight: bold; text-decoration: none;">View All Logs &rarr;</a>
+    </div>
+
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in recent_logs %}
+            <tr>
+                <td style="color: var(--ns-text-muted);">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td style="font-weight: bold;">{{ log.username }}</td>
+                <td><span style="background: var(--ns-bg-hover); padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{ log.action }}</span></td>
+                <td>{{ log.details }}</td>
+                <td style="color: var(--ns-text-sub); font-family: monospace;">{{ log.ip_address }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--ns-text-sub);">No recent activity</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 15px;">
+        <h2 style="margin: 0; text-align: left;">Analytics & Traceability</h2>
+    </div>
+
+    <div class="chart-grid">
+        <div class="chart-box">
+            <canvas id="trendChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="riskChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="consentChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="sampleStatusChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="cellLineChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <canvas id="avgChart"></canvas>
+    </div>
+
+    </main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch("/admin/analytics-data");
+        const data = await res.json();
+        
+        // 1. Trend Chart (Line)
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: data.months,
+                datasets: [
+                    { label: 'Experiments', data: data.experiments, borderColor: '#0f766e', tension: 0.1 },
+                    { label: 'Registrations', data: data.registrations, borderColor: '#3b82f6', tension: 0.1 }
+                ]
+            },
+            options: { plugins: { title: { display: true, text: 'Monthly Trends' } } }
+        });
+
+        // 2. Risk Levels (Doughnut)
+        new Chart(document.getElementById('riskChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Safe (Low)', 'Moderate', 'Toxic (High)'],
+                datasets: [{
+                    data: [data.risk_levels.Low, data.risk_levels.Moderate, data.risk_levels.High],
+                    backgroundColor: ['#22c55e', '#eab308', '#ef4444']
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Safe vs Toxic Experiments' } } }
+        });
+
+        // 3. Participant Consent Breakdown (Doughnut)
+        if (data.consent_breakdown) {
+            new Chart(document.getElementById('consentChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Consented', 'Pending', 'Withdrawn'],
+                    datasets: [{
+                        data: [
+                            data.consent_breakdown.Consented || 0,
+                            data.consent_breakdown.Pending || 0,
+                            data.consent_breakdown.Withdrawn || 0
+                        ],
+                        backgroundColor: ['#16a34a', '#f59e0b', '#dc2626']
+                    }]
+                },
+                options: { plugins: { title: { display: true, text: 'Participant Consent Status' } } }
+            });
+        }
+
+        // 4. Sample Status Breakdown (Bar)
+        if (data.sample_status) {
+            new Chart(document.getElementById('sampleStatusChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data.sample_status),
+                    datasets: [{
+                        label: 'Biological Samples',
+                        data: Object.values(data.sample_status),
+                        backgroundColor: '#2563eb'
+                    }]
+                },
+                options: { plugins: { title: { display: true, text: 'Biological Sample Status' } } }
+            });
+        }
+
+        // 5. Cell Lines (Bar)
+        new Chart(document.getElementById('cellLineChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data.cell_lines),
+                datasets: [{
+                    label: 'Experiments',
+                    data: Object.values(data.cell_lines),
+                    backgroundColor: '#6366f1'
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Cell Line Distribution' } } }
+        });
+
+        // 6. Averages (Bar)
+        new Chart(document.getElementById('avgChart'), {
+            type: 'bar',
+            data: {
+                labels: ['ROS', 'LDH', 'Apoptosis'],
+                datasets: [{
+                    label: 'Average Score',
+                    data: [data.averages.ros, data.averages.ldh, data.averages.apoptosis],
+                    backgroundColor: '#ec4899'
+                }]
+            },
+            options: { plugins: { title: { display: true, text: 'Overall Biomarker Averages' } } }
+        });
+
+    } catch (e) {
+        console.error("Failed to load analytics data", e);
+    }
+});
+</script>
+
+</body>
+</html>

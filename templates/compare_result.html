@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <title>Comparison Results — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1100px; box-sizing: border-box; width: 100%;">
+        <h1 style="font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 20px;">Comparison Results</h1>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Final Conclusion</h2>
+            <p>
+                <b>{{ safest.name }}</b> is safer because it has the highest average cell viability
+                of <b>{{ safest.avg }}%</b>.
+            </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Combined Dose Response Curve</h2>
+            <img src="/static/{{ graph }}" class="graph" style="max-width: 100%; border-radius: 10px;">
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>Experiment Comparison Table</h2>
+
+            <div class="ns-table-wrapper" style="margin-top: 15px;">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Experiment</th>
+                            <th>Average Viability</th>
+                            <th>IC50</th>
+                            <th>Safe Range</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td><b>{{ r.name }}</b></td>
+                            <td>{{ r.avg }}%</td>
+                            <td>{{ r.ic50 }}</td>
+                            <td>{{ r.safe_range }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <a href="/compare">
+                <button type="button" class="ns-btn ns-btn-primary">🔄 Compare Again</button>
+            </a>
+            <a href="/home">
+                <button type="button" class="ns-btn ns-btn-secondary">🏠 Home</button>
+            </a>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

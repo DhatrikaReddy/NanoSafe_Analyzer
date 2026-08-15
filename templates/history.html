@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experiment History - NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: var(--ns-bg-main);
+        }
+        .history-page-container {
+            max-width: 1350px;
+            padding: 30px 24px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .history-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .history-hero h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+        }
+        .history-hero p {
+            margin: 6px 0 0 0;
+            opacity: 0.9;
+            font-size: 15px;
+        }
+        .hero-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ccfbf1;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .nav-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Project Sidebar Layout */
+        .history-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .history-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .projects-sidebar {
+            background: var(--ns-bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            position: sticky;
+            top: 20px;
+        }
+        .projects-sidebar h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .project-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            color: var(--ns-text-main);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .project-link:hover {
+            background: var(--ns-bg-hover);
+        }
+        .project-link.active {
+            background: rgba(15, 118, 110, 0.1);
+            color: #0f766e;
+            border-left: 3px solid #0f766e;
+        }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--ns-bg-card); padding: 25px; border-radius: 16px;
+            width: 100%; max-width: 400px;
+        }
+        .modal-content h3 { margin-top: 0; color: var(--ns-text-main); }
+        .modal-content input, .modal-content textarea {
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--ns-border-input);
+            background: var(--ns-bg-input); color: var(--ns-text-main); margin-bottom: 15px; box-sizing: border-box;
+        }
+        .folder-select {
+            padding: 6px; border-radius: 6px; border: 1px solid var(--ns-border-input);
+            background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 12px;
+        }
+
+        /* Empty State Card */
+        .empty-history-card {
+            background: var(--ns-bg-card);
+            border-radius: 20px;
+            padding: 50px 30px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            margin-bottom: 30px;
+            border: 2px dashed #cbd5e1;
+        }
+        .empty-history-card .empty-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+        .empty-history-card h3 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin-bottom: 8px;
+        }
+        .empty-history-card p {
+            color: var(--ns-text-muted);
+            font-size: 15px;
+            max-width: 550px;
+            margin: 0 auto 20px auto;
+        }
+
+        /* Summary Analytics Cards */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .analytic-card {
+            background: var(--ns-bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            border-left: 5px solid #0f766e;
+            transition: transform 0.2s ease;
+        }
+        .analytic-card:hover {
+            transform: translateY(-3px);
+        }
+        .analytic-card span {
+            font-size: 13px;
+            color: var(--ns-text-muted);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .analytic-card h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+            color: var(--ns-text-main);
+        }
+        .analytic-card small {
+            font-size: 11px;
+            color: var(--ns-text-sub);
+            display: block;
+            margin-top: 4px;
+        }
+        .analytic-card.high-risk { border-left-color: #ef4444; }
+        .analytic-card.high-risk h3 { color: #dc2626; }
+        .analytic-card.mod-risk { border-left-color: #f97316; }
+        .analytic-card.mod-risk h3 { color: #ea580c; }
+        .analytic-card.low-risk { border-left-color: #22c55e; }
+        .analytic-card.low-risk h3 { color: #16a34a; }
+
+        /* Charts Section */
+        .charts-wrapper {
+            background: var(--ns-bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+        }
+        .charts-wrapper h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f766e;
+            margin-bottom: 20px;
+        }
+        /* Analytics Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 24px;
+        }
+        .chart-box {
+            background: var(--ns-bg-input);
+            border-radius: 14px;
+            padding: 20px;
+            border: 1px solid var(--ns-border-main);
+            height: 340px;
+            position: relative;
+        }
+        .chart-box h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .chart-empty-overlay {
+            position: absolute;
+            top: 40px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(248, 250, 252, 0.95);
+            color: var(--ns-text-sub);
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 10px;
+        }
+
+        /* Filter Section */
+        .filter-card {
+            background: var(--ns-bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+        .filter-form label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+            margin-bottom: 4px;
+            display: block;
+        }
+        .filter-form input, .filter-form select {
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border: 1px solid var(--ns-border-input);
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--ns-bg-input);
+        }
+        .filter-btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Table Section */
+        .table-card {
+            background: var(--ns-bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+            overflow-x: auto;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+        .history-table th {
+            background: var(--ns-bg-hover);
+            color: var(--ns-text-main);
+            font-weight: 700;
+            border-bottom: 2px solid #cbd5e1;
+            padding: 12px;
+        }
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--ns-border-main);
+        }
+        .row-high-risk { background-color: #fef2f2 !important; }
+        .row-mod-risk { background-color: #fff7ed !important; }
+        .row-low-risk { background-color: #f0fdf4 !important; }
+        
+        .btn-action {
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: 2px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-action.view { background: #0f766e; color: white; }
+        .btn-action.view:hover { background: #115e59; color: white; }
+        .btn-action.pdf { background: #2563eb; color: white; }
+        .btn-action.pdf:hover { background: #1d4ed8; color: white; }
+        .btn-action.compare { background: #7c3aed; color: white; }
+        .btn-action.compare:hover { background: #6d28d9; color: white; }
+        .btn-action.delete { background: #dc2626; color: white; }
+        .btn-action.delete:hover { background: #b91c1c; color: white; }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-page {
+            padding: 6px 12px;
+            border: 1px solid var(--ns-border-input);
+            background: var(--ns-bg-card);
+            color: var(--ns-text-main);
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .btn-page.active {
+            background: #0f766e;
+            color: white;
+            border-color: #0f766e;
+        }
+        .btn-page:hover:not(.active) {
+            background: var(--ns-bg-hover);
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="history-page-container">
+
+    <!-- Header Hero -->
+    <div class="history-hero">
+        <div>
+            <span class="hero-badge">ZnO Nanoparticle LIMS — Biocompatibility &amp; Cytotoxicity Research</span>
+            <h1>📜 ZnO Experiment History Dashboard</h1>
+            <p>Complete research records for ZnO nanoparticle cytotoxicity and biocompatibility evaluation.</p>
+        </div>
+        <div class="nav-buttons">
+            <a href="{{ url_for('main.export_csv') }}" class="ns-btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">📊 Export CSV</a>
+            <a href="{{ url_for('main.export_excel') }}" class="ns-btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">📁 Export Excel</a>
+            <a href="{{ url_for('main.backup_create') }}" class="ns-btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">💾 Backup DB</a>
+            <a href="{{ url_for('main.upload') }}" class="ns-btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">➕ New Analysis</a>
+            <a href="{{ url_for('main.compare') }}" class="ns-btn ns-btn-primary">📊 Compare</a>
+            <a href="{{ url_for('main.home') }}" class="ns-btn ns-btn-primary">🏠 Home</a>
+        </div>
+    </div>
+
+    <!-- Layout Wrapper -->
+    <div class="history-layout">
+        
+        <!-- Sidebar for Projects -->
+        <div class="projects-sidebar">
+            <h3>📁 My Projects <a href="#" onclick="openProjectModal()" style="font-size: 13px; font-weight: normal; color: #0f766e; text-decoration: none;">+ New</a></h3>
+            
+            <a href="?project_id=" class="project-link {% if current_project_id == '' or current_project_id == None %}active{% endif %}">
+                📚 All Experiments
+            </a>
+            
+            <a href="?project_id=unassigned" class="project-link {% if current_project_id == 'unassigned' %}active{% endif %}">
+                ⚠️ Unassigned
+            </a>
+            
+            <hr style="border: 0; border-top: 1px solid var(--ns-border-main); margin: 15px 0;">
+            
+            {% for proj in projects %}
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <a href="?project_id={{ proj.id }}" class="project-link {% if current_project_id == proj.id|string %}active{% endif %}" style="flex-grow: 1; margin-bottom: 0;">
+                    {{ proj.name }}
+                </a>
+                <form action="/projects/delete/{{ proj.id }}" method="POST" style="margin: 0; padding: 0;" onsubmit="return confirm('Delete project? Experiments will be moved to Unassigned.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 10px;" title="Delete Project">🗑️</button>
+                </form>
+            </div>
+            {% endfor %}
+            
+            {% if not projects %}
+            <p style="font-size: 12px; color: var(--ns-text-muted); margin-top: 10px;">No custom projects created yet. Click "+ New" to organize your experiments.</p>
+            {% endif %}
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="history-main-content">
+
+    <!-- Empty State Alert Banner when 0 experiments -->
+    {% if analytics.total_experiments == 0 %}
+    <div class="empty-history-card">
+        <div class="empty-icon">📄</div>
+        <h3>No Experiments Yet</h3>
+        <p>Perform your first ZnO nanoparticle cytotoxicity analysis to generate research history, analytics, and visualizations.</p>
+        <p style="color: var(--ns-text-sub); font-size: 13px; margin-bottom: 20px;">Run your first experiment to generate research analytics.</p>
+        <a href="/upload" class="ns-btn ns-btn-primary" style="font-size: 16px; padding: 12px 28px; border-radius: 12px;">
+            🚀 Start New Analysis
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Analytics Section -->
+    <div class="analytics-grid">
+        <div class="analytic-card">
+            <span>Total Experiments</span>
+            <h3>{{ analytics.total_experiments }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card">
+            <span>Avg Toxicity Score</span>
+            <h3>{{ analytics.avg_toxicity_score }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card">
+            <span>Highest Toxicity</span>
+            <h3>{{ analytics.highest_toxicity }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card">
+            <span>Avg IC50 Threshold</span>
+            <h3>{{ analytics.avg_ic50 }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card high-risk">
+            <span>High Risk Samples</span>
+            <h3>{{ analytics.high_risk_samples }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card mod-risk">
+            <span>Moderate Risk</span>
+            <h3>{{ analytics.moderate_risk_samples }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+        <div class="analytic-card low-risk">
+            <span>Low Risk Samples</span>
+            <h3>{{ analytics.low_risk_samples }}</h3>
+            {% if analytics.total_experiments == 0 %}<small>No data available</small>{% endif %}
+        </div>
+    </div>
+
+    <!-- Interactive Charts Grid -->
+    <div class="charts-wrapper">
+        <h2>📈 Interactive Research Analytics</h2>
+        <div class="charts-grid">
+            <div class="chart-box">
+                <h4>Toxicity Score Trend</h4>
+                <canvas id="toxicityTrendChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">📊 No Data Available</div>
+                {% endif %}
+            </div>
+            <div class="chart-box">
+                <h4>Risk Level Distribution</h4>
+                <canvas id="riskDistributionChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">🍩 No Data Available</div>
+                {% endif %}
+            </div>
+            <div class="chart-box">
+                <h4>Average Cell Viability (%)</h4>
+                <canvas id="viabilityChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">📉 No Data Available</div>
+                {% endif %}
+            </div>
+            <div class="chart-box">
+                <h4>Average ROS Level</h4>
+                <canvas id="rosChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">🧪 No Data Available</div>
+                {% endif %}
+            </div>
+            <div class="chart-box">
+                <h4>Average LDH Release</h4>
+                <canvas id="ldhChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">🧪 No Data Available</div>
+                {% endif %}
+            </div>
+            <div class="chart-box">
+                <h4>Average Apoptosis (%)</h4>
+                <canvas id="apoptosisChart"></canvas>
+                {% if analytics.total_experiments == 0 %}
+                <div class="chart-empty-overlay">🧫 No Data Available</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="filter-card">
+        <form method="GET" action="{{ url_for('main.history') }}" class="filter-form">
+            <div>
+                <label>Sample Name</label>
+                <input type="text" name="sample_name" placeholder="Search sample..." value="{{ filter_sample_name }}">
+            </div>
+            <div>
+                <label>Cell Line</label>
+                <select name="cell_line">
+                    <option value="">All Cell Lines</option>
+                    {% for cl in cell_lines %}
+                    <option value="{{ cl }}" {% if filter_cell_line == cl %}selected{% endif %}>{{ cl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Risk Level</label>
+                <select name="risk_level">
+                    <option value="">All Risk Levels</option>
+                    <option value="Low" {% if filter_risk_level == 'Low' %}selected{% endif %}>Low (Safe)</option>
+                    <option value="Moderate" {% if filter_risk_level == 'Moderate' %}selected{% endif %}>Moderate Risk</option>
+                    <option value="High" {% if filter_risk_level == 'High' %}selected{% endif %}>High (Toxic)</option>
+                </select>
+            </div>
+            <div>
+                <label>Date</label>
+                <input type="date" name="date" value="{{ filter_date }}">
+            </div>
+            <div>
+                <label>Sort Order</label>
+                <select name="sort">
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                </select>
+            </div>
+            <div class="filter-btn-group">
+                <button type="submit" class="ns-btn ns-btn-primary" style="flex:1;">Filter</button>
+                <a href="{{ url_for('main.history') }}" class="ns-btn ns-btn-secondary" style="flex:1; text-align: center;">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Table -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin:0; font-size: 1.1rem; color: var(--ns-text-main);">Experiment Log</h3>
+        <button onclick="plotSelected()" class="ns-btn ns-btn-primary" style="padding: 6px 12px; font-size: 13px;">📊 Plot Selected</button>
+    </div>
+    <div class="table-card">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)">
+                    </th>
+                    <th>ID</th>
+                    <th>Date & Time</th>
+                    <th>Sample Name</th>
+                    <th>Cell Line</th>
+                    <th>Toxicity Score</th>
+                    <th>Risk</th>
+                    <th>Folder</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if experiments %}
+                {% for exp in experiments %}
+                <tr class="{% if exp.risk_level == 'High' %}row-high-risk{% elif exp.risk_level == 'Moderate' %}row-mod-risk{% else %}row-low-risk{% endif %}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="exp-checkbox" value="{{ exp.id }}">
+                    </td>
+                    <td><b>#{{ exp.id }}</b></td>
+                    <td><small>{{ exp.date_time }}</small></td>
+                    <td><b>{{ exp.sample_name }}</b></td>
+                    <td>{{ exp.cell_line }}</td>
+                    <td><b>{{ exp.toxicity_score }}</b></td>
+                    <td>
+                        <span class="ns-badge {% if exp.risk_level == 'High' %}ns-badge-toxic{% elif exp.risk_level == 'Moderate' %}ns-badge-moderate{% else %}ns-badge-safe{% endif %}">
+                            {{ exp.risk_level }}
+                        </span>
+                    </td>
+                    <td>
+                        <select class="folder-select" data-id="{{ exp.id }}" onchange="moveToProject(this.dataset.id, this.value)">
+                            <option value="">Unassigned</option>
+                            {% for proj in projects %}
+                            <option value="{{ proj.id }}" {% if exp.project_id == proj.id %}selected{% endif %}>{{ proj.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <div class="btn-group" style="display:flex; gap: 5px;">
+                            <a href="{{ url_for('main.history_detail', history_id=exp.id) }}" class="btn-action view" title="View Full Details">👁️ View</a>
+                            <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="btn-action pdf" title="Download PDF Report">📄 PDF</a>
+                            <a href="{{ url_for('main.compare') }}?exp1={{ exp.id }}" class="btn-action compare" title="Compare Experiment">📊 Compare</a>
+                            <button data-id="{{ exp.id }}" data-name="{{ exp.sample_name }}" onclick="deleteExperiment(this.dataset.id, this.dataset.name)" class="btn-action delete" title="Delete Experiment">🗑️ Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 40px 20px;">
+                        <div style="color: var(--ns-text-muted);">
+                            <h5 style="font-weight: 800; margin-bottom: 8px; color: var(--ns-text-main);">No experiments have been performed yet.</h5>
+                            <p style="margin-bottom: 16px;">Run your first experiment to generate research analytics and history records.</p>
+                            <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-primary">➕ Start New Analysis</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination-container">
+            <span style="color: var(--ns-text-muted); font-size: 13px;">Showing Page <b>{{ page }}</b> of <b>{{ total_pages }}</b> (Total: {{ total_count }} records)</span>
+            <div class="btn-group">
+                {% if page > 1 %}
+                <a href="{{ url_for('main.history', page=page-1, sample_name=filter_sample_name, cell_line=filter_cell_line, risk_level=filter_risk_level, date=filter_date, sort=sort) }}" class="btn-page">Previous</a>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                <a href="{{ url_for('main.history', page=p, sample_name=filter_sample_name, cell_line=filter_cell_line, risk_level=filter_risk_level, date=filter_date, sort=sort) }}" class="btn-page {% if p == page %}active{% endif %}">{{ p }}</a>
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <a href="{{ url_for('main.history', page=page+1, sample_name=filter_sample_name, cell_line=filter_cell_line, risk_level=filter_risk_level, date=filter_date, sort=sort) }}" class="btn-page">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        </div> <!-- End Main Content -->
+    </div> <!-- End Layout -->
+
+    </main>
+</div>
+
+<!-- Create Project Modal -->
+<div id="projectModal" class="modal">
+    <div class="modal-content">
+        <h3>Create New Project</h3>
+        <form action="/projects/create" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label>Project Name</label>
+            <input type="text" name="name" required placeholder="e.g. Zinc Oxide Q3 Study">
+            
+            <label>Description (Optional)</label>
+            <textarea name="description" rows="3" placeholder="Brief details about this folder..."></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="button" class="ns-btn" onclick="closeProjectModal()" style="flex: 1;">Cancel</button>
+                <button type="submit" class="ns-btn ns-btn-primary" style="flex: 1;">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script id="chart-data" type="application/json">
+{{ chart_data | tojson | safe }}
+</script>
+<script>
+// Initialize Chart.js Graphs with real data
+const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const textColor = isDark ? '#cbd5e1' : '#64748b';
+const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+const commonScales = {
+    x: {
+        grid: { display: false },
+        ticks: {
+            color: textColor,
+            font: { family: 'Inter', size: 10 },
+            maxRotation: 45,
+            minRotation: 45,
+            callback: function(val, index) {
+                let label = this.getLabelForValue(val);
+                return label.length > 12 ? label.substring(0, 12) + '...' : label;
+            }
+        }
+    },
+    y: {
+        grid: { color: gridColor },
+        ticks: { color: textColor, font: { family: 'Inter', size: 11 } }
+    }
+};
+
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+        padding: { bottom: 15 }
+    },
+    plugins: { 
+        legend: { display: false },
+        tooltip: {
+            backgroundColor: isDark ? 'rgba(30,41,59,0.9)' : 'rgba(255,255,255,0.9)',
+            titleColor: isDark ? '#f8fafc' : '#0f172a',
+            bodyColor: isDark ? '#cbd5e1' : '#475569',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderWidth: 1,
+            padding: 10,
+            usePointStyle: true
+        }
+    },
+    scales: commonScales
+};
+
+if (chartData.labels && chartData.labels.length > 0) {
+    // 1. Toxicity Trend Chart (Scale 0-100)
+    if (document.getElementById('toxicityTrendChart')) {
+        let opt = JSON.parse(JSON.stringify(commonOptions));
+        opt.scales.y.min = 0; opt.scales.y.max = 100;
+        new Chart(document.getElementById('toxicityTrendChart'), {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Toxicity Score',
+                    data: chartData.toxicity_scores,
+                    borderColor: '#0f766e',
+                    backgroundColor: 'rgba(15, 118, 110, 0.15)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: opt
+        });
+    }
+
+    // 2. Risk Distribution Chart
+    if (document.getElementById('riskDistributionChart')) {
+        new Chart(document.getElementById('riskDistributionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['High Risk', 'Moderate Risk', 'Low Risk'],
+                datasets: [{
+                    data: [chartData.risk_counts.High, chartData.risk_counts.Moderate, chartData.risk_counts.Low],
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { 
+                    legend: { position: 'bottom', labels: { color: textColor, padding: 15, font: {family: 'Inter', weight: '600'} } } 
+                }
+            }
+        });
+    }
+
+    // 3. Cell Viability Chart (Scale 0-100)
+    if (document.getElementById('viabilityChart')) {
+        let opt = JSON.parse(JSON.stringify(commonOptions));
+        opt.scales.y.min = 0; opt.scales.y.max = 100;
+        new Chart(document.getElementById('viabilityChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Cell Viability (%)',
+                    data: chartData.cell_viabilities,
+                    backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                    hoverBackgroundColor: '#2563eb',
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: opt
+        });
+    }
+
+    // 4. ROS Level Chart (Scale starts at 0)
+    if (document.getElementById('rosChart')) {
+        let opt = JSON.parse(JSON.stringify(commonOptions));
+        opt.scales.y.min = 0;
+        new Chart(document.getElementById('rosChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'ROS Level',
+                    data: chartData.ros_levels,
+                    backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                    hoverBackgroundColor: '#9333ea',
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: opt
+        });
+    }
+
+    // 5. LDH Release Chart (Scale starts at 0)
+    if (document.getElementById('ldhChart')) {
+        let opt = JSON.parse(JSON.stringify(commonOptions));
+        opt.scales.y.min = 0;
+        new Chart(document.getElementById('ldhChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'LDH Release',
+                    data: chartData.ldh_releases,
+                    backgroundColor: 'rgba(234, 179, 8, 0.85)',
+                    hoverBackgroundColor: '#ca8a04',
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: opt
+        });
+    }
+
+    // 6. Apoptosis Chart (Scale 0-100)
+    if (document.getElementById('apoptosisChart')) {
+        let opt = JSON.parse(JSON.stringify(commonOptions));
+        opt.scales.y.min = 0; opt.scales.y.max = 100;
+        new Chart(document.getElementById('apoptosisChart'), {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Apoptosis (%)',
+                    data: chartData.apoptosis_levels,
+                    backgroundColor: 'rgba(236, 72, 153, 0.85)',
+                    hoverBackgroundColor: '#db2777',
+                    borderRadius: 4,
+                    barPercentage: 0.6
+                }]
+            },
+            options: opt
+        });
+    }
+}
+
+// Delete Experiment Function with confirmation
+const csrfToken = "{{ csrf_token() }}";
+function deleteExperiment(id, name) {
+    if (confirm(`Are you sure you want to delete experiment #${id} ("${name}")? This action cannot be undone.`)) {
+        fetch(`/delete_history/${id}`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Error deleting experiment: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                alert('Network error deleting experiment');
+            });
+    }
+}
+function openProjectModal() {
+    document.getElementById('projectModal').classList.add('active');
+}
+function closeProjectModal() {
+    document.getElementById('projectModal').classList.remove('active');
+}
+function moveToProject(historyId, projectId) {
+    fetch('/history/move_to_project', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ history_id: historyId, project_id: projectId })
+    }).then(r => r.json()).then(data => {
+        if (!data.success) {
+            alert('Error moving to project: ' + (data.error || 'Unknown'));
+        } else {
+            // Optional: visually confirm or reload
+            // window.location.reload(); 
+        }
+    }).catch(e => {
+        alert('Network error while moving project');
+    });
+}
+
+// === Selective Plotting Logic ===
+const selectedIdsStr = "{{ selected_ids_str|default('') }}";
+const initiallySelected = selectedIdsStr ? selectedIdsStr.split(',').filter(x => x) : [];
+
+// Auto-check the checkboxes that match initiallySelected
+document.querySelectorAll('.exp-checkbox').forEach(cb => {
+    if (initiallySelected.includes(cb.value)) {
+        cb.checked = true;
+    }
+});
+
+function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.exp-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+}
+
+function plotSelected() {
+    const checkboxes = document.querySelectorAll('.exp-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value).join(',');
+    
+    if (!selectedIds && initiallySelected.length === 0) {
+        alert("Please select at least one experiment to plot.");
+        return;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (selectedIds) {
+        urlParams.set('selected_ids', selectedIds);
+    } else {
+        urlParams.delete('selected_ids');
+    }
+    window.location.search = urlParams.toString();
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <title>All Experiments - Admin</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        .admin-subnav {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+            background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px;
+            border: 1px solid var(--ns-border-main);
+        }
+        .admin-subnav a {
+            color: var(--ns-text-muted); text-decoration: none; padding: 7px 14px;
+            border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.15s;
+        }
+        .admin-subnav a:hover { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .admin-subnav a.active { background: #f0fdfa; color: #0f766e; font-weight: 700; }
+        
+        .log-table { width: 100%; background: var(--ns-bg-card); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.03); margin-top: 20px; border: 1px solid var(--ns-border-main); }
+        .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
+        .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); padding: 12px 14px; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .risk-high { background: #fee2e2; color: #b91c1c; }
+        .risk-mod { background: #fef08a; color: #854d0e; }
+        .risk-low { background: #dcfce3; color: #166534; }
+        
+        .pagination { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+        .pagination a { padding: 8px 12px; background: var(--ns-bg-card); border: 1px solid var(--ns-border-input); border-radius: 6px; text-decoration: none; color: var(--ns-text-main); }
+        .pagination a:hover { background: var(--ns-bg-hover); }
+        .pagination span { padding: 8px 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+
+        <div class="admin-subnav">
+            <a href="{{ url_for('admin.dashboard') }}">📊 Overview</a>
+            <a href="{{ url_for('admin.users') }}">👥 User Accounts</a>
+            <a href="{{ url_for('admin.all_experiments') }}" class="active">🧪 All Experiments</a>
+            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
+            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
+            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
+        </div>
+
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">All System Experiments</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Viewing {{ total_count }} experiments across all users.</p>
+    
+    <table class="log-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>User</th>
+                <th>Sample Name</th>
+                <th>Cell Line</th>
+                <th>Viability</th>
+                <th>Score</th>
+                <th>Risk Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in experiments %}
+            <tr>
+                <td style="color: var(--ns-text-muted);">#{{ exp.id }}</td>
+                <td>{{ exp.date_time.split(' ')[0] if exp.date_time else '' }}</td>
+                <td style="font-weight: bold;">{{ exp.username }}</td>
+                <td>{{ exp.sample_name }}</td>
+                <td>{{ exp.cell_line }}</td>
+                <td>{{ exp.cell_viability }}%</td>
+                <td>{{ exp.toxicity_score }}</td>
+                <td>
+                    <span class="badge {% if exp.risk_level == 'High' %}risk-high{% elif exp.risk_level == 'Moderate' %}risk-mod{% else %}risk-low{% endif %}">
+                        {{ exp.risk_level }}
+                    </span>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align: center; padding: 30px; color: var(--ns-text-sub);">No experiments found</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('admin.all_experiments', page=page-1) }}">&laquo; Prev</a>
+        {% endif %}
+        
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        
+        {% if page < total_pages %}
+            <a href="{{ url_for('admin.all_experiments', page=page+1) }}">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    </main>
+</div>
+
+</body>
+</html>

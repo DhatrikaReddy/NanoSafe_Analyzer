@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+
+    <title>User Management - Admin</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        .admin-subnav {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+            background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px;
+            border: 1px solid var(--ns-border-main);
+        }
+        .admin-subnav a {
+            color: var(--ns-text-muted); text-decoration: none; padding: 7px 14px;
+            border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.15s;
+        }
+        .admin-subnav a:hover { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .admin-subnav a.active { background: #f0fdfa; color: #0f766e; font-weight: 700; }
+
+        .log-table { width: 100%; background: var(--ns-bg-card); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--ns-border-main); }
+        .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
+        .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); vertical-align: middle; padding: 10px 14px; }
+        
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge.green { background: #dcfce3; color: #166534; }
+        .badge.red { background: #fee2e2; color: #b91c1c; }
+        .badge.gray { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .badge.blue { background: #dbeafe; color: #1e40af; }
+        
+        .action-btn { background: none; border: 1px solid var(--ns-border-input); color: var(--ns-text-main); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin: 2px; font-weight: 600; }
+        .action-btn:hover { background: var(--ns-bg-hover); }
+        .action-btn.danger { color: #ef4444; border-color: #fca5a5; }
+        .action-btn.danger:hover { background: #fef2f2; }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+
+        <div class="admin-subnav">
+            <a href="{{ url_for('admin.dashboard') }}">📊 Overview</a>
+            <a href="{{ url_for('admin.users') }}" class="active">👥 User Accounts</a>
+            <a href="{{ url_for('admin.all_experiments') }}">🧪 All Experiments</a>
+            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
+            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
+            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
+        </div>
+
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">User Management</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Manage researcher accounts, permissions, and security states</p>
+    
+    <form method="GET" action="{{ url_for('admin.users') }}" style="margin: 15px 0; display: flex; gap: 10px;">
+        <input type="text" name="search" placeholder="Search by username or email..." value="{{ search or '' }}" style="max-width: 300px;">
+        <button type="submit" class="action-btn">🔍 Search</button>
+        {% if search %}
+        <a href="{{ url_for('admin.users') }}"><button type="button" class="action-btn">Clear</button></a>
+        {% endif %}
+    </form>
+
+    <table class="log-table" style="margin-top: 10px;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Experiments</th>
+                <th>Reports</th>
+                <th>Registered</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td style="color: var(--ns-text-muted);">#{{ user.id }}</td>
+                <td style="font-weight: bold;">{{ user.username }}</td>
+                <td>{{ user.email or 'N/A' }}</td>
+                <td>
+                    <span class="badge {% if user.is_admin %}blue{% else %}gray{% endif %}">{{ user.role.title() }}</span>
+                </td>
+                <td>
+                    <span class="badge {% if user.is_active %}green{% else %}red{% endif %}" id="status-active-{{ user.id }}">
+                        {{ 'Active' if user.is_active else 'Disabled' }}
+                    </span>
+                    <span class="badge {% if user.is_verified %}green{% else %}gray{% endif %}" id="status-ver-{{ user.id }}" style="margin-left: 5px;">
+                        {{ 'Verified' if user.is_verified else 'Unverified' }}
+                    </span>
+                </td>
+                <td style="font-weight: bold; text-align: center;">{{ user_stats[user.id].experiments }}</td>
+                <td style="font-weight: bold; text-align: center;">{{ user_stats[user.id].reports }}</td>
+                <td style="color: var(--ns-text-muted);">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <a href="{{ url_for('admin.all_experiments', user_id=user.id) }}"><button type="button" class="action-btn">View Exps</button></a>
+                    <button type="button" class="action-btn btn-toggle-active" data-user-id="{{ user.id }}">Toggle Active</button>
+                    <button type="button" class="action-btn btn-toggle-verified" data-user-id="{{ user.id }}">Toggle Verified</button>
+                    <button type="button" class="action-btn btn-reset-pw" data-user-id="{{ user.id }}">Reset PW</button>
+                    <button type="button" class="action-btn danger btn-delete-user" data-user-id="{{ user.id }}" data-username="{{ user.username }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    </main>
+</div>
+
+<script>
+    const csrfToken = "{{ csrf_token() }}";
+
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        if (target.classList.contains('btn-toggle-active')) {
+            toggleActive(target.dataset.userId);
+        } else if (target.classList.contains('btn-toggle-verified')) {
+            toggleVerified(target.dataset.userId);
+        } else if (target.classList.contains('btn-reset-pw')) {
+            resetPassword(target.dataset.userId);
+        } else if (target.classList.contains('btn-delete-user')) {
+            deleteUser(target.dataset.userId, target.dataset.username);
+        }
+    });
+
+    async function toggleActive(userId) {
+        if(!confirm('Toggle active status for this user?')) return;
+        const res = await fetch(`/admin/users/${userId}/toggle-active`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const data = await res.json();
+        if(data.success) location.reload();
+        else alert(data.error);
+    }
+
+    async function toggleVerified(userId) {
+        if(!confirm('Toggle verification status for this user?')) return;
+        const res = await fetch(`/admin/users/${userId}/toggle-verified`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const data = await res.json();
+        if(data.success) location.reload();
+        else alert(data.error);
+    }
+
+    async function resetPassword(userId) {
+        if(!confirm('Are you sure you want to force reset this user\'s password?')) return;
+        const res = await fetch(`/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const data = await res.json();
+        if(data.success) {
+            alert(data.message);
+        } else alert(data.error);
+    }
+
+    async function deleteUser(userId, username) {
+        if(!confirm(`WARNING: Are you sure you want to completely delete user "${username}" and all their associated data? This cannot be undone.`)) return;
+        const res = await fetch(`/admin/users/${userId}/delete`, {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const data = await res.json();
+        if(data.success) {
+            alert(data.message);
+            location.reload();
+        } else alert(data.error || 'Failed to delete user');
+    }
+</script>
+
+</body>
+</html>

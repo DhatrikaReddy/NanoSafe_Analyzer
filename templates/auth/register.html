@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+      if (localStorage.getItem('ns_theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    </script>
+    <title>Register - NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+    <style>
+        .auth-card {
+            display: block;
+            max-width: 450px;
+            margin: 60px auto;
+            padding: 30px;
+            background: var(--ns-bg-card);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .auth-card h2 { color: #0f766e; margin-bottom: 10px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-group label { font-weight: bold; font-size: 14px; color: var(--ns-text-main); }
+        .form-group input { margin-top: 5px; width: 100%; box-sizing: border-box; }
+        .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; text-align: left; font-size: 14px; display: none; }
+        .alert.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .alert.success { background: #dcfce3; color: #166534; border: 1px solid #86efac; }
+        .links { margin-top: 20px; font-size: 14px; }
+        .links a { color: #0f766e; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+        .pw-hint { font-size: 12px; color: var(--ns-text-muted); margin-top: 5px; }
+    </style>
+</head>
+<body style="background: var(--ns-bg-main);">
+
+<div class="auth-card">
+    <h2>Create Account</h2>
+    <p style="color: var(--ns-text-muted); margin-bottom: 25px;">Join NanoSafe Analyzer</p>
+
+    <div id="alert-box" class="alert"></div>
+    {% if error %}
+    <div class="alert error" style="display: block;">{{ error }}</div>
+    {% endif %}
+
+    <form id="register-form" method="POST" action="{{ url_for('auth.register') }}">
+        <input type="hidden" name="csrf_token" id="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" name="username" required placeholder="Choose a username" autocomplete="off">
+        </div>
+        
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="email" name="email" required placeholder="name@example.com" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <div style="position: relative; display: flex; align-items: center; margin-top: 5px;">
+                <input type="password" id="password" name="password" required placeholder="Create a password" style="width: 100%; box-sizing: border-box; padding-right: 35px; margin-top: 0;" autocomplete="new-password">
+                <span id="togglePassword" style="position: absolute; right: 10px; cursor: pointer; color: var(--ns-text-muted); display: flex; align-items: center; justify-content: center;" title="Toggle Password Visibility">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+            </div>
+            <div class="pw-hint">Must be at least 8 characters.</div>
+        </div>
+
+        <div class="form-group">
+            <label>Confirm Password</label>
+            <div style="position: relative; display: flex; align-items: center; margin-top: 5px;">
+                <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password" style="width: 100%; box-sizing: border-box; padding-right: 35px; margin-top: 0;" autocomplete="new-password">
+                <span id="toggleConfirmPassword" style="position: absolute; right: 10px; cursor: pointer; color: var(--ns-text-muted); display: flex; align-items: center; justify-content: center;" title="Toggle Password Visibility">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </span>
+            </div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="ns-btn ns-btn-primary" style="width: 100%; margin-top: 10px;">Sign Up</button>
+    </form>
+
+    <div class="links">
+        <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </div>
+</div>
+
+<script>
+    const regForm = document.getElementById('register-form');
+    const alertBox = document.getElementById('alert-box');
+    const submitBtn = document.getElementById('submit-btn');
+
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+    const confirmPassword = document.getElementById('confirm_password');
+
+    const eyeIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+    const eyeOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+    function setupToggle(toggleBtn, inputField) {
+        if(toggleBtn) {
+            toggleBtn.addEventListener('click', function () {
+                const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
+                inputField.setAttribute('type', type);
+                this.innerHTML = type === 'password' ? eyeIcon : eyeOffIcon;
+            });
+        }
+    }
+
+    setupToggle(togglePassword, password);
+    setupToggle(toggleConfirmPassword, confirmPassword);
+
+    function showAlert(msg, isError = true) {
+        alertBox.textContent = msg;
+        alertBox.className = 'alert ' + (isError ? 'error' : 'success');
+        alertBox.style.display = 'block';
+    }
+
+    regForm.addEventListener('submit', (e) => {
+        const passwordVal = password.value;
+        const confirmVal = confirmPassword.value;
+
+        if (passwordVal !== confirmVal) {
+            e.preventDefault();
+            showAlert('Passwords do not match.');
+            return;
+        }
+
+        if (passwordVal.length < 8) {
+            e.preventDefault();
+            showAlert('Password must be at least 8 characters long.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Registering...';
+    });
+</script>
+
+</body>
+</html>

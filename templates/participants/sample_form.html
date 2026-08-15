@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if action=='edit' %}Edit Sample{% else %}New Biological Sample{% endif %} — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        body { background: var(--ns-bg-main); }
+        .ns-sidebar-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        @media (max-width: 900px) { .ns-sidebar-layout { grid-template-columns: 1fr; } .ns-sidebar { display: none; } }
+        .form-page { padding: 32px 36px; max-width: 1000px; }
+
+        .form-hero {
+            background: linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%);
+            color: white; padding: 24px 32px; border-radius: 18px;
+            margin-bottom: 26px; box-shadow: 0 8px 24px rgba(29,78,216,0.2);
+        }
+        .form-hero h1 { margin: 0 0 4px; font-size: 22px; font-weight: 800; }
+        .form-hero p { margin: 0; opacity: 0.88; font-size: 13px; }
+
+        .form-card {
+            background: var(--ns-bg-card); border-radius: 18px; padding: 30px;
+            border: 1px solid var(--ns-border-main); box-shadow: 0 4px 16px rgba(15,118,110,0.06);
+            margin-bottom: 22px;
+        }
+        .form-card h3 { font-size: 16px; font-weight: 800; color: #0f766e; margin: 0 0 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .form-group .required-star { color: #dc2626; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 12px 14px; border-radius: 10px;
+            border: 1px solid var(--ns-border-input); background: var(--ns-bg-input);
+            font-size: 14px; color: var(--ns-text-main); width: 100%; box-sizing: border-box;
+            font-family: 'Inter', Arial, sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,0.12);
+        }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-span-2 { grid-column: 1 / -1; }
+
+        /* Experiment linking */
+        .exp-link-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px; max-height: 320px; overflow-y: auto;
+            padding: 14px; background: var(--ns-bg-input);
+            border-radius: 12px; border: 1px solid var(--ns-border-input);
+        }
+        .exp-link-item {
+            display: flex; align-items: flex-start; gap: 10px;
+            background: var(--ns-bg-card); border-radius: 10px;
+            border: 1px solid var(--ns-border-main); padding: 12px;
+            cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .exp-link-item:hover { border-color: #0f766e; box-shadow: 0 2px 8px rgba(15,118,110,0.1); }
+        .exp-link-item input[type=checkbox] { margin-top: 2px; accent-color: #0f766e; width: 16px; height: 16px; flex-shrink: 0; }
+        .exp-link-item label { cursor: pointer; font-size: 13px; line-height: 1.4; }
+        .exp-link-item label b { display: block; color: var(--ns-text-main); }
+        .exp-link-item label small { color: var(--ns-text-muted); font-size: 11px; }
+
+        .consent-notice {
+            background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px;
+            padding: 12px 16px; font-size: 13px; color: #c2410c; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-actions { display: flex; gap: 12px; margin-top: 8px; }
+        .flash-msg { padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-weight: 600; font-size: 13.5px; }
+        .flash-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .flash-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    </style>
+</head>
+<body>
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="form-page">
+
+        <div class="form-hero">
+            <h1>{% if action=='edit' %}✏️ Edit Sample: {{ sample.sample_id }}{% else %}🧫 New Biological Sample{% endif %}</h1>
+            <p>ZnO Biocompatibility Study — Biological Sample Registry</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST"
+              action="{% if action=='edit' %}{{ url_for('participants.sample_edit', sample_pk=sample.id) }}{% else %}{{ url_for('participants.sample_new') }}{% endif %}"
+              enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Sample Information -->
+            <div class="form-card">
+                <h3>🧫 Sample Information</h3>
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Sample ID <span class="required-star">*</span></label>
+                        <input type="text" name="sample_id" required
+                               placeholder="e.g. S-001, BIO-2024-001"
+                               value="{% if action=='edit' %}{{ sample.sample_id }}{% else %}{{ form_data.get('sample_id','') }}{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sample Status</label>
+                        <select name="sample_status">
+                            {% set ss = sample.sample_status if action=='edit' else form_data.get('sample_status','Active') %}
+                            <option value="Active"     {% if ss=='Active' %}selected{% endif %}>Active</option>
+                            <option value="Processing" {% if ss=='Processing' %}selected{% endif %}>Processing</option>
+                            <option value="Completed"  {% if ss=='Completed' %}selected{% endif %}>Completed</option>
+                            <option value="Archived"   {% if ss=='Archived' %}selected{% endif %}>Archived</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Sample Type</label>
+                        <select name="sample_type">
+                            {% set st = sample.sample_type if action=='edit' else form_data.get('sample_type','') %}
+                            <option value="">— Select type —</option>
+                            {% for t in ['Blood','Tissue','Cell Culture','Serum','Plasma','Urine','Saliva','Biopsy','Other'] %}
+                            <option value="{{ t }}" {% if st==t %}selected{% endif %}>{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cell Type / Line</label>
+                        <select name="cell_type">
+                            {% set ct = sample.cell_type if action=='edit' else form_data.get('cell_type','') %}
+                            <option value="">— Select cell type —</option>
+                            {% for c in ['HeLa','MCF-7','A549','HEK293','NIH-3T3','HepG2','Caco-2','CHO','Jurkat','PC12','Primary cells','Other'] %}
+                            <option value="{{ c }}" {% if ct==c %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Collection Date</label>
+                        <input type="date" name="collection_date"
+                               value="{% if action=='edit' and sample.collection_date %}{{ sample.collection_date.strftime('%Y-%m-%d') }}{% else %}{{ form_data.get('collection_date','') }}{% endif %}">
+                    </div>
+
+                    <!-- Participant -->
+                    <div class="form-group">
+                        <label>Participant (Consented only)</label>
+                        {% if not consented_participants %}
+                        <div class="consent-notice">
+                            ⚠️ No consented participants found. Add a participant and set their consent to "Consented" first.
+                        </div>
+                        {% endif %}
+                        <select name="participant_fk">
+                            <option value="">— Unassigned —</option>
+                            {% for p in consented_participants %}
+                            {% set cur_fk = sample.participant_fk if action=='edit' else form_data.get('participant_fk','') %}
+                            <option value="{{ p.id }}"
+                                {% if cur_fk|string == p.id|string %}selected{% endif %}>
+                                {{ p.participant_id }} {% if p.study_group %}({{ p.study_group }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group form-span-2">
+                        <label>Notes</label>
+                        <textarea name="notes" placeholder="Sample collection notes, storage conditions, quality observations...">{% if action=='edit' %}{{ sample.notes or '' }}{% else %}{{ form_data.get('notes','') }}{% endif %}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiment Linking -->
+            <div class="form-card">
+                <h3>🔗 Link to ZnO Experiments</h3>
+                <p style="color:var(--ns-text-muted); font-size:13.5px; margin: 0 0 14px;">
+                    Select one or more ZnO nanoparticle experiments performed on this sample.
+                    Only experiments belonging to your account are shown.
+                </p>
+
+                {% if user_experiments %}
+                <div class="exp-link-grid">
+                    {% for exp in user_experiments %}
+                    <div class="exp-link-item">
+                        <input type="checkbox" name="linked_experiments"
+                               id="exp_{{ exp.id }}" value="{{ exp.id }}"
+                               {% if exp.id|string in linked_exp_ids %}checked{% endif %}>
+                        <label for="exp_{{ exp.id }}">
+                            <b>{{ exp.sample_name }}</b>
+                            <small>
+                                #{{ exp.id }} · {{ exp.cell_line or 'Unknown cell' }} ·
+                                {{ exp.created_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align:center; padding:30px; color:var(--ns-text-muted);">
+                    <div style="font-size:36px; margin-bottom:10px;">🧪</div>
+                    <p style="font-size:13.5px;">No ZnO experiments found. <a href="{{ url_for('main.upload') }}" style="color:#0f766e;">Run an analysis first</a> to enable experiment linking.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="ns-btn ns-btn-primary" style="padding:12px 28px; font-size:15px;">
+                    {% if action == 'edit' %}💾 Save Changes{% else %}➕ Create Sample{% endif %}
+                </button>
+                <a href="{{ url_for('participants.samples_list') }}" class="ns-btn ns-btn-secondary" style="padding:12px 22px;">Cancel</a>
+            </div>
+        </form>
+
+    </main>
+</div>
+</body>
+</html>

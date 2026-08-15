@@ -1,0 +1,113 @@
+<!-- _sidebar.html — Enterprise Research Workspace Sidebar -->
+<aside class="ns-sidebar">
+    <div class="ns-sidebar-brand">
+        <div class="ns-brand-logo">🧬</div>
+        <div class="ns-brand-text">
+            <span class="ns-brand-title">NanoSafe</span>
+            <span class="ns-brand-sub">Biomedical Analyzer</span>
+        </div>
+    </div>
+
+    <nav class="ns-sidebar-nav">
+        <!-- 1. Analytical Suite -->
+        <div class="ns-nav-section-title">LABORATORY EXPERIMENTS</div>
+        <div class="ns-nav-group">
+            <a href="{{ url_for('main.home') }}" class="ns-nav-item {% if request.endpoint == 'main.home' %}active{% endif %}">
+                <span class="ns-nav-icon">📊</span>
+                <span class="ns-nav-label">Command Center</span>
+            </a>
+            <a href="{{ url_for('main.upload') }}" class="ns-nav-item {% if request.endpoint == 'main.upload' %}active{% endif %}">
+                <span class="ns-nav-icon">🧪</span>
+                <span class="ns-nav-label">New Experiment</span>
+            </a>
+            <a href="{{ url_for('main.batch_import') }}" class="ns-nav-item {% if request.endpoint == 'main.batch_import' %}active{% endif %}">
+                <span class="ns-nav-icon">📦</span>
+                <span class="ns-nav-label">Batch 96-Well Importer</span>
+            </a>
+            <a href="{{ url_for('main.history') }}" class="ns-nav-item {% if request.endpoint in ['main.history','main.history_detail'] %}active{% endif %}">
+                <span class="ns-nav-icon">📜</span>
+                <span class="ns-nav-label">Experiment History</span>
+            </a>
+            <a href="{{ url_for('main.compare') }}" class="ns-nav-item {% if request.endpoint == 'main.compare' %}active{% endif %}">
+                <span class="ns-nav-icon">📈</span>
+                <span class="ns-nav-label">Multi-Experiment Compare</span>
+            </a>
+            <a href="{{ url_for('main.profile', tab='reports') }}" class="ns-nav-item {% if request.endpoint == 'main.profile' and request.args.get('tab') == 'reports' %}active{% endif %}">
+                <span class="ns-nav-icon">📄</span>
+                <span class="ns-nav-label">Report Archive</span>
+            </a>
+        </div>
+
+        <div class="ns-nav-divider"></div>
+
+        <!-- 2. Simulation & Standards -->
+        <div class="ns-nav-section-title">SIMULATION &amp; CLINICAL</div>
+        <div class="ns-nav-group">
+            <a href="{{ url_for('main.simulator') }}" class="ns-nav-item {% if request.endpoint == 'main.simulator' %}active{% endif %}">
+                <span class="ns-nav-icon">🎛️</span>
+                <span class="ns-nav-label">Dose Simulator (What-If)</span>
+            </a>
+            <a href="{{ url_for('main.clinical_guide') }}" class="ns-nav-item {% if request.endpoint == 'main.clinical_guide' %}active{% endif %}">
+                <span class="ns-nav-icon">📚</span>
+                <span class="ns-nav-label">Clinical Standards Hub</span>
+            </a>
+            <a href="{{ url_for('participants.participants_list') }}" class="ns-nav-item {% if request.endpoint in ['participants.participants_list', 'participants.participant_new', 'participants.participant_detail', 'participants.participant_edit'] %}active{% endif %}">
+                <span class="ns-nav-icon">🧑‍🔬</span>
+                <span class="ns-nav-label">Study Participants</span>
+            </a>
+            <a href="{{ url_for('participants.samples_list') }}" class="ns-nav-item {% if request.endpoint in ['participants.samples_list', 'participants.sample_new', 'participants.sample_edit', 'participants.bulk_import_samples'] %}active{% endif %}">
+                <span class="ns-nav-icon">🧫</span>
+                <span class="ns-nav-label">Biological Samples</span>
+            </a>
+        </div>
+
+        <div class="ns-nav-divider"></div>
+
+        <!-- 3. Account & Administration -->
+        <div class="ns-nav-section-title">SYSTEM &amp; SETTINGS</div>
+        <div class="ns-nav-group">
+            <a href="{{ url_for('main.profile') }}" class="ns-nav-item {% if request.endpoint == 'main.profile' and request.args.get('tab','profile') == 'profile' %}active{% endif %}">
+                <span class="ns-nav-icon">👤</span>
+                <span class="ns-nav-label">Profile &amp; Preferences</span>
+            </a>
+            <a href="{{ url_for('main.profile', tab='security') }}" class="ns-nav-item {% if request.endpoint == 'main.profile' and request.args.get('tab') == 'security' %}active{% endif %}">
+                <span class="ns-nav-icon">🔐</span>
+                <span class="ns-nav-label">Security &amp; Auth</span>
+            </a>
+            {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin.dashboard') }}" class="ns-nav-item {% if request.blueprint == 'admin' and request.endpoint != 'admin.ml_models' %}active{% endif %}">
+                <span class="ns-nav-icon">🛡️</span>
+                <span class="ns-nav-label">Admin Console</span>
+            </a>
+            <a href="{{ url_for('admin.ml_models') }}" class="ns-nav-item {% if request.endpoint == 'admin.ml_models' %}active{% endif %}">
+                <span class="ns-nav-icon">🤖</span>
+                <span class="ns-nav-label">ML Diagnostics</span>
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="ns-nav-divider"></div>
+
+        <!-- Logout -->
+        <div class="ns-nav-group">
+            <a href="{{ url_for('auth.logout') }}" class="ns-nav-item logout">
+                <span class="ns-nav-icon">🚪</span>
+                <span class="ns-nav-label">Sign Out</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- User Card in Footer -->
+    <div class="ns-sidebar-footer">
+        <div class="ns-sidebar-user">
+            <div class="ns-sidebar-avatar">{{ session.get('username', 'U')[0].upper() }}</div>
+            <div class="ns-sidebar-user-meta">
+                <div class="ns-sidebar-uname" title="{{ session.get('username', '') }}">{{ session.get('username', 'Researcher') }}</div>
+                <div class="ns-sidebar-urole">
+                    <span class="ns-sidebar-online-dot"></span>
+                    {{ session.get('role', 'user').title() }} · Online
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>

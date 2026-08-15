@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biological Samples — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        body { background: var(--ns-bg-main); }
+        .ns-sidebar-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+        @media (max-width: 900px) { .ns-sidebar-layout { grid-template-columns: 1fr; } .ns-sidebar { display: none; } }
+        .samples-page { padding: 32px 36px; max-width: 1300px; }
+
+        .pt-hero {
+            background: linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%);
+            color: white; padding: 28px 36px; border-radius: 20px;
+            margin-bottom: 28px; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 18px;
+            box-shadow: 0 10px 28px rgba(29,78,216,0.2);
+        }
+        .pt-hero h1 { margin: 0; font-size: 26px; font-weight: 800; }
+        .pt-hero p { margin: 6px 0 0; opacity: 0.88; font-size: 14px; }
+
+        .pt-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 26px; }
+        @media (max-width: 900px) { .pt-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .pt-stat-card {
+            background: var(--ns-bg-card); border-radius: 16px; padding: 20px 22px;
+            border: 1px solid var(--ns-border-main); box-shadow: 0 3px 12px rgba(15,118,110,0.06);
+            border-left: 4px solid #0f766e; transition: transform 0.2s;
+        }
+        .pt-stat-card:hover { transform: translateY(-3px); }
+        .pt-stat-card span { font-size: 12px; font-weight: 700; color: var(--ns-text-muted); display: block; margin-bottom: 6px; }
+        .pt-stat-card h3 { font-size: 28px; font-weight: 800; color: #0f766e; margin: 0; }
+
+        .filter-card { background: var(--ns-bg-card); border-radius: 14px; padding: 18px 22px;
+            margin-bottom: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border: 1px solid var(--ns-border-main); }
+        .filter-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+        @media (max-width: 1100px) { .filter-row { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 700px) { .filter-row { grid-template-columns: 1fr; } }
+        .filter-row label { font-size: 11px; font-weight: 700; color: var(--ns-text-muted); display: block; margin-bottom: 5px; }
+        .filter-row input, .filter-row select {
+            border-radius: 8px; padding: 9px 12px; font-size: 13px;
+            border: 1px solid var(--ns-border-input); width: 100%; box-sizing: border-box;
+            background: var(--ns-bg-input); color: var(--ns-text-main);
+        }
+
+        .table-card { background: var(--ns-bg-card); border-radius: 18px; padding: 22px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04); overflow-x: auto; border: 1px solid var(--ns-border-main); }
+        .table-card h3 { font-size: 17px; font-weight: 800; color: var(--ns-text-main);
+            margin: 0 0 18px; display: flex; justify-content: space-between; align-items: center; }
+        .pt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .pt-table th { background: var(--ns-bg-hover); font-weight: 700; color: var(--ns-text-main);
+            padding: 11px 12px; border-bottom: 2px solid var(--ns-border-main); text-align: left; }
+        .pt-table td { padding: 11px 12px; border-bottom: 1px solid var(--ns-border-main); vertical-align: middle; }
+        .pt-table tr:last-child td { border-bottom: none; }
+        .pt-table tr:hover td { background: var(--ns-bg-hover); }
+
+        .badge-active     { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-processing { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-completed  { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-archived   { background: var(--ns-bg-hover); color: var(--ns-text-muted); border: 1px solid var(--ns-border-main); padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+        .badge-consented { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .badge-pending   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .badge-withdrawn { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+
+        .btn-act { padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+            margin: 2px; border: none; cursor: pointer; transition: opacity 0.15s; }
+        .btn-act:hover { opacity: 0.85; }
+        .btn-edit   { background: #2563eb; color: white; }
+        .btn-delete { background: #dc2626; color: white; }
+
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-state .empty-icon { font-size: 56px; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="samples-page">
+
+        <!-- Hero -->
+        <div class="pt-hero">
+            <div>
+                <h1>🧫 Biological Samples</h1>
+                <p>Track biological samples collected from study participants — linked to ZnO experiments</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('participants.export_samples_csv', search=search, participant_id=filter_participant, sample_type=filter_type, sample_status=filter_status, sort=sort) }}" class="ns-btn ns-btn-secondary" title="Export samples as CSV">📥 Export CSV</a>
+                <a href="{{ url_for('participants.sample_bulk_import') }}" class="ns-btn ns-btn-secondary" title="Import multiple samples via CSV">📤 Bulk Import</a>
+                <a href="{{ url_for('participants.participants_list') }}" class="ns-btn ns-btn-secondary">🧑‍🔬 Participants</a>
+                <a href="{{ url_for('participants.sample_new') }}" class="ns-btn ns-btn-primary">➕ New Sample</a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="pt-stats-grid">
+            <div class="pt-stat-card">
+                <span>Total Participants</span>
+                <h3>{{ stats.total_participants }}</h3>
+            </div>
+            <div class="pt-stat-card" style="border-left-color:#2563eb;">
+                <span>Total Samples</span>
+                <h3 style="color:#2563eb;">{{ stats.total_samples }}</h3>
+            </div>
+            <div class="pt-stat-card" style="border-left-color:#f59e0b;">
+                <span>Linked Experiments</span>
+                <h3 style="color:#d97706;">{{ stats.active_experiments }}</h3>
+            </div>
+            <div class="pt-stat-card" style="border-left-color:#7c3aed;">
+                <span>Completed Analyses</span>
+                <h3 style="color:#7c3aed;">{{ stats.completed_analyses }}</h3>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom:18px;">
+            {% for category, message in messages %}
+            <div style="padding:12px 16px; border-radius:10px; margin-bottom:8px; font-weight:600; font-size:13.5px;
+                background:{% if category=='success' %}#dcfce7{% elif category=='danger' %}#fee2e2{% else %}#fef3c7{% endif %};
+                color:{% if category=='success' %}#166534{% elif category=='danger' %}#991b1b{% else %}#92400e{% endif %};
+                border:1px solid {% if category=='success' %}#bbf7d0{% elif category=='danger' %}#fca5a5{% else %}#fde68a{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Filter -->
+        <div class="filter-card">
+            <form method="GET" action="{{ url_for('participants.samples_list') }}" class="filter-row">
+                <div>
+                    <label>Search Sample ID</label>
+                    <input type="text" name="search" placeholder="e.g. S-001..." value="{{ search }}">
+                </div>
+                <div>
+                    <label>Participant ID</label>
+                    <select name="participant_id">
+                        <option value="">All Participants</option>
+                        {% for p in all_participants %}
+                        <option value="{{ p.participant_id }}" {% if filter_participant==p.participant_id %}selected{% endif %}>
+                            {{ p.participant_id }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Sample Type</label>
+                    <select name="sample_type">
+                        <option value="">All Types</option>
+                        {% for t in ['Blood','Tissue','Cell Culture','Serum','Plasma','Urine','Saliva','Biopsy','Other'] %}
+                        <option value="{{ t }}" {% if filter_type==t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select name="sample_status">
+                        <option value="">All</option>
+                        <option value="Active"     {% if filter_status=='Active' %}selected{% endif %}>Active</option>
+                        <option value="Processing" {% if filter_status=='Processing' %}selected{% endif %}>Processing</option>
+                        <option value="Completed"  {% if filter_status=='Completed' %}selected{% endif %}>Completed</option>
+                        <option value="Archived"   {% if filter_status=='Archived' %}selected{% endif %}>Archived</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Sort</label>
+                    <select name="sort">
+                        <option value="newest" {% if sort=='newest' %}selected{% endif %}>Newest First</option>
+                        <option value="oldest" {% if sort=='oldest' %}selected{% endif %}>Oldest First</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button type="submit" class="ns-btn ns-btn-primary" style="white-space:nowrap;">Filter</button>
+                    <a href="{{ url_for('participants.samples_list') }}" class="ns-btn ns-btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Table -->
+        <div class="table-card">
+            <h3>
+                Sample Registry
+                <span style="font-size:13px; color:var(--ns-text-muted); font-weight:600;">{{ samples|length }} record{% if samples|length != 1 %}s{% endif %}</span>
+            </h3>
+            {% if samples %}
+            <table class="pt-table">
+                <thead>
+                    <tr>
+                        <th>Sample ID</th>
+                        <th>Participant</th>
+                        <th>Sample Type</th>
+                        <th>Cell Type</th>
+                        <th>Collection Date</th>
+                        <th>Status</th>
+                        <th>Linked Experiments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in samples %}
+                {% set participant = participant_map.get(s.participant_fk) %}
+                <tr>
+                    <td><b>{{ s.sample_id }}</b></td>
+                    <td>
+                        {% if participant %}
+                        <a href="{{ url_for('participants.participant_detail', participant_pk=participant.id) }}"
+                           style="color:#0f766e; font-weight:700; text-decoration:none;">
+                            {{ participant.participant_id }}
+                        </a>
+                        <span class="badge-{{ participant.consent_status.lower() }}" style="display:inline-block; margin-left:4px;">{{ participant.consent_status }}</span>
+                        {% else %}
+                        <span style="color:var(--ns-text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s.sample_type or '—' }}</td>
+                    <td>{{ s.cell_type or '—' }}</td>
+                    <td><small>{{ s.collection_date.strftime('%Y-%m-%d') if s.collection_date else '—' }}</small></td>
+                    <td>
+                        <span class="badge-{{ s.sample_status.lower() }}">{{ s.sample_status }}</span>
+                    </td>
+                    <td>
+                        <b style="color:#0f766e;">{{ link_counts[s.id] }}</b>
+                        {% if link_counts[s.id] > 0 %} experiment{% if link_counts[s.id] != 1 %}s{% endif %}{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                            <a href="{{ url_for('participants.sample_edit', sample_pk=s.id) }}" class="btn-act btn-edit">✏️ Edit</a>
+                            <form action="{{ url_for('participants.sample_delete', sample_pk=s.id) }}" method="POST" style="display:inline;"
+                                  onsubmit="return confirm('Delete sample {{ s.sample_id }}? Experiment links will also be removed.')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-act btn-delete">🗑 Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🧫</div>
+                <h3 style="color:var(--ns-text-main);">No Samples Recorded</h3>
+                <p style="color:var(--ns-text-muted);">Add biological samples from consented participants to begin tracking ZnO experiments.</p>
+                <a href="{{ url_for('participants.sample_new') }}" class="ns-btn ns-btn-primary" style="font-size:15px; padding:12px 26px;">➕ Add First Sample</a>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+</body>
+</html>

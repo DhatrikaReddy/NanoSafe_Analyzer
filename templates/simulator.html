@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Dose Simulator &amp; What-If Sandbox — NanoSafe Analyzer</title>
+    <meta name="description" content="Interactive sandbox simulating concentration-dependent cytotoxicity and biocompatibility of ZnO nanoparticles in real time.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') + '?v=5' }}">
+    <style>
+        .sim-container {
+            padding: 32px 36px;
+            max-width: 1250px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        /* Hero */
+        .sim-hero {
+            background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 28px 36px;
+            margin-bottom: 28px;
+            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.18);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .sim-hero h1 { font-size: 26px; font-weight: 800; margin: 0 0 6px; }
+        .sim-hero p { margin: 0; opacity: 0.9; font-size: 14px; max-width: 740px; line-height: 1.5; }
+        .sim-tag {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ccfbf1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        /* Layout Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        /* Control Card */
+        .sim-card {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 18px;
+            padding: 26px 28px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+        }
+        .sim-card h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form Controls */
+        .control-group {
+            margin-bottom: 22px;
+        }
+        .control-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .control-label {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--ns-text-main);
+        }
+        .control-value-badge {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f766e;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            padding: 3px 10px;
+            border-radius: 8px;
+        }
+        .sim-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+            accent-color: #0f766e;
+            cursor: pointer;
+        }
+
+        .sim-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--ns-border-input);
+            border-radius: 10px;
+            background: var(--ns-bg-input);
+            color: var(--ns-text-main);
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        /* Exposure Pills */
+        .time-pills {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .time-pill {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-input);
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ns-text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .time-pill.active {
+            background: #0f766e;
+            color: white;
+            border-color: #0f766e;
+            box-shadow: 0 2px 8px rgba(15,118,110,0.3);
+        }
+
+        /* Results Gauges */
+        .gauge-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .gauge-box {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+        }
+        .gauge-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ns-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .gauge-val {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin-bottom: 4px;
+        }
+        .gauge-sub {
+            font-size: 12px;
+            color: var(--ns-text-muted);
+        }
+
+        /* Biomarker mini grid */
+        .bio-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .bio-mini-item {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .bio-mini-label { font-size: 11px; color: var(--ns-text-muted); font-weight: 600; }
+        .bio-mini-val { font-size: 16px; font-weight: 800; margin-top: 2px; color: var(--ns-text-main); }
+
+        @media (max-width: 900px) {
+            .sim-grid { grid-template-columns: 1fr; }
+            .sim-container { padding: 20px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main class="sim-container">
+
+        <!-- Hero Header -->
+        <div class="sim-hero">
+            <div>
+                <span class="sim-tag">⚡ Interactive What-If Simulator</span>
+                <h1>Live ZnO Dose Simulator &amp; Toxicity Sandbox</h1>
+                <p>
+                    Adjust nanoparticle concentration, cell line sensitivity, and exposure duration to observe instant real-time 
+                    cytotoxicity forecasts and cell sensitivity estimates.
+                </p>
+            </div>
+            <a href="{{ url_for('main.upload') }}" class="ns-btn ns-btn-primary" style="background: white; color: #0f766e; font-weight: 800;">
+                🔬 Run Lab Experiment Upload
+            </a>
+        </div>
+
+        <div class="sim-grid">
+
+            <!-- LEFT: Sandbox Controls -->
+            <div class="sim-card">
+                <h2>🎛️ Simulation Parameters</h2>
+
+                <!-- Concentration Slider -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">ZnO Nanoparticle Concentration</span>
+                        <span class="control-value-badge" id="doseBadge">25.0 µg/mL</span>
+                    </div>
+                    <input type="range" min="0" max="200" step="0.5" value="25.0" class="sim-slider" id="doseSlider" oninput="onParamChange()">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--ns-text-muted); margin-top: 4px;">
+                        <span>0 µg/mL (Control)</span>
+                        <span>50 µg/mL</span>
+                        <span>100 µg/mL</span>
+                        <span>200 µg/mL (Max)</span>
+                    </div>
+                </div>
+
+                <!-- Exposure Duration Pills -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Exposure Duration</span>
+                        <span style="font-size: 12.5px; font-weight: 700; color: #0f766e;" id="timeLabel">24 Hours</span>
+                    </div>
+                    <div class="time-pills">
+                        <div class="time-pill" onclick="selectTime('6', this)">6 h</div>
+                        <div class="time-pill" onclick="selectTime('12', this)">12 h</div>
+                        <div class="time-pill active" onclick="selectTime('24', this)">24 h</div>
+                        <div class="time-pill" onclick="selectTime('48', this)">48 h</div>
+                        <div class="time-pill" onclick="selectTime('72', this)">72 h</div>
+                    </div>
+                    <input type="hidden" id="exposureTimeInput" value="24">
+                </div>
+
+                <!-- Cell Line Select -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Target Cell Line</span>
+                    </div>
+                    <select class="sim-select" id="cellLineSelect" onchange="onParamChange()">
+                        <option value="A549">A549 (Human Lung Carcinoma — Standard Inhalation Model)</option>
+                        <option value="HeLa" selected>HeLa (Human Epithelial / Cervical)</option>
+                        <option value="MCF-7">MCF-7 (Human Breast Adenocarcinoma)</option>
+                        <option value="HEK293">HEK293 (Human Embryonic Kidney — Renal Toxicity)</option>
+                        <option value="NIH-3T3">NIH-3T3 (Mouse Embryonic Fibroblast — Wound Healing)</option>
+                        <option value="HepG2">HepG2 (Human Hepatocellular — Liver Clearance)</option>
+                        <option value="Caco-2">Caco-2 (Human Colorectal — Oral Absorption)</option>
+                        <option value="CHO">CHO (Chinese Hamster Ovary — Biopharma)</option>
+                        <option value="Jurkat">Jurkat (Human T-Lymphocyte — Immune Response)</option>
+                        <option value="PC12">PC12 (Rat Pheochromocytoma — Neural Tissue)</option>
+                    </select>
+                </div>
+
+                <!-- Target Medical Application Select -->
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <span class="control-label">Target Medical Application Preset</span>
+                    </div>
+                    <select class="sim-select" id="medicalAppSelect" onchange="onParamChange()">
+                        <option value="wound_dressing">🩹 Wound Dressing &amp; Topical Antimicrobial (Min Viability &ge; 80%)</option>
+                        <option value="dental">🦷 Dental Biomaterials &amp; Cements (Min Viability &ge; 75%)</option>
+                        <option value="drug_delivery">💊 Targeted Drug Delivery / Nanocarriers (Min Viability &ge; 90%)</option>
+                        <option value="tissue_engineering">🧫 Tissue Engineering Scaffolds (Min Viability &ge; 85%)</option>
+                        <option value="general">🔬 General Biomedical Research (ISO 10993-5 Baseline)</option>
+                    </select>
+                </div>
+
+                <div style="background: var(--ns-bg-input); border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: var(--ns-text-muted); line-height: 1.5; border-left: 4px solid #0f766e;">
+                    <b>💡 Real-Time Simulation Engine:</b> Predictions execute 100% offline via local Scikit-Learn ensemble models and 4PL sigmoidal Hill equations.
+                </div>
+            </div>
+
+            <!-- RIGHT: Live ML Predictions -->
+            <div class="sim-card">
+                <h2>🤖 Real-Time ML Predictions</h2>
+
+                <!-- Main Gauges -->
+                <div class="gauge-row">
+                    <div class="gauge-box">
+                        <div class="gauge-title">Predicted Cell Viability</div>
+                        <div class="gauge-val" id="viabDisplay" style="color: #16a34a;">84.5%</div>
+                        <div class="gauge-sub" id="viabSub">Cell survival response</div>
+                    </div>
+                    <div class="gauge-box">
+                        <div class="gauge-title">ML Toxicity Score</div>
+                        <div class="gauge-val" id="scoreDisplay" style="color: #0f766e;">14.2</div>
+                        <div class="gauge-sub" id="riskBadge"><span class="ns-badge ns-badge-safe">🟢 Low Risk (Safe)</span></div>
+                    </div>
+                </div>
+
+                <!-- Biomarker Row -->
+                <div class="bio-mini-grid">
+                    <div class="bio-mini-item">
+                        <div class="bio-mini-label">Oxidative Stress (ROS)</div>
+                        <div class="bio-mini-val" id="rosDisplay">1.8×</div>
+                    </div>
+                    <div class="bio-mini-item">
+                        <div class="bio-mini-label">Membrane Lysis (LDH)</div>
+                        <div class="bio-mini-val" id="ldhDisplay">4.5%</div>
+                    </div>
+                    <div class="bio-mini-item">
+                        <div class="bio-mini-label">Apoptosis Rate</div>
+                        <div class="bio-mini-val" id="apopDisplay">3.2%</div>
+                    </div>
+                </div>
+
+                <!-- ISO Compliance Card -->
+                <div style="background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); border-radius: 14px; padding: 16px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase;">ISO 10993-5 Verdict</div>
+                        <div style="font-size: 15px; font-weight: 800; margin-top: 2px;" id="isoDisplay">PASS — Biocompatible</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase;">Effective IC50</div>
+                        <div style="font-size: 15px; font-weight: 800; color: #0f766e;" id="ic50Display">48.2 µg/mL</div>
+                    </div>
+                </div>
+
+                <!-- Live Radar Canvas -->
+                <div style="height: 230px; position: relative;">
+                    <canvas id="simRadarChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+let simChart = null;
+
+function selectTime(val, elem) {
+    document.querySelectorAll('.time-pill').forEach(p => p.classList.remove('active'));
+    elem.classList.add('active');
+    document.getElementById('exposureTimeInput').value = val;
+    document.getElementById('timeLabel').innerText = val + ' Hours';
+    onParamChange();
+}
+
+function initRadar() {
+    const ctx = document.getElementById('simRadarChart').getContext('2d');
+    simChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Cell Viability (%)', 'ROS Level', 'LDH Leakage', 'Apoptosis %'],
+            datasets: [
+                {
+                    label: 'Simulated Profile',
+                    data: [85, 20, 15, 10],
+                    backgroundColor: 'rgba(15, 118, 110, 0.25)',
+                    borderColor: '#0f766e',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#0f766e',
+                    pointRadius: 4
+                },
+                {
+                    label: 'ISO 10993-5 Safe Line',
+                    data: [80, 15, 10, 8],
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    borderColor: '#22c55e',
+                    borderWidth: 1.5,
+                    borderDash: [4, 4],
+                    pointBackgroundColor: '#22c55e',
+                    pointRadius: 3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    ticks: { display: false },
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    pointLabels: {
+                        font: { family: 'Inter, Arial, sans-serif', size: 11, weight: 'bold' }
+                    }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+async function onParamChange() {
+    const dose = parseFloat(document.getElementById('doseSlider').value);
+    const cellLine = document.getElementById('cellLineSelect').value;
+    const expTime = parseFloat(document.getElementById('exposureTimeInput').value);
+    const medicalApp = document.getElementById('medicalAppSelect').value;
+
+    document.getElementById('doseBadge').innerText = dose.toFixed(1) + ' µg/mL';
+
+    try {
+        const response = await fetch('/api/simulate-dose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dose: dose,
+                cell_line: cellLine,
+                exposure_time: expTime,
+                medical_application: medicalApp
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            updateUI(data);
+        }
+    } catch(err) {
+        console.error("Simulation error:", err);
+    }
+}
+
+function updateUI(data) {
+    const viab = data.viability;
+    const score = data.ml_prediction.toxicity_score;
+    const level = data.ml_prediction.toxicity_level;
+    const iso = data.ml_prediction.iso_compliance;
+    const ic50 = data.eff_ic50;
+
+    const viabEl = document.getElementById('viabDisplay');
+    viabEl.innerText = viab + '%';
+    viabEl.style.color = viab >= 80 ? '#16a34a' : (viab >= 50 ? '#d97706' : '#dc2626');
+
+    document.getElementById('scoreDisplay').innerText = score;
+    document.getElementById('rosDisplay').innerText = data.ros + '×';
+    document.getElementById('ldhDisplay').innerText = data.ldh + '%';
+    document.getElementById('apopDisplay').innerText = data.apoptosis + '%';
+    document.getElementById('ic50Display').innerText = ic50 + ' µg/mL';
+
+    const riskBadge = document.getElementById('riskBadge');
+    if (level === 'Low') {
+        riskBadge.innerHTML = '<span class="ns-badge ns-badge-safe">🟢 Low Risk (Safe)</span>';
+    } else if (level === 'Moderate') {
+        riskBadge.innerHTML = '<span class="ns-badge ns-badge-moderate">🟡 Moderate Risk</span>';
+    } else {
+        riskBadge.innerHTML = '<span class="ns-badge ns-badge-toxic">🔴 Toxic</span>';
+    }
+
+    const isoEl = document.getElementById('isoDisplay');
+    isoEl.innerText = iso;
+    isoEl.style.color = iso.includes('PASS') ? '#16a34a' : (iso.includes('CONDITIONAL') ? '#d97706' : '#dc2626');
+
+    if (simChart) {
+        const radarScores = [
+            Math.min(100, Math.max(0, viab)),
+            Math.min(100, Math.max(0, (data.ros / 10.0) * 100)),
+            Math.min(100, Math.max(0, (data.ldh / 25.0) * 100)),
+            Math.min(100, Math.max(0, (data.apoptosis / 20.0) * 100))
+        ];
+        simChart.data.datasets[0].data = radarScores;
+        simChart.update('none');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initRadar();
+    onParamChange();
+});
+</script>
+
+</body>
+</html>

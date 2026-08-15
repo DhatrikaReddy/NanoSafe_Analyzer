@@ -1,0 +1,6 @@
+Dataset Name: Nanoparticles Toxicity Dataset (Fixed Encoded)
+Original Source/Website: https://github.com/Elaheh-P/Nanoparticles_Toxicity (Originally sourced from ToxicityAssessment_MeOxNP / Kaggle)
+Dataset URL: https://raw.githubusercontent.com/Elaheh-P/Nanoparticles_Toxicity/master/Fixed_Encoded_Nanotoxicity_Dataset.csv
+Download Date: 2026-08-08
+Description: A real-world curated dataset for predicting the cytotoxicity of various metal oxide nanoparticles (including ZnO). It contains physicochemical descriptors like core size, hydrodynamic size, surface charge, and surface area, along with experimental factors like exposure time and dosage. The target variable is "class" (0 for low/no toxicity, 1 for high toxicity/cell death).
+License/Source Info: Data derived from academic studies focusing on in silico modeling for toxicity assessment of metal-oxide nanoparticles.
