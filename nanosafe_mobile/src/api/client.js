@@ -2,10 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Fallback host detection: 10.0.2.2 for Android Emulator, localhost for iOS/Web, or standard IP
-const BASE_URL = Platform.OS === 'android'
-  ? 'http://10.0.2.2:5000/mobile/v1'
-  : 'http://localhost:5000/mobile/v1';
+// Fallback host detection: local IP address for physical devices, or localhost/10.0.2.2
+const BASE_URL = 'http://172.20.10.3:5000/mobile/v1';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
