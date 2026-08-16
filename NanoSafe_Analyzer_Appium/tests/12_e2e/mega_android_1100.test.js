@@ -7,6 +7,13 @@
 const fs = require('fs');
 const path = require('path');
 
+if (typeof beforeAll === 'undefined' && typeof before === 'function') {
+    global.beforeAll = before;
+}
+if (typeof afterAll === 'undefined' && typeof after === 'function') {
+    global.afterAll = after;
+}
+
 const appResults = [];
 
 function recordMobileResult(id, category, name, description, status, duration, error = '') {
