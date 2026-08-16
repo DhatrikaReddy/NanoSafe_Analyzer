@@ -1,13 +1,15 @@
 /**
  * parseK6Summary.js
- * Parses summary.json to generate load-test-summary.md with actual performance metrics.
+ * Parses summary.json to generate load-test-summary.md and load-test-report.xlsx.
  */
 
 const fs = require('fs');
 const path = require('path');
+const XLSX = require('xlsx');
 
 const jsonPath = path.join(__dirname, '../../reports/latest/summary.json');
 const mdOutputPath = path.join(__dirname, '../../reports/latest/load-test-summary.md');
+const xlsxOutputPath = path.join(__dirname, '../../reports/latest/load-test-report.xlsx');
 
 function parseSummary() {
     console.log("Parsing Load Test Summary JSON...");
@@ -62,6 +64,24 @@ This report documents the actual load-testing results verified against the backe
 
     fs.writeFileSync(mdOutputPath, mdContent.trim(), 'utf8');
     console.log(`Load test summary markdown saved: ${mdOutputPath}`);
+
+    // Generate Excel report
+    const wb = XLSX.utils.book_new();
+    const excelRows = [
+        { "Metric Name": "Virtual Users", "Value": m.vus },
+        { "Metric Name": "Duration (s)", "Value": m.duration_s },
+        { "Metric Name": "Total Requests", "Value": m.total_requests },
+        { "Metric Name": "Requests/sec (RPS)", "Value": m.requests_per_sec },
+        { "Metric Name": "Average Response Time (ms)", "Value": m.avg_response_time_ms },
+        { "Metric Name": "Minimum Response Time (ms)", "Value": m.min_response_time_ms },
+        { "Metric Name": "Maximum Response Time (ms)", "Value": m.max_response_time_ms },
+        { "Metric Name": "P95 Response Time (ms)", "Value": m.p95_response_time_ms },
+        { "Metric Name": "Failure Rate (%)", "Value": m.failure_rate_percent }
+    ];
+    const ws = XLSX.utils.json_to_sheet(excelRows);
+    XLSX.utils.book_append_sheet(wb, ws, "Load Test Metrics");
+    XLSX.writeFile(wb, xlsxOutputPath);
+    console.log(`Load test Excel report saved: ${xlsxOutputPath}`);
 }
 
 if (require.main === module) {
@@ -69,3 +89,4 @@ if (require.main === module) {
 }
 
 module.exports = { parseSummary };
+

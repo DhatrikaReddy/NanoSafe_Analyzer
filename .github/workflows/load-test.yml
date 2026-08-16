@@ -1,6 +1,10 @@
 name: NanoSafe Load & Performance Benchmarking
 
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -61,3 +65,4 @@ jobs:
         path: |
           reports/latest/summary.json
           reports/latest/load-test-summary.md
+          reports/latest/load-test-report.xlsx
