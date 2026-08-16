@@ -9,7 +9,7 @@ on:
 
 jobs:
   android-e2e:
-    runs-on: macos-latest # macOS contains HAXM hardware acceleration for Android emulator runner
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -31,16 +31,11 @@ jobs:
         npm install
         npm install -g appium
 
-    - name: Run Appium Tests on Android Emulator
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 30
-        target: google_apis
-        arch: x86_64
-        script: |
-          chmod +x NanoSafe_Analyzer_Appium/scripts/ci_run_tests.sh
-          cd NanoSafe_Analyzer_Appium
-          ./scripts/ci_run_tests.sh
+    - name: Run Appium Tests
+      run: |
+        chmod +x NanoSafe_Analyzer_Appium/scripts/ci_run_tests.sh
+        cd NanoSafe_Analyzer_Appium
+        ./scripts/ci_run_tests.sh
 
     - name: Archive Mobile Reports
       uses: actions/upload-artifact@v4
