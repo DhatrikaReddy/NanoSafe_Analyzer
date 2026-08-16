@@ -30,6 +30,9 @@ jobs:
         DATABASE_URL: sqlite:///nanosafe.db
         WTF_CSRF_ENABLED: "false"
         PORT: 5000
+        ADMIN_USERNAME: admin
+        ADMIN_EMAIL: admin@nanosafe.local
+        ADMIN_PASSWORD: AdminPassword123!
       run: |
         python app.py &
         sleep 5

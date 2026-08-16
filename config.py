@@ -40,7 +40,7 @@ class Config:
     # ── Admin Seed ─────────────────────────────────────────
     ADMIN_USERNAME: str = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_EMAIL: str = os.environ.get("ADMIN_EMAIL", "admin@nanosafe.local")
-    ADMIN_PASSWORD: str = os.environ.get("ADMIN_PASSWORD", "Admin@NanoSafe2026!")
+    ADMIN_PASSWORD: str = os.environ.get("ADMIN_PASSWORD", "AdminPassword123!")
 
     # ── Email / SMTP ───────────────────────────────────────
     MAIL_SERVER: str = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
