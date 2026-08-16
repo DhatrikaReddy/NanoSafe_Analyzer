@@ -24,6 +24,7 @@ async function runLoadTest() {
     console.log(`Concurrency: ${CONCURRENCY} VUs | Duration: ${DURATION_MS / 1000}s...`);
 
     const latencies = [];
+    const requestSamples = [];
     let totalRequests = 0;
     let failedRequests = 0;
     const endTime = Date.now() + DURATION_MS;
@@ -41,6 +42,15 @@ async function runLoadTest() {
                 if (res.statusCode >= 400) {
                     failedRequests++;
                 }
+                if (requestSamples.length < 310) {
+                    requestSamples.push({
+                        id: `REQ-${String(requestSamples.length + 1).padStart(3, '0')}`,
+                        path: pathStr,
+                        latency_ms: duration,
+                        status: res.statusCode >= 400 ? 'Failed' : 'Passed',
+                        status_code: res.statusCode
+                    });
+                }
                 // consume response data
                 res.on('data', () => {});
                 res.on('end', () => resolve());
@@ -51,6 +61,15 @@ async function runLoadTest() {
                 latencies.push(duration);
                 totalRequests++;
                 failedRequests++;
+                if (requestSamples.length < 310) {
+                    requestSamples.push({
+                        id: `REQ-${String(requestSamples.length + 1).padStart(3, '0')}`,
+                        path: pathStr,
+                        latency_ms: duration,
+                        status: 'Failed',
+                        status_code: 500
+                    });
+                }
                 resolve();
             });
             req.end();
@@ -99,7 +118,8 @@ async function runLoadTest() {
             max_response_time_ms: max,
             p95_response_time_ms: p95,
             failure_rate_percent: parseFloat(failureRate.toFixed(2))
-        }
+        },
+        samples: requestSamples
     };
 
     // Ensure reports dir exists
