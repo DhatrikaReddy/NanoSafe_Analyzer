@@ -55,6 +55,8 @@ jobs:
         node NanoSafe_Analyzer_Backend/scripts/load-test.js
 
     - name: Parse Load Test Results
+      env:
+        NODE_PATH: ${{ github.workspace }}/NanoSafe_Analyzer_E2E/node_modules
       run: |
         node NanoSafe_Analyzer_Backend/scripts/parseK6Summary.js
 
