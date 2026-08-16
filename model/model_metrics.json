@@ -15,8 +15,8 @@
         "toxicity_regressor": {
             "algorithm": "RandomForestRegressor(n_estimators=120)",
             "testing_r2": 0.9977,
-            "testing_mae": 1.1322,
-            "testing_mse": 2.4431
+            "testing_mae": 1.1306,
+            "testing_mse": 2.4298
         },
         "risk_classifier": {
             "algorithm": "RandomForestClassifier(n_estimators=100)",
@@ -25,7 +25,7 @@
         "ic50_estimator": {
             "algorithm": "GradientBoostingRegressor(n_estimators=120)",
             "testing_r2": 0.9995,
-            "testing_mae": 0.2263
+            "testing_mae": 0.2258
         }
     }
 }

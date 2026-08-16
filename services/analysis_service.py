@@ -55,11 +55,11 @@ def compute_4pl_ic50(df_sorted):
     if ic50_linear is not None:
         return round(float(ic50_linear), 2), 1.0, 0.90, "Linear Concentration Interpolation"
     
-    # If cell viability never drops below 50%
-    if y.min() >= 50.0:
+    # If cell viability never drops to or below 50%
+    if y.min() > 50.0:
         return None, 1.0, 1.0, "IC50 Not Reached (Viability > 50% at all tested doses)"
     else:
-        return round(float(x.min()), 2), 1.0, 0.85, "High Toxicity Threshold (< minimum tested dose)"
+        return None, 1.0, 0.0, "IC50 unavailable for this dataset"
 
 def process_experiment_data(df, cell_line, static_folder, experiment_name, medical_application="general"):
     """
@@ -98,7 +98,13 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
 
     # Compute Exact 4PL IC50
     ic50_val, hill_slope, fit_r2, fit_method = compute_4pl_ic50(df_sorted)
-    ic50_display = f"{ic50_val} µg/mL" if ic50_val is not None else "Not Reached (> Maximum Tested Dose)"
+    if ic50_val is not None:
+        ic50_display = f"{ic50_val} µg/mL"
+    else:
+        if "Not Reached" in fit_method:
+            ic50_display = "Not Reached (> Maximum Tested Dose)"
+        else:
+            ic50_display = "IC50 unavailable for this dataset"
 
     # Compute Safe Usage Ceiling (Highest concentration maintaining >= 80% viability)
     safe_points = df_sorted[df_sorted["Cell Viability"] >= 80.0]

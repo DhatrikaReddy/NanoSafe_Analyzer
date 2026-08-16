@@ -497,6 +497,24 @@ def upload():
     participant_id  = request.form.get("participant_id", type=int)
     sample_id       = request.form.get("sample_id", type=int)
     
+    # ── Consent Verification checks ──
+    if sample_id:
+        target_sample = BiologicalSample.query.filter_by(id=sample_id, user_id=uid).first()
+        if target_sample and target_sample.participant:
+            status = target_sample.participant.consent_status
+            if status in ["Withdrawn", "Pending"]:
+                participants = StudyParticipant.query.filter_by(user_id=uid).order_by(StudyParticipant.created_at.desc()).all()
+                samples = BiologicalSample.query.filter_by(user_id=uid).order_by(BiologicalSample.created_at.desc()).all()
+                return render_template("upload.html", participants=participants, samples=samples, error=f"Action Blocked: Participant consent is {status}. Cannot use this sample.")
+    elif participant_id:
+        target_part = StudyParticipant.query.filter_by(id=participant_id, user_id=uid).first()
+        if target_part:
+            status = target_part.consent_status
+            if status in ["Withdrawn", "Pending"]:
+                participants = StudyParticipant.query.filter_by(user_id=uid).order_by(StudyParticipant.created_at.desc()).all()
+                samples = BiologicalSample.query.filter_by(user_id=uid).order_by(BiologicalSample.created_at.desc()).all()
+                return render_template("upload.html", participants=participants, samples=samples, error=f"Action Blocked: Participant consent is {status}. Cannot create experiments.")
+
     df = None
     file = request.files.get("file")
     csv_filename = file.filename if (file and file.filename != "") else "Manual Data Entry"
@@ -801,9 +819,19 @@ def ajax_compare():
                 v1,v2=df_s.iloc[k]["Cell Viability"],df_s.iloc[k+1]["Cell Viability"]
                 c1,c2=df_s.iloc[k]["Concentration"], df_s.iloc[k+1]["Concentration"]
                 if (v1>=50 and v2<=50) or (v1<=50 and v2>=50):
-                    ic50v=c1+((50-v1)*(c2-c1))/(v2-v1); break
-            ic50n  = round(float(ic50v),2) if ic50v is not None else round(float(df["Concentration"].median()),2)
-            ic50s  = f"{ic50n} µg/mL"
+                    if v2 != v1:
+                        ic50v=c1+((50-v1)*(c2-c1))/(v2-v1)
+                    break
+            
+            if ic50v is not None:
+                ic50n  = round(float(ic50v),2)
+                ic50s  = f"{ic50n} µg/mL"
+            else:
+                if not df_s.empty and df_s["Cell Viability"].min() >= 50.0:
+                    ic50s = "Not Reached (> Maximum Tested Dose)"
+                else:
+                    ic50s = "IC50 unavailable for this dataset"
+            
             safe_d = df[df["Cell Viability"]>=80]
             sr_num = round(float(safe_d["Concentration"].max()),2) if not safe_d.empty else round(float(df["Concentration"].min()),2)
             sr_str = f"0 - {sr_num} µg/mL"
@@ -1114,10 +1142,28 @@ def delete_history(history_id):
     if not hist:
         return jsonify({"error": "Experiment not found"}), 404
 
-    db.session.delete(hist)
+    # 1. Clean up generated files from disk (graph/plot PNG and report PDF)
+    # Target only files associated with this experiment, handle missing files gracefully
+    for file_path in [hist.pdf_path, hist.graph_path]:
+        if file_path and os.path.exists(file_path):
+            # Safe check: do not delete static assets/folders themselves or outside user workspace
+            if os.path.isfile(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    current_app.logger.error("Failed to delete file %s: %s", file_path, e)
+
+    # 2. Delete the parent Experiment to trigger DB cascades (removes Experiment, ExperimentResult, Report, and History)
+    exp = hist.experiment
+    if exp:
+        db.session.delete(exp)
+    else:
+        db.session.delete(hist)
+
     db.session.add(AuditLog(
         user_id=uid, username=current_username(),
-        action="Record Deleted", details=f"Deleted history #{history_id}",
+        action="Record Deleted", details=f"Deleted experiment and history #{history_id}",
+        ip_address=request.remote_addr or "",
     ))
     db.session.commit()
     return jsonify({"success": True, "message": "Experiment deleted successfully."})
@@ -1127,14 +1173,24 @@ def delete_history(history_id):
 @verified_required
 def download_history_report(history_id):
     uid = current_user_id()
-    hist = History.query.filter(
-        (History.id == history_id) | (History.experiment_id == history_id),
-        History.user_id == uid
-    ).first()
+    is_admin = (session.get("role") == "admin")
+    
+    if is_admin:
+        hist = History.query.filter(
+            (History.id == history_id) | (History.experiment_id == history_id)
+        ).first()
+    else:
+        hist = History.query.filter(
+            (History.id == history_id) | (History.experiment_id == history_id),
+            History.user_id == uid
+        ).first()
     
     exp = None
     if not hist:
-        exp = Experiment.query.filter_by(id=history_id, user_id=uid).first()
+        if is_admin:
+            exp = Experiment.query.filter_by(id=history_id).first()
+        else:
+            exp = Experiment.query.filter_by(id=history_id, user_id=uid).first()
         if not exp:
             flash("Experiment report not found.")
             return redirect(url_for("main.history"))

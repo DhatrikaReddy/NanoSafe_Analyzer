@@ -9,7 +9,7 @@ import secrets
 
 from flask import (
     request, render_template, redirect, url_for,
-    flash, jsonify,
+    flash, jsonify, session,
 )
 from werkzeug.security import generate_password_hash
 from collections import defaultdict
@@ -426,3 +426,115 @@ def retrain_ml_models():
         flash(f"Model retraining failed: {e}", "danger")
 
     return redirect(url_for("admin.ml_models"))
+
+
+# ────────────────────────────────────────────────────────────
+# USER DETAILS PAGE
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/users/<int:user_id>")
+@admin_required
+def user_details(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Activity counters
+    exp_count = History.query.filter_by(user_id=user.id).count()
+    report_count = Report.query.join(Experiment).filter(Experiment.user_id == user.id).count()
+    upload_count = AuditLog.query.filter_by(user_id=user.id).filter(AuditLog.action.ilike("%upload%")).count()
+    
+    # Recent activity logs for this user
+    recent_logs = AuditLog.query.filter_by(user_id=user.id).order_by(AuditLog.timestamp.desc()).limit(15).all()
+    
+    # User's experiments
+    user_experiments = History.query.filter_by(user_id=user.id).order_by(History.id.desc()).limit(20).all()
+    
+    # User's reports
+    user_reports = Report.query.join(Experiment).filter(Experiment.user_id == user.id).order_by(Report.generated_at.desc()).limit(20).all()
+    
+    # Last activity
+    last_act = AuditLog.query.filter_by(user_id=user.id).order_by(AuditLog.timestamp.desc()).first()
+    last_activity_time = last_act.timestamp.strftime("%Y-%m-%d %H:%M") if last_act else "No activity logged"
+
+    return render_template("admin/user_details.html",
+        username=current_username(),
+        user=user,
+        stats={
+            "experiments": exp_count,
+            "reports": report_count,
+            "uploads": upload_count,
+            "last_activity": last_activity_time
+        },
+        recent_logs=recent_logs,
+        experiments=[e.to_dict() for e in user_experiments],
+        reports=user_reports
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# REPORTS MONITORING
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/reports")
+@admin_required
+def reports_monitoring():
+    all_reports = Report.query.order_by(Report.generated_at.desc()).all()
+    return render_template("admin/reports.html",
+        username=current_username(),
+        reports=all_reports
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# SECURITY MONITORING
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/security")
+@admin_required
+def security_monitoring():
+    # AuditLogs related to auth failures or security
+    failed_logins = AuditLog.query.filter(
+        (AuditLog.action.ilike("%failed%")) | (AuditLog.description.ilike("%failed%"))
+    ).order_by(AuditLog.timestamp.desc()).limit(30).all()
+    
+    role_changes = AuditLog.query.filter(
+        (AuditLog.action.ilike("%role%")) | (AuditLog.description.ilike("%role%"))
+    ).order_by(AuditLog.timestamp.desc()).limit(30).all()
+    
+    password_changes = AuditLog.query.filter(
+        (AuditLog.action.ilike("%password%")) | (AuditLog.description.ilike("%password%"))
+    ).order_by(AuditLog.timestamp.desc()).limit(30).all()
+
+    suspicious_events = AuditLog.query.filter(
+        (AuditLog.action.ilike("%suspicious%")) | (AuditLog.description.ilike("%suspicious%")) | (AuditLog.action.ilike("%unauthorized%"))
+    ).order_by(AuditLog.timestamp.desc()).limit(30).all()
+
+    return render_template("admin/security.html",
+        username=current_username(),
+        failed_logins=failed_logins,
+        role_changes=role_changes,
+        password_changes=password_changes,
+        suspicious_events=suspicious_events
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# ANALYTICS
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/analytics")
+@admin_required
+def analytics_view():
+    return render_template("admin/analytics.html",
+        username=current_username()
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# ADMIN PROFILE
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/profile")
+@admin_required
+def admin_profile():
+    admin_user = User.query.get(current_user_id())
+    admin_actions = AuditLog.query.filter_by(user_id=admin_user.id).order_by(AuditLog.timestamp.desc()).limit(20).all()
+    return render_template("admin/profile.html",
+        username=current_username(),
+        user=admin_user,
+        logs=admin_actions
+    )

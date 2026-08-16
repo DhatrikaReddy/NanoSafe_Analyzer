@@ -99,11 +99,11 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="form-grid">
-                    <!-- Patient Full Name -->
+                    <!-- Patient Full Name (Optional for Anonymity) -->
                     <div class="form-group">
-                        <label>Patient / Participant Full Name <span class="required-star">*</span></label>
-                        <input type="text" name="name" required
-                               placeholder="e.g. Johnathan Doe, Sarah Connor"
+                        <label>Patient / Participant Name (Optional for Anonymity)</label>
+                        <input type="text" name="name"
+                               placeholder="e.g. Patient 104, Sub-009 (Leave empty or pseudonymize for privacy)"
                                value="{% if action=='edit' %}{{ participant.name or '' }}{% else %}{{ form_data.get('name','') }}{% endif %}">
                     </div>
 

@@ -132,13 +132,15 @@ class EmailVerificationToken(db.Model):
     otp_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
 
     user = db.relationship("User", backref=db.backref("verification_tokens", lazy="dynamic", cascade="all, delete-orphan"))
 
-    def __init__(self, user_id: int, otp_hash: str, expires_at):
+    def __init__(self, user_id: int, otp_hash: str, expires_at, attempts=0):
         self.user_id = user_id
         self.otp_hash = otp_hash
         self.expires_at = expires_at
+        self.attempts = attempts
 
     def __repr__(self):
         return f"<EmailVerificationToken user={self.user_id}>"
@@ -470,24 +472,113 @@ class AuditLog(db.Model):
     __tablename__ = "audit_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     username = db.Column(db.String(80), default="system")
-    action = db.Column(db.String(100), nullable=False)
-    details = db.Column(db.Text, default="")
+    action = db.Column(db.String(100), nullable=False, index=True)
+    module = db.Column(db.String(100), default="")
+    resource_id = db.Column(db.String(100), default="")
+    description = db.Column(db.Text, default="")
+    status = db.Column(db.String(50), default="")
     ip_address = db.Column(db.String(45), default="")
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
 
-    def __init__(self, user_id=None, username="system", action="", details="", ip_address="", timestamp=None):
+    def __init__(self, user_id=None, username="system", action="", details="", description="", module="", resource_id="", status="", ip_address="", timestamp=None):
         self.user_id = user_id
         self.username = username
         self.action = action
-        self.details = details
+        self.resource_id = resource_id
+        self.description = description or details
         self.ip_address = ip_address
         if timestamp:
             self.timestamp = timestamp
 
+        # Auto-classify module if not provided
+        if not module:
+            action_lower = action.lower()
+            if any(x in action_lower for x in ["login", "logout", "verified", "register", "password", "otp", "profile"]):
+                module = "Authentication"
+            elif any(x in action_lower for x in ["experiment", "upload", "import"]):
+                module = "Experiments"
+            elif any(x in action_lower for x in ["comparison", "compare", "ic50", "toxicity"]):
+                module = "Analysis"
+            elif any(x in action_lower for x in ["report", "pdf"]):
+                module = "Reports"
+            elif any(x in action_lower for x in ["participant", "consent"]):
+                module = "Participants"
+            elif any(x in action_lower for x in ["sample", "vial"]):
+                module = "Samples"
+            elif any(x in action_lower for x in ["admin", "role", "deactivate", "activate", "clear user", "delete user"]):
+                module = "Administration"
+            else:
+                module = "System"
+        self.module = module
+
+        # Auto-classify status if not provided
+        if not status:
+            details_lower = (details or description or "").lower()
+            if any(x in details_lower for x in ["failed", "error", "invalid", "deny", "danger", "incorrect", "locked"]):
+                status = "Failed"
+            else:
+                status = "Success"
+        self.status = status
+
+    @property
+    def details(self):
+        return self.description
+
     def __repr__(self):
         return f"<AuditLog [{self.action}] by {self.username}>"
+
+
+def log_audit_event(action, module, description, status, resource_id=None, user_id=None, username=None):
+    """
+    Log an audit event with automated request IP, session user ID, and username resolving.
+    Committed immediately to ensure persistence.
+    """
+    from flask import session, request
+    
+    # Try resolving user context
+    resolved_user_id = user_id
+    resolved_username = username
+    
+    # If not explicitly provided, try getting from flask session
+    try:
+        if not resolved_user_id and "user_id" in session:
+            resolved_user_id = session["user_id"]
+        if not resolved_username and "username" in session:
+            resolved_username = session["username"]
+    except Exception:
+        pass
+        
+    if not resolved_username:
+        resolved_username = "system"
+        
+    # Try resolving client IP address
+    ip = ""
+    try:
+        if request:
+            ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+            if "," in ip:
+                ip = ip.split(",")[0].strip()
+    except Exception:
+        pass
+        
+    try:
+        log_entry = AuditLog(
+            user_id=resolved_user_id,
+            username=resolved_username,
+            action=action,
+            module=module,
+            resource_id=str(resource_id) if resource_id is not None else "",
+            description=description,
+            status=status,
+            ip_address=ip
+        )
+        db.session.add(log_entry)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"[AuditLog Error] Failed to write log: {e}")
 
 
 # ============================================================

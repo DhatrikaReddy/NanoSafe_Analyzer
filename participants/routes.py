@@ -402,6 +402,29 @@ def participant_edit(participant_pk):
         participant.study_group = study_group or None
         participant.medical_history = medical_history
         participant.consent_status = consent_status
+        if consent_status == "Withdrawn":
+            from models import BiologicalSample, SampleExperimentLink
+            samples = BiologicalSample.query.filter_by(participant_fk=participant.id).all()
+            for s in samples:
+                s.sample_status = "Archived"
+                if "Consent Withdrawn" not in (s.notes or ""):
+                    s.notes = (s.notes or "") + " [Consent Withdrawn]"
+                
+                links = SampleExperimentLink.query.filter_by(sample_id=s.id).all()
+                for link in links:
+                    exp = link.experiment
+                    if exp:
+                        if "Consent Withdrawn" not in (exp.sample_name or ""):
+                            exp.sample_name += " [Consent Withdrawn]"
+                        if exp.result:
+                            if "consent withdrawn" not in (exp.result.interpretation or "").lower():
+                                exp.result.interpretation = (exp.result.interpretation or "") + " [Warning: Participant consent withdrawn for this sample]"
+                        if exp.history:
+                            if "Consent Withdrawn" not in (exp.history.sample_name or ""):
+                                exp.history.sample_name += " [Consent Withdrawn]"
+                            if "consent withdrawn" not in (exp.history.interpretation or "").lower():
+                                exp.history.interpretation = (exp.history.interpretation or "") + " [Warning: Participant consent withdrawn for this sample]"
+
         participant.consent_date = consent_date
         participant.research_notes = research_notes
 

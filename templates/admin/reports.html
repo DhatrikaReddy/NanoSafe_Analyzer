@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <title>Reports Monitoring - Admin</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        .log-table { width: 100%; background: var(--ns-bg-card); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--ns-border-main); }
+        .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
+        .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); vertical-align: middle; padding: 10px 14px; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge.green { background: #dcfce3; color: #166534; }
+        .badge.gray { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .action-btn { background: none; border: 1px solid var(--ns-border-input); color: var(--ns-text-main); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin: 2px; font-weight: 600; text-decoration: none; display: inline-block; }
+        .action-btn:hover { background: var(--ns-bg-hover); }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">Reports Monitoring</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Monitor and download generated experiment reports</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" style="margin-bottom: 20px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Report ID</th>
+                    <th>Experiment ID</th>
+                    <th>Created By</th>
+                    <th>Format</th>
+                    <th>Created At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td style="font-weight: bold;">RPT-{{ report.id }}</td>
+                    <td>EXP-{{ report.experiment_id }}</td>
+                    <td style="font-weight: 600;">{{ report.experiment.owner.username if (report.experiment and report.experiment.owner) else 'System' }}</td>
+                    <td><span class="badge gray">PDF</span></td>
+                    <td style="color: var(--ns-text-muted);">{{ report.generated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><span class="badge green">Generated</span></td>
+                    <td>
+                        <a href="{{ url_for('main.download_history_report', history_id=report.experiment_id) }}" class="action-btn">📥 Download PDF</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--ns-text-muted); padding: 30px;">No reports generated yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</div>
+
+</body>
+</html>

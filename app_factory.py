@@ -7,7 +7,7 @@ Creates and configures the Flask application with all extensions and blueprints.
 import logging
 from datetime import datetime
 
-from flask import Flask
+from flask import Flask, request
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -30,11 +30,19 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Disable rate limits in debug/testing mode
+    if app.config.get("DEBUG") or app.config.get("TESTING"):
+        app.config["RATELIMIT_ENABLED"] = False
+
     # ── Initialise Extensions ──────────────────────────────
     db.init_app(app)
     mail.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+
+    @limiter.request_filter
+    def bypass_limiter_for_testing_and_localhost():
+        return app.config.get("TESTING", False) or request.remote_addr in ["127.0.0.1", "::1"]
 
 
     from mobile import mobile_bp
@@ -146,6 +154,14 @@ def _auto_migrate_schema():
                 if "consent_updated_at" not in cols:
                     conn.exec_driver_sql("ALTER TABLE study_participants ADD COLUMN consent_updated_at DATETIME")
                     logger.info("Auto-migrated: added consent_updated_at column to study_participants")
+                
+                # Check email_verification_tokens table columns
+                res_tok = conn.exec_driver_sql("PRAGMA table_info(email_verification_tokens)").fetchall()
+                cols_tok = [r[1] for r in res_tok] if res_tok else []
+                if "attempts" not in cols_tok:
+                    conn.exec_driver_sql("ALTER TABLE email_verification_tokens ADD COLUMN attempts INTEGER DEFAULT 0 NOT NULL")
+                    logger.info("Auto-migrated: added attempts column to email_verification_tokens")
+                
                 conn.commit()
     except Exception as e:
         logger.warning("Auto-migration notice: %s", e)

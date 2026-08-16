@@ -4,12 +4,61 @@
         <div class="ns-brand-logo">🧬</div>
         <div class="ns-brand-text">
             <span class="ns-brand-title">NanoSafe</span>
-            <span class="ns-brand-sub">Biomedical Analyzer</span>
+            <span class="ns-brand-sub">{% if request.blueprint == 'admin' %}Administrator{% else %}Biomedical Analyzer{% endif %}</span>
         </div>
     </div>
 
     <nav class="ns-sidebar-nav">
-        <!-- 1. Analytical Suite -->
+        {% if request.blueprint == 'admin' %}
+        <!-- Admin Dashboard Section -->
+        <div class="ns-nav-section-title">ADMINISTRATOR SYSTEM</div>
+        <div class="ns-nav-group">
+            <a href="{{ url_for('admin.dashboard') }}" class="ns-nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <span class="ns-nav-icon">📊</span>
+                <span class="ns-nav-label">Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="ns-nav-item {% if request.endpoint in ['admin.users', 'admin.user_details'] %}active{% endif %}">
+                <span class="ns-nav-icon">👥</span>
+                <span class="ns-nav-label">Users</span>
+            </a>
+            <a href="{{ url_for('admin.audit_log') }}" class="ns-nav-item {% if request.endpoint == 'admin.audit_log' %}active{% endif %}">
+                <span class="ns-nav-icon">📋</span>
+                <span class="ns-nav-label">Activity Logs</span>
+            </a>
+            <a href="{{ url_for('admin.all_experiments') }}" class="ns-nav-item {% if request.endpoint == 'admin.all_experiments' %}active{% endif %}">
+                <span class="ns-nav-icon">🧪</span>
+                <span class="ns-nav-label">Experiments</span>
+            </a>
+            <a href="{{ url_for('admin.reports_monitoring') }}" class="ns-nav-item {% if request.endpoint == 'admin.reports_monitoring' %}active{% endif %}">
+                <span class="ns-nav-icon">📄</span>
+                <span class="ns-nav-label">Reports</span>
+            </a>
+            <a href="{{ url_for('admin.analytics_view') }}" class="ns-nav-item {% if request.endpoint == 'admin.analytics_view' %}active{% endif %}">
+                <span class="ns-nav-icon">📈</span>
+                <span class="ns-nav-label">Analytics</span>
+            </a>
+            <a href="{{ url_for('admin.security_monitoring') }}" class="ns-nav-item {% if request.endpoint == 'admin.security_monitoring' %}active{% endif %}">
+                <span class="ns-nav-icon">🛡️</span>
+                <span class="ns-nav-label">Security</span>
+            </a>
+            <a href="{{ url_for('admin.ml_models') }}" class="ns-nav-item {% if request.endpoint == 'admin.ml_models' %}active{% endif %}">
+                <span class="ns-nav-icon">🤖</span>
+                <span class="ns-nav-label">ML Diagnostics</span>
+            </a>
+            <a href="{{ url_for('admin.admin_profile') }}" class="ns-nav-item {% if request.endpoint == 'admin.admin_profile' %}active{% endif %}">
+                <span class="ns-nav-icon">👤</span>
+                <span class="ns-nav-label">Admin Profile</span>
+            </a>
+        </div>
+        <div class="ns-nav-divider"></div>
+        <div class="ns-nav-group">
+            <a href="{{ url_for('main.home') }}" class="ns-nav-item">
+                <span class="ns-nav-icon">🔄</span>
+                <span class="ns-nav-label">Go to Research</span>
+            </a>
+        </div>
+        {% else %}
+        <!-- 1. Laboratory Experiments -->
         <div class="ns-nav-section-title">LABORATORY EXPERIMENTS</div>
         <div class="ns-nav-group">
             <a href="{{ url_for('main.home') }}" class="ns-nav-item {% if request.endpoint == 'main.home' %}active{% endif %}">
@@ -40,7 +89,7 @@
 
         <div class="ns-nav-divider"></div>
 
-        <!-- 2. Simulation & Standards -->
+        <!-- 2. Simulation & Clinical -->
         <div class="ns-nav-section-title">SIMULATION &amp; CLINICAL</div>
         <div class="ns-nav-group">
             <a href="{{ url_for('main.simulator') }}" class="ns-nav-item {% if request.endpoint == 'main.simulator' %}active{% endif %}">
@@ -75,16 +124,13 @@
                 <span class="ns-nav-label">Security &amp; Auth</span>
             </a>
             {% if session.get('role') == 'admin' %}
-            <a href="{{ url_for('admin.dashboard') }}" class="ns-nav-item {% if request.blueprint == 'admin' and request.endpoint != 'admin.ml_models' %}active{% endif %}">
+            <a href="{{ url_for('admin.dashboard') }}" class="ns-nav-item">
                 <span class="ns-nav-icon">🛡️</span>
                 <span class="ns-nav-label">Admin Console</span>
             </a>
-            <a href="{{ url_for('admin.ml_models') }}" class="ns-nav-item {% if request.endpoint == 'admin.ml_models' %}active{% endif %}">
-                <span class="ns-nav-icon">🤖</span>
-                <span class="ns-nav-label">ML Diagnostics</span>
-            </a>
             {% endif %}
         </div>
+        {% endif %}
 
         <div class="ns-nav-divider"></div>
 

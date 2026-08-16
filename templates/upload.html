@@ -350,6 +350,9 @@
                 {% endfor %}
               {% endif %}
             {% endwith %}
+            {% if error %}
+              <div class="ns-flash danger" style="margin-bottom: 20px; padding: 14px 18px; border-radius: 10px; font-size: 14px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">{{ error }}</div>
+            {% endif %}
 
             <form action="{{ url_for('main.upload') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

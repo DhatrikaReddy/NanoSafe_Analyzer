@@ -1,39 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <script>
   if (localStorage.getItem('ns_theme') === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
   }
 </script>
-
-    <title>User Management - Admin</title>
+    <title>User Accounts - Admin</title>
     <link rel="stylesheet" href="/static/style.css?v=5">
     <style>
-        .admin-subnav {
-            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
-            background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px;
-            border: 1px solid var(--ns-border-main);
-        }
-        .admin-subnav a {
-            color: var(--ns-text-muted); text-decoration: none; padding: 7px 14px;
-            border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.15s;
-        }
-        .admin-subnav a:hover { background: var(--ns-bg-hover); color: var(--ns-text-main); }
-        .admin-subnav a.active { background: #f0fdfa; color: #0f766e; font-weight: 700; }
-
         .log-table { width: 100%; background: var(--ns-bg-card); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--ns-border-main); }
         .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
         .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); vertical-align: middle; padding: 10px 14px; }
-        
         .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
         .badge.green { background: #dcfce3; color: #166534; }
         .badge.red { background: #fee2e2; color: #b91c1c; }
         .badge.gray { background: var(--ns-bg-hover); color: var(--ns-text-main); }
         .badge.blue { background: #dbeafe; color: #1e40af; }
-        
-        .action-btn { background: none; border: 1px solid var(--ns-border-input); color: var(--ns-text-main); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin: 2px; font-weight: 600; }
+        .action-btn { background: none; border: 1px solid var(--ns-border-input); color: var(--ns-text-main); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; margin: 2px; font-weight: 600; text-decoration: none; display: inline-block; }
         .action-btn:hover { background: var(--ns-bg-hover); }
         .action-btn.danger { color: #ef4444; border-color: #fca5a5; }
         .action-btn.danger:hover { background: #fef2f2; }
@@ -45,73 +29,73 @@
     {% include '_sidebar.html' %}
 
     <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
-
-        <div class="admin-subnav">
-            <a href="{{ url_for('admin.dashboard') }}">📊 Overview</a>
-            <a href="{{ url_for('admin.users') }}" class="active">👥 User Accounts</a>
-            <a href="{{ url_for('admin.all_experiments') }}">🧪 All Experiments</a>
-            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
-            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
-            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">User Accounts Management</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Manage researcher credentials, roles, and security authorization states</p>
+    
+        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+            <form method="GET" action="{{ url_for('admin.users') }}" style="display: flex; gap: 10px; flex-grow: 1;">
+                <input type="text" name="search" placeholder="Search by name or email..." value="{{ search or '' }}" style="max-width: 300px; margin-bottom: 0;">
+                <button type="submit" class="action-btn">🔍 Search</button>
+                {% if search %}
+                <a href="{{ url_for('admin.users') }}"><button type="button" class="action-btn">Clear</button></a>
+                {% endif %}
+            </form>
         </div>
 
-        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">User Management</h1>
-        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Manage researcher accounts, permissions, and security states</p>
-    
-    <form method="GET" action="{{ url_for('admin.users') }}" style="margin: 15px 0; display: flex; gap: 10px;">
-        <input type="text" name="search" placeholder="Search by username or email..." value="{{ search or '' }}" style="max-width: 300px;">
-        <button type="submit" class="action-btn">🔍 Search</button>
-        {% if search %}
-        <a href="{{ url_for('admin.users') }}"><button type="button" class="action-btn">Clear</button></a>
-        {% endif %}
-    </form>
-
-    <table class="log-table" style="margin-top: 10px;">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Experiments</th>
-                <th>Reports</th>
-                <th>Registered</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td style="color: var(--ns-text-muted);">#{{ user.id }}</td>
-                <td style="font-weight: bold;">{{ user.username }}</td>
-                <td>{{ user.email or 'N/A' }}</td>
-                <td>
-                    <span class="badge {% if user.is_admin %}blue{% else %}gray{% endif %}">{{ user.role.title() }}</span>
-                </td>
-                <td>
-                    <span class="badge {% if user.is_active %}green{% else %}red{% endif %}" id="status-active-{{ user.id }}">
-                        {{ 'Active' if user.is_active else 'Disabled' }}
-                    </span>
-                    <span class="badge {% if user.is_verified %}green{% else %}gray{% endif %}" id="status-ver-{{ user.id }}" style="margin-left: 5px;">
-                        {{ 'Verified' if user.is_verified else 'Unverified' }}
-                    </span>
-                </td>
-                <td style="font-weight: bold; text-align: center;">{{ user_stats[user.id].experiments }}</td>
-                <td style="font-weight: bold; text-align: center;">{{ user_stats[user.id].reports }}</td>
-                <td style="color: var(--ns-text-muted);">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                <td>
-                    <a href="{{ url_for('admin.all_experiments', user_id=user.id) }}"><button type="button" class="action-btn">View Exps</button></a>
-                    <button type="button" class="action-btn btn-toggle-active" data-user-id="{{ user.id }}">Toggle Active</button>
-                    <button type="button" class="action-btn btn-toggle-verified" data-user-id="{{ user.id }}">Toggle Verified</button>
-                    <button type="button" class="action-btn btn-reset-pw" data-user-id="{{ user.id }}">Reset PW</button>
-                    <button type="button" class="action-btn danger btn-delete-user" data-user-id="{{ user.id }}" data-username="{{ user.username }}">Delete</button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Verified</th>
+                    <th>Registered</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('admin.user_details', user_id=user.id) }}" style="font-weight: bold; color: #0f766e; text-decoration: none;">
+                            {{ user.full_name or user.username }}
+                        </a>
+                        <div style="font-size: 11px; color: var(--ns-text-muted);">username: {{ user.username }}</div>
+                    </td>
+                    <td>{{ user.email or 'N/A' }}</td>
+                    <td>
+                        <span class="badge {% if user.is_admin %}blue{% else %}gray{% endif %}">{{ user.role.title() }}</span>
+                    </td>
+                    <td>
+                        <span class="badge {% if user.is_active %}green{% else %}red{% endif %}">
+                            {{ 'Active' if user.is_active else 'Deactivated' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if user.is_verified %}green{% else %}gray{% endif %}">
+                            {{ 'Verified' if user.is_verified else 'Unverified' }}
+                        </span>
+                    </td>
+                    <td style="color: var(--ns-text-muted);">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="color: var(--ns-text-muted);">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Never' }}</td>
+                    <td>
+                        <button type="button" class="action-btn btn-toggle-active" data-user-id="{{ user.id }}">{{ 'Deactivate' if user.is_active else 'Activate' }}</button>
+                        <button type="button" class="action-btn btn-toggle-verified" data-user-id="{{ user.id }}">Verify/Unverify</button>
+                        
+                        <!-- Role selection form -->
+                        <select class="role-selector" data-user-id="{{ user.id }}" style="padding: 4px 8px; border-radius: 6px; font-size: 12px; max-width: 100px;">
+                            <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                        </select>
+                        
+                        <button type="button" class="action-btn danger btn-delete-user" data-user-id="{{ user.id }}" data-username="{{ user.username }}">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </main>
 </div>
 
@@ -124,49 +108,61 @@
             toggleActive(target.dataset.userId);
         } else if (target.classList.contains('btn-toggle-verified')) {
             toggleVerified(target.dataset.userId);
-        } else if (target.classList.contains('btn-reset-pw')) {
-            resetPassword(target.dataset.userId);
         } else if (target.classList.contains('btn-delete-user')) {
             deleteUser(target.dataset.userId, target.dataset.username);
         }
     });
 
+    document.querySelectorAll('.role-selector').forEach(selector => {
+        selector.addEventListener('change', function() {
+            changeRole(this.dataset.userId, this.value);
+        });
+    });
+
     async function toggleActive(userId) {
-        if(!confirm('Toggle active status for this user?')) return;
+        if(!confirm('Toggle account active status for this researcher?')) return;
         const res = await fetch(`/admin/users/${userId}/toggle-active`, {
             method: 'POST',
             headers: {'X-CSRFToken': csrfToken}
         });
         const data = await res.json();
         if(data.success) location.reload();
-        else alert(data.error);
+        else alert(data.error || 'Failed to update active state');
     }
 
     async function toggleVerified(userId) {
-        if(!confirm('Toggle verification status for this user?')) return;
+        if(!confirm('Toggle email verified status for this researcher?')) return;
         const res = await fetch(`/admin/users/${userId}/toggle-verified`, {
             method: 'POST',
             headers: {'X-CSRFToken': csrfToken}
         });
         const data = await res.json();
         if(data.success) location.reload();
-        else alert(data.error);
+        else alert(data.error || 'Failed to update verified state');
     }
 
-    async function resetPassword(userId) {
-        if(!confirm('Are you sure you want to force reset this user\'s password?')) return;
-        const res = await fetch(`/admin/users/${userId}/reset-password`, {
+    async function changeRole(userId, newRole) {
+        if(!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+            location.reload();
+            return;
+        }
+        const formData = new FormData();
+        formData.append('role', newRole);
+        const res = await fetch(`/admin/users/${userId}/change-role`, {
             method: 'POST',
-            headers: {'X-CSRFToken': csrfToken}
+            headers: {'X-CSRFToken': csrfToken},
+            body: formData
         });
         const data = await res.json();
-        if(data.success) {
-            alert(data.message);
-        } else alert(data.error);
+        if(data.success) location.reload();
+        else {
+            alert(data.error || 'Failed to change role');
+            location.reload();
+        }
     }
 
     async function deleteUser(userId, username) {
-        if(!confirm(`WARNING: Are you sure you want to completely delete user "${username}" and all their associated data? This cannot be undone.`)) return;
+        if(!confirm(`WARNING: Are you sure you want to completely delete user "${username}" and all their associated experiments and reports? This action cannot be undone.`)) return;
         const res = await fetch(`/admin/users/${userId}/delete`, {
             method: 'POST',
             headers: {'X-CSRFToken': csrfToken}

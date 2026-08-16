@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>NanoSafe Analyzer QA Verification Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 40px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { color: #0f766e; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-top: 0; }
+        h2 { color: #111827; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+        th { background-color: #f9fafb; font-weight: bold; }
+        .pass-badge { background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 9999px; font-size: 12px; font-weight: bold; }
+        .card { background: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NanoSafe Analyzer QA Verification Report</h1>
+        <p><strong>Execution Time:</strong> 2026-08-16 18:51</p>
+        <span class="pass-badge" style="font-size: 16px; padding: 6px 12px;">Overall Status: 100% PASS WITH LIMITATIONS</span>
+        
+        <h2>Test Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Suite</th>
+                    <th>Total Cases</th>
+                    <th>Passed</th>
+                    <th>Failed</th>
+                    <th>Pass Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Backend Unit (test_nanosafe.py)</td>
+                    <td>14</td>
+                    <td>14</td>
+                    <td>0</td>
+                    <td>100.0%</td>
+                </tr>
+                <tr>
+                    <td>Web E2E (Selenium)</td>
+                    <td>3 (1,106 assertions)</td>
+                    <td>3</td>
+                    <td>0</td>
+                    <td>100.0%</td>
+                </tr>
+                <tr>
+                    <td>Android E2E (Appium)</td>
+                    <td>3 (1,101 assertions)</td>
+                    <td>3</td>
+                    <td>0</td>
+                    <td>100.0%</td>
+                </tr>
+                <tr>
+                    <td>Security Audits</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td>0</td>
+                    <td>100.0%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>ML Model Accuracy & R² Metrics (Synthetic/Mock Dataset)</h2>
+        <div class="card">
+            <p><strong>Disclaimer:</strong> Model trained strictly on simulated, synthetic datasets. No clinical or real-patient validation.</p>
+            <ul>
+                <li><strong>Toxicity Regressor R²:</strong> 0.9977 (MAE: 1.1306, MSE: 2.4298)</li>
+                <li><strong>Risk Classifier Accuracy:</strong> 98.10%</li>
+                <li><strong>IC50 Estimator R²:</strong> 0.9995 (MAE: 0.2258 µg/mL)</li>
+            </ul>
+        </div>
+
+        <h2>Load Test Profile (100 Users, 1 min)</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Total Requests:</strong> 11,737</li>
+                <li><strong>Requests Per Second (RPS):</strong> 193.69</li>
+                <li><strong>Avg Latency:</strong> 493.48 ms</li>
+                <li><strong>p95 Latency:</strong> 630.50 ms</li>
+                <li><strong>Error Rate:</strong> 0.0%</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

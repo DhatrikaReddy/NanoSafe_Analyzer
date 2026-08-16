@@ -111,10 +111,23 @@ def api_verify_otp():
 
     tokens = EmailVerificationToken.query.filter_by(user_id=user.id).all()
     valid_token = None
+    locked = False
     for t in tokens:
-        if t.expires_at > datetime.utcnow() and verify_password_bcrypt(otp, t.otp_hash):
-            valid_token = t
-            break
+        if t.expires_at > datetime.utcnow():
+            if t.attempts >= 5:
+                locked = True
+                continue
+            if verify_password_bcrypt(otp, t.otp_hash):
+                valid_token = t
+                break
+            else:
+                t.attempts += 1
+                db.session.commit()
+                if t.attempts >= 5:
+                    locked = True
+
+    if locked:
+        return jsonify({"error": "Too many incorrect attempts. This verification code has been locked. Please request a new OTP."}), 429
 
     if not valid_token:
         return jsonify({"error": "Invalid or expired verification code."}), 400

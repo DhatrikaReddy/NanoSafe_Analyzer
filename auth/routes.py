@@ -58,21 +58,39 @@ def verify_otp():
         return redirect(url_for("admin.dashboard") if user.is_admin else url_for("main.home"))
 
     if request.method == "GET":
-        # Show dev OTP on screen if no email configured
-        dev_otp = session.pop("dev_otp", None)
+        # Show dev OTP on screen only in development mode
+        dev_otp = None
+        is_dev = current_app.config.get("DEBUG") or not current_app.config.get("MAIL_USERNAME")
+        if is_dev:
+            dev_otp = session.pop("dev_otp", None)
+        else:
+            session.pop("dev_otp", None)
         return render_template("auth/verify_otp.html", email=user.email, error=None, dev_otp=dev_otp)
 
     otp = request.form.get("otp", "").strip()
     if not otp:
         return render_template("auth/verify_otp.html", email=user.email, error="Please enter the verification code.", dev_otp=None)
 
-    # Find valid token
+    # Find valid token and rate-limit incorrect attempts
     tokens = EmailVerificationToken.query.filter_by(user_id=user.id).all()
     valid_token = None
+    locked = False
     for t in tokens:
-        if t.expires_at > datetime.utcnow() and verify_password_bcrypt(otp, t.otp_hash):
-            valid_token = t
-            break
+        if t.expires_at > datetime.utcnow():
+            if t.attempts >= 5:
+                locked = True
+                continue
+            if verify_password_bcrypt(otp, t.otp_hash):
+                valid_token = t
+                break
+            else:
+                t.attempts += 1
+                db.session.commit()
+                if t.attempts >= 5:
+                    locked = True
+
+    if locked:
+        return render_template("auth/verify_otp.html", email=user.email, error="Too many incorrect attempts. This verification code has been locked. Please click 'Resend OTP' to request a new code.", dev_otp=None)
 
     if not valid_token:
         return render_template("auth/verify_otp.html", email=user.email, error="Invalid or expired verification code. Please try again.", dev_otp=None)
@@ -154,7 +172,12 @@ def verify_login_otp():
         return redirect(url_for("auth.login"))
 
     if request.method == "GET":
-        dev_otp = session.pop("dev_login_otp", None)
+        dev_otp = None
+        is_dev = current_app.config.get("DEBUG") or not current_app.config.get("MAIL_USERNAME")
+        if is_dev:
+            dev_otp = session.pop("dev_login_otp", None)
+        else:
+            session.pop("dev_login_otp", None)
         return render_template("auth/verify_login_otp.html", email=user.email, error=None, dev_otp=dev_otp)
 
     otp = request.form.get("otp", "").strip()
@@ -163,10 +186,23 @@ def verify_login_otp():
 
     tokens = EmailVerificationToken.query.filter_by(user_id=user.id).all()
     valid_token = None
+    locked = False
     for t in tokens:
-        if t.expires_at > datetime.utcnow() and verify_password_bcrypt(otp, t.otp_hash):
-            valid_token = t
-            break
+        if t.expires_at > datetime.utcnow():
+            if t.attempts >= 5:
+                locked = True
+                continue
+            if verify_password_bcrypt(otp, t.otp_hash):
+                valid_token = t
+                break
+            else:
+                t.attempts += 1
+                db.session.commit()
+                if t.attempts >= 5:
+                    locked = True
+
+    if locked:
+        return render_template("auth/verify_login_otp.html", email=user.email, error="Too many incorrect attempts. This verification code has been locked. Please click 'Resend OTP' to request a new code.")
 
     if not valid_token:
         return render_template("auth/verify_login_otp.html", email=user.email, error="Invalid or expired verification code.")
@@ -286,11 +322,21 @@ def register():
         db.session.add(token)
         db.session.commit()
 
-        # Send OTP — if email fails, abort registration with error
+        # Send OTP — if email fails, do not abort/rollback registration
         email_sent = send_otp_email(user.email, otp_code)
+        
+        # Check if we are in development/offline mode (DEBUG is True or no SMTP configured)
+        is_dev = current_app.config.get("DEBUG") or not current_app.config.get("MAIL_USERNAME")
         if not email_sent:
-            db.session.rollback()
-            return render_template("auth/register.html", error="Failed to send verification email. Please check your email address and try again.")
+            if is_dev:
+                session["dev_otp"] = otp_code
+                current_app.logger.info("Development Mode: Generated OTP %s for %s", otp_code, user.username)
+            else:
+                flash("SMTP service unavailable. Please click 'Resend OTP' once the email server is online.", "warning")
+        else:
+            if is_dev:
+                session["dev_otp"] = otp_code
+                current_app.logger.info("Development Mode (Email Sent): Generated OTP %s for %s", otp_code, user.username)
 
         # Establish an unverified session
         _set_session(user)

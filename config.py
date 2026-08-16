@@ -38,8 +38,8 @@ class Config:
     }
 
     # ── Admin Seed ─────────────────────────────────────────
-    ADMIN_USERNAME: str = os.environ.get("ADMIN_USERNAME", "admin")
-    ADMIN_EMAIL: str = os.environ.get("ADMIN_EMAIL", "admin@nanosafe.local")
+    ADMIN_USERNAME: str = os.environ.get("ADMIN_USERNAME", "dhatrikaakepati")
+    ADMIN_EMAIL: str = os.environ.get("ADMIN_EMAIL", "dhatrikaakepati@gmail.com")
     ADMIN_PASSWORD: str = os.environ.get("ADMIN_PASSWORD", "AdminPassword123!")
 
     # ── Email / SMTP ───────────────────────────────────────
@@ -65,7 +65,7 @@ class Config:
     # ── Session Security ───────────────────────────────────
     SESSION_COOKIE_HTTPONLY: bool = True
     SESSION_COOKIE_SAMESITE: str = "Lax"
-    SESSION_COOKIE_SECURE: bool = not (os.environ.get("DEBUG", "false").lower() == "true")
+    SESSION_COOKIE_SECURE: bool = not (os.environ.get("DEBUG", "false").lower() == "true") and not (os.environ.get("FLASK_ENV", "production") == "development") and not (os.environ.get("TESTING", "false").lower() == "true")
 
     # ── JWT ────────────────────────────────────────────────
     JWT_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY", SECRET_KEY)

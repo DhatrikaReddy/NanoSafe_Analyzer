@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <title>Administrator Profile - Admin</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        .profile-container { display: flex; gap: 30px; margin-bottom: 30px; flex-wrap: wrap; }
+        .card { background: var(--ns-bg-card); border-radius: 12px; border: 1px solid var(--ns-border-main); padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); flex: 1; min-width: 300px; }
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .log-table th { background: var(--ns-bg-input); color: var(--ns-text-main); font-size: 13px; text-transform: uppercase; text-align: left; padding: 12px 14px; }
+        .log-table td { font-size: 13.5px; border-bottom: 1px solid var(--ns-border-main); padding: 10px 14px; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge.blue { background: #dbeafe; color: #1e40af; }
+        .badge.green { background: #d1fae5; color: #065f46; }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+        <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">Administrator Profile</h1>
+        <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">View administrator settings and personal administrative logs</p>
+
+        <div class="profile-container">
+            <!-- Account Details Card -->
+            <div class="card" style="flex: 1;">
+                <h3 style="margin-top: 0; color: #0f766e; border-bottom: 1px solid var(--ns-border-main); padding-bottom: 10px;">👤 Administrator Account Details</h3>
+                <div style="margin: 15px 0; line-height: 1.8;">
+                    <div><strong>Username:</strong> `{{ user.username }}`</div>
+                    <div><strong>Email:</strong> `{{ user.email or 'N/A' }}`</div>
+                    <div><strong>Role:</strong> <span class="badge blue">{{ user.role.upper() }}</span></div>
+                    <div><strong>Account Status:</strong> <span class="badge green">Active</span></div>
+                    <div><strong>Registered At:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    <div><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'Just now' }}</div>
+                </div>
+            </div>
+
+            <!-- Profile Info Card -->
+            <div class="card" style="flex: 1.5;">
+                <h3 style="margin-top: 0; color: #0f766e; border-bottom: 1px solid var(--ns-border-main); padding-bottom: 10px;">📋 Policy Enforcement Statement</h3>
+                <div style="font-size: 13.5px; line-height: 1.6; color: var(--ns-text-muted);">
+                    <p>As a designated platform administrator of the NanoSafe Analyzer console, you have privileges to override research settings, configure system-wide parameters, audit logs, and toggle researcher states.</p>
+                    <p><strong>Note on Privacy Compliance:</strong> You are strictly prohibited from storing or displaying passwords, OTP secrets, verification tokens, or private tokens inside audit trails. High severity checks enforce these masks globally.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Specific Logs -->
+        <div class="card">
+            <h3 style="margin-top: 0; color: #0f766e;">🛡️ Recent Administrative Actions Performed</h3>
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Action</th>
+                        <th>Module</th>
+                        <th>Description</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td style="color: var(--ns-text-muted);">{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="font-weight: 600;">{{ log.action }}</td>
+                        <td><span class="badge blue">{{ log.module }}</span></td>
+                        <td>{{ log.description }}</td>
+                        <td><span class="badge green">{{ log.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--ns-text-muted); padding: 20px;">No administrative events logged.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
