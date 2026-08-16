@@ -15,4 +15,6 @@ reports/*
 .idea/
 serviceAccountKey.json
 scratch/
+recreation_guide.md
+
 
