@@ -74,3 +74,49 @@ We have successfully created and integrated a robust, enterprise-grade test auto
 - [`security-review.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/security-review.yml) — Performs nightly vulnerabilities scans.
 - [`android-e2e.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/android-e2e.yml) — Runs Appium inside Android emulator environment.
 - [`load-test.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/load-test.yml) — Automates daily performance benchmarks.
+
+---
+
+## 💻 Exact Verification Commands
+
+### 1. Start NanoSafe_Analyzer (Local Flask Server)
+```powershell
+$env:FLASK_ENV="testing"
+$env:SECRET_KEY="test-key-development-value-only"
+$env:DATABASE_URL="sqlite:///nanosafe.db"
+$env:WTF_CSRF_ENABLED="false"
+$env:ADMIN_USERNAME="admin"
+$env:ADMIN_EMAIL="admin@nanosafe.local"
+$env:ADMIN_PASSWORD="AdminPassword123!"
+.venv\Scripts\python.exe app.py
+```
+
+### 2. Run Web E2E tests & compile reports
+```powershell
+cd NanoSafe_Analyzer_E2E
+npm test
+node utils/excelReporter.js
+node utils/htmlReportGenerator.js
+```
+
+### 3. Run Android tests & compile reports
+```powershell
+cd NanoSafe_Analyzer_Appium
+npm test
+node utils/xlsxReporter.js
+node utils/generateHtmlReport.js
+```
+
+### 4. Run Security tests
+```powershell
+$env:NODE_PATH="NanoSafe_Analyzer_E2E/node_modules"
+node NanoSafe_Analyzer_Backend/scripts/generateSecuritySuite.js
+node NanoSafe_Analyzer_E2E/scripts/generateWebSecuritySuite.js
+```
+
+### 5. Run Load tests & parse summary
+```powershell
+node NanoSafe_Analyzer_Backend/scripts/load-test.js
+node NanoSafe_Analyzer_Backend/scripts/parseK6Summary.js
+```
+
