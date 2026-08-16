@@ -1,10 +1,7 @@
 name: NanoSafe Mobile Android E2E CI
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   android-e2e:

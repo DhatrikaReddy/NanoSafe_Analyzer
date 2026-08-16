@@ -1,10 +1,7 @@
 name: NanoSafe Security & Vulnerabilities Audit
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   security-audit:

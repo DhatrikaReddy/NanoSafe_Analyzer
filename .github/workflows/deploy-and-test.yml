@@ -1,10 +1,7 @@
 name: NanoSafe Web E2E Deploy & Test
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-test:
