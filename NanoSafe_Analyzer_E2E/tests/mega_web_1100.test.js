@@ -101,7 +101,7 @@ describe('NanoSafe Analyzer Master Web E2E Suite', () => {
     test('2. Dose Simulator Sensitivity Matrix (900 assertions)', async () => {
         // Authenticate the session
         await driver.get(`${BASE_URL}/auth/login`);
-        await driver.findElement(By.name('username')).sendKeys('admin');
+        await driver.findElement(By.name('username')).sendKeys('admin@nanosafe.local');
         await driver.findElement(By.name('password')).sendKeys('AdminPassword123!');
         await driver.findElement(By.css('button[type="submit"]')).click();
 
