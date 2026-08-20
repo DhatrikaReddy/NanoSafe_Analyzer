@@ -52,14 +52,7 @@ jobs:
       env:
         TEST_BASE_URL: http://127.0.0.1:5000
       run: |
-        cd NanoSafe_Analyzer_E2E
-        npm test
-
-    - name: Compile Excel & HTML Reports
-      run: |
-        cd NanoSafe_Analyzer_E2E
-        node utils/excelReporter.js
-        node utils/htmlReportGenerator.js
+        node NanoSafe_Analyzer_E2E/scripts/run_selenium_tests.js
 
     - name: Archive Test Reports
       uses: actions/upload-artifact@v4
