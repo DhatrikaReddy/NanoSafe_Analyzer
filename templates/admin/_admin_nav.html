@@ -1,0 +1,20 @@
+<!-- _admin_nav.html — Pro Admin Header Navigation with Instant Logout -->
+<div class="admin-subnav" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--ns-border-main); align-items: center; justify-content: space-between; box-shadow: var(--ns-shadow-xs);">
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">📊 Overview</a>
+        <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint in ['admin.users', 'admin.user_details'] %}active{% endif %}">👥 User Accounts</a>
+        <a href="{{ url_for('admin.all_experiments') }}" class="{% if request.endpoint == 'admin.all_experiments' %}active{% endif %}">🧪 All Experiments</a>
+        <a href="{{ url_for('participants.participants_list') }}" class="{% if request.endpoint == 'participants.participants_list' %}active{% endif %}">🧑‍🔬 Study Participants</a>
+        <a href="{{ url_for('participants.samples_list') }}" class="{% if request.endpoint == 'participants.samples_list' %}active{% endif %}">🧫 Biological Samples</a>
+        <a href="{{ url_for('admin.audit_log') }}" class="{% if request.endpoint == 'admin.audit_log' %}active{% endif %}">📋 Audit Trail</a>
+        <a href="{{ url_for('admin.ml_models') }}" class="{% if request.endpoint == 'admin.ml_models' %}active{% endif %}">🤖 ML Diagnostics</a>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
+        <a href="{{ url_for('main.home') }}" style="background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); color: var(--ns-text-main); font-weight: 700; padding: 7px 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 4px;" title="Switch back to Research Workspace">
+            🏠 Workspace
+        </a>
+        <a href="{{ url_for('auth.logout') }}" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #ef4444; font-weight: 800; padding: 7px 14px; border-radius: 8px; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(239,68,68,0.15); transition: all 0.15s ease;" title="Sign out of Admin Session">
+            🚪 Sign Out
+        </a>
+    </div>
+</div>

@@ -1,0 +1,226 @@
+name: e2e.yml
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  # 1. 🌐 Selenium Web Tests (450)
+  selenium-web-tests:
+    name: "🌐 Selenium Web Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Selenium Web Tests
+        run: |
+          node NanoSafe_Analyzer_E2E/scripts/run_selenium_tests.js
+      - name: Upload Selenium Web Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-web-report
+          path: reports/latest/selenium-web-report.xlsx
+
+  # 2. 📱 Appium Android Tests (450)
+  appium-android-tests:
+    name: "📱 Appium Android Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_Appium
+          npm install
+      - name: Run 450 Appium Android Tests
+        run: |
+          node NanoSafe_Analyzer_Appium/scripts/run_appium_tests.js
+      - name: Upload Appium Android Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium-android-report
+          path: reports/latest/appium-android-report.xlsx
+
+  # 3. 🧪 Unit API Tests (450)
+  unit-api-tests:
+    name: "🧪 Unit API Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Unit API Tests
+        run: |
+          node scripts/run_unit_api_tests.js
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: reports/latest/unit-test-report.xlsx
+
+  # 4. ✅ Validation Tests (450)
+  validation-tests:
+    name: "✅ Validation Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Validation Tests
+        run: |
+          node scripts/run_validation_tests.js
+      - name: Upload Validation Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-test-report
+          path: reports/latest/validation-test-report.xlsx
+
+  # 5. 🚀 Deployment Status Tests (450)
+  deployment-status-tests:
+    name: "🚀 Deployment Status Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Deployment Status Tests
+        run: |
+          node scripts/run_deployment_tests.js
+      - name: Upload Deployment Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-test-report
+          path: reports/latest/deployment-test-report.xlsx
+
+  # 6. ⚡ Load Performance Tests (450)
+  load-performance-tests:
+    name: "⚡ Load Performance Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Load Performance Tests
+        run: |
+          node scripts/run_load_tests.js
+      - name: Upload Load Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report
+          path: reports/latest/load-test-report.xlsx
+
+  # 7. 🔒 Vulnerability Tests (450)
+  vulnerability-tests:
+    name: "🔒 Vulnerability Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 DAST Vulnerability Tests
+        run: |
+          node scripts/run_vulnerability_tests.js
+      - name: Upload Vulnerability Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-test-report
+          path: reports/latest/vulnerability-test-report.xlsx
+
+  # 8. 🔄 Full E2E Tests (450)
+  full-e2e-tests:
+    name: "🔄 Full E2E Tests (450)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Run 450 Full E2E Tests
+        run: |
+          node scripts/run_full_e2e_tests.js
+      - name: Upload Full E2E Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-e2e-report
+          path: reports/latest/full-e2e-report.xlsx
+
+  # 9. 📊 Compile Master Excel Report & Upload
+  compile-master-excel-report:
+    name: "📊 Compile Master Excel Report & Upload"
+    needs:
+      - selenium-web-tests
+      - appium-android-tests
+      - unit-api-tests
+      - validation-tests
+      - deployment-status-tests
+      - load-performance-tests
+      - vulnerability-tests
+      - full-e2e-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: |
+          cd NanoSafe_Analyzer_E2E
+          npm install
+      - name: Download all test reports
+        uses: actions/download-artifact@v4
+        with:
+          path: reports/latest/downloaded
+      - name: Flatten Artifacts
+        run: |
+          mkdir -p reports/latest
+          cp -r reports/latest/downloaded/*/* reports/latest/ || true
+      - name: Compile Master Excel Workbook & HTML
+        run: |
+          node scripts/compile_master_excel_report.js
+      - name: Upload Master Excel Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Master_NanoSafe_E2E_Test_Report
+          path: |
+            reports/latest/Master_NanoSafe_E2E_Test_Report.xlsx
+            reports/latest/Master_Execution_Dashboard.html

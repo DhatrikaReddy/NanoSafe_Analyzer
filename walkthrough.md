@@ -1,122 +1,83 @@
 # Walkthrough — Completed Upgrades & Deployment
 
-This walkthrough summarizes the changes made to the **NanoSafe Analyzer** web application during this phase of upgrades, verification results, and deployment adjustments.
+This walkthrough summarizes the recent enhancements and upgrades made to the **NanoSafe Analyzer** platform (Web and Mobile), verification results, and researcher-focused clinical workflows.
 
 ---
 
-## 🚀 Key Upgrades Implemented
+## 🚀 Recent Key Enhancements Implemented
 
-### 1. Renamed "Assays" to "Experiments" (Topic-Specific Alignment)
-- **Changes:** Updated terminology across all user-facing interfaces to reflect standard clinical and laboratory terminology matching the project topic:
-  - Sidebar sections now read **`LABORATORY EXPERIMENTS`** instead of `LABORATORY ASSAYS`.
-  - Links and titles updated to **`Experiment History`** and **`Multi-Experiment Compare`**.
-  - All form options, chart legends (`● Your Measured Experiment Points`), descriptions, and upload formats converted to focus on **Experiments** rather than Assays.
+### 1. Multi-Formulation Compare Screen Upgrades (`CompareScreen.js`)
+- **Full Attributes Parity with New Analysis:**
+  - Expanded manual entry formulation cards to include all scientific and biophysical parameters:
+    - **Formulation / Sample Name:** Custom alphanumeric sample identifiers.
+    - **Study Participant Link:** Direct patient dropdown selector for primary cell tolerance assays or preclinical screening mode.
+    - **Cell Line:** Full selection from `ALL_CELL_LINES` (`HeLa`, `A549`, `MCF-7`, `HEK-293`, `HepG2`, `HUVEC`, `NIH-3T3`, `Primary Keratinocytes`).
+    - **Exposure Duration:** Calibrated periods (`6h`, `12h`, `24h (Standard)`, `48h`, `72h (Extended)`).
+    - **Medical Application:** `General (ISO 10993-5)`, `Wound Dressing`, `Dental Biomaterial`, `Drug Delivery`, `Tissue Scaffold`.
+    - **Synthesis Method:** `Green Synthesis (Plant/Biogenic)`, `Chemical Precipitation`, `Sol-Gel Hydrolysis`, `Hydrothermal Autoclave`.
+    - **Surface Coating:** `Bare ZnO (Uncoated)`, `PEG-Coated`, `Chitosan-Coated`, `Silica-Coated`.
+    - **Hemolysis Rate (%):** ASTM F756 red blood cell membrane lysis rate.
+### 1. 🔄 Clean Manual Data Entry & Zero-Default Inputs (Compare & Analysis Screens)
+- **Compare Screen (`nanosafe_mobile/src/screens/main/CompareScreen.js`)**:
+  - Removed all hardcoded dummy rows and prefilled values from formulation cards.
+  - Newly initialized cards (`createEmptyManualExperiment`) start completely blank with `{ concentration: '', viability: '', ros: '', ldh: '', apoptosis: '' }` rows.
+  - Adding a new formulation card (`➕ Add Formulation B`) creates clean, blank cards ready for user-entered experimental measurements.
+  - In History comparison mode, initial selection starts clean without auto-checking default records.
+  - Added live screen focus listener to automatically refresh saved records and participants when switching tabs.
+  - Implemented the `Clear` / reset button on dose-response measurement tables.
 
-### 2. Auto-Populated Precautionary Guidelines
-- **Changes:** Added dynamic warning cards containing actionable biosafety precautions whenever an experiment fails biocompatibility criteria (Cell Viability < 70% or High Risk level):
-  - **Concentration Reduction:** Advises adjusting dosage below the calculated IC50 threshold.
-  - **Encapsulation/Coating:** Recommends coating Zinc Oxide nanoparticles with polymers (like PEG or Silica) to avoid rapid dissolution.
-  - **Chelation Agents:** Suggests adding Zn²⁺ chelators (EDTA or DTPA) to capture free zinc ions.
-  - **Antioxidants:** Recommends co-administering Vitamin E or N-acetylcysteine to limit reactive oxygen stress (ROS) and cellular apoptosis.
-  - **Lab Safety:** Recommends handling in Class II biosafety cabinets with gloves and protective gear.
-- **Locations:** Fully rendered on the immediate **[Dashboard Result Page](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/templates/dashboard.html)** and within past records inside **[Experiment History Detail](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/templates/history_detail.html)**.
+- **New Analysis Screen (`nanosafe_mobile/src/screens/main/NewAnalysisScreen.js`)**:
+  - All formulation dropdown fields (`cellLine`, `exposureTime`, `medicalApp`, `synthesisMethod`, `surfaceCoating`) initialize to empty state with descriptive placeholders (`🧫 Select Target Cell Line *`, `⏱️ Select Exposure Duration *`, `🏥 Select Target Application *`, etc.).
+  - Added explicit validation alerts if any formulation parameter or dose row is left blank before running calculation.
 
-### 3. Removed Developer-Centric Clutter & ML Status Indicators
-- **Changes:**
-  - Removed **`Offline ML (R² 99.8%)`** status pill and **`+ New Assay`** action from the header.
-  - Wiped the **`How NanoSafe Works`** pipeline section and **`Workspace Status Tiles`** from the homepage, redirecting users directly to the clinical research options.
-  - Simplified ML titles to user-friendly terms (e.g. `Safe Range (Calibrated)`).
+- **Simulator Screen (`nanosafe_mobile/src/screens/main/SimulatorScreen.js`)**:
+  - Initial state starts clean with zero pre-filled assumptions.
+  - When unconfigured, displays an interactive guidance placeholder explaining the parameters required for real-time ML prediction.
 
-### 4. Disabled Browser Autofill & Password Managers
-- **Changes:**
-  - Added `autocomplete="off"` to all username and email fields on login and register forms.
-  - Configured `autocomplete="new-password"` on password input controls to force modern browsers to override stored autofill suggestions.
+- **Dashboard Screen (`nanosafe_mobile/src/screens/main/DashboardScreen.js`)**:
+  - Added navigation focus event listener so overall metrics, recent experiment history, and counts automatically stay in sync when returning from running assays.
 
-### 5. Added Expert Q&A Accordion Panel
-- **Changes:** Inserted 7 detailed doctor interview questions and answers regarding biological safety, ZnO nanoparticle cytotoxic pathways, and translational therapeutic windows in **[clinical_guide.html](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/templates/clinical_guide.html)**.
+---
+
+### 2. 🧪 Multi-Biomarker & ML Model Risk Synchronization
+- Harmonized Random Forest classification outputs in `services/ml_predictor.py` with ISO 10993-5 cell viability thresholds:
+  - **🟢 LOW RISK — SAFE**: Viability $\ge 80\%$, Toxicity Score $< 30$, Hemolysis $< 2.0\%$.
+  - **🟡 MODERATE RISK**: Viability $\ge 50\%$, Toxicity Score $< 60$.
+  - **🔴 HIGH RISK — CYTOTOXIC**: Viability $< 50\%$ or elevated toxicity score.
+- Unified the **Top Hero Verdict Banner** and **ML Model Insights Card** across `NewAnalysisScreen.js` and `HistoryScreen.js`.
+
+### 3. Biological Specimen & Patient Details Integration (`SamplesScreen.js` & `mobile/routes.py`)
+- **Backend Metadata Enrichment:**
+  - Enriched `GET /mobile/v1/samples/` in `mobile/routes.py` to return full linked clinical patient data: `participantId`, `participantName`, `participantBloodGroup`, `participantCohort`, `participantConsent`, `participantAge`, `participantSex`.
+- **Mobile Specimen Registry Upgrade (`SamplesScreen.js`):**
+  - Added live participant fetching and interactive dropdown selector in the Add Specimen modal.
+  - Prominently rendered patient identification cards (`[PAT-2026-001] John D.`), blood group badges (`🩸 O+`), and consent status (`🟢 Consented`) on every specimen card.
+  - Integrated a 1-tap **"⚡ Run Cytotoxicity Bioassay for this Specimen"** launcher button prefilling the new analysis workflow.
+
+### 4. Patient Enrollment Modal Visibility & Specimens Tab (`ParticipantsScreen.js`)
+- **100% Solid Opaque Backgrounds:**
+  - Eliminated transparent background bleed-through by setting solid `backgroundColor: isDark ? '#0f172a' : '#ffffff'` on `modalCard`, dark backdrop `backgroundColor: 'rgba(0,0,0,0.85)'`, solid text inputs (`backgroundColor: isDark ? '#1e293b' : '#f8fafc'`), and solid dropdown menus with high-contrast text.
+- **Dedicated "🧫 Bio-Specimens" Tab:**
+  - Added a dedicated specimen tracking tab in the Patient Profile modal, listing all biological samples registered for that participant with direct 1-tap viability test launchers.
+
+### 4. Hide Firebase Authentication in Settings / Profile
+- Removed Firebase authentication row from user-facing profile and settings views.
+
+### 5. Research Papers & Literature Repository
+- Downloaded and archived all 8 scientific research papers and ISO standards in `C:\Users\bhumi\Downloads\NanoSafe_Research_Papers_And_Articles`:
+  1. `ISO_10993_5_Biological_Evaluation_Medical_Devices_Cytotoxicity.pdf`
+  2. `Nel_et_al_Toxic_Potential_Materials_Nanoscale_Science.pdf`
+  3. `Rasmussen_et_al_Zinc_Oxide_Nanoparticles_Cytotoxicity_ROS.pdf`
+  4. `Brunner_et_al_In_Vitro_Cytotoxicity_Oxide_Nanoparticles.pdf`
+  5. `ISO_14155_Clinical_Investigation_Medical_Devices_GCP.pdf`
+  6. `ASTM_F756_Standard_Practice_Assessment_Hemolytic_Properties.pdf`
+  7. `Hill_Equation_4PL_Dose_Response_Curve_Fitting_Methodology.pdf`
+  8. `Zinc_Oxide_Nanoparticle_Biocompatibility_Literature_Synthesis.md`
 
 ---
 
 ## 🔬 Verification & Connection Health Results
 
-- **Local SMTP Verification:** Dispatched a test email from the app context using the SMTP credentials configured inside `.env`. The email was successfully transmitted over SSL.
-- **Flask Test Harness Route Scans:** Executed a route-connection script querying all 43 registered routes. All template and database context queries completed successfully without compiler warnings.
-- **Secrets Rotation:** Rotated `SECRET_KEY`, `WTF_CSRF_SECRET_KEY`, and `JWT_SECRET_KEY` inside `.env` to random 64-character secure hex keys.
-
----
-
-## 🛠️ Master Testing, Security, and Benchmarking Pipelines Implemented
-
-We have successfully created and integrated a robust, enterprise-grade test automation and CI/CD verification suite for both Web and Android platforms:
-
-### 1. Web E2E Testing Suite (`/NanoSafe_Analyzer_E2E`)
-- **E2E Test File:** [`tests/mega_web_1100.test.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_E2E/tests/mega_web_1100.test.js) — Implements Jest + Selenium Webdriver (headless Chrome) testing with 1,100 assertions validating authentication, simulation math, microplate parsing, clinical sample linking, database persistence, and admin controls.
-- **Reporting Utilities:**
-  - [`utils/excelReporter.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_E2E/utils/excelReporter.js) — Compiles `reports/latest/selenium-report.xlsx` across 3 detailed tabs.
-  - [`utils/htmlReportGenerator.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_E2E/utils/htmlReportGenerator.js) — Builds a beautifully-styled `reports/latest/execution-report.html` execution trace.
-
-### 2. Backend Security & Vulnerability Audits (`/NanoSafe_Analyzer_Backend`)
-- **Backend Audit:** [`scripts/generateSecuritySuite.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Backend/scripts/generateSecuritySuite.js) — Audits Flask configurations, SQLite drivers, requirements packages, and session security. Produces `findings.xlsx`, `security-review.md`, and `executive-summary.md`.
-- **Frontend Audit:** [`scripts/generateWebSecuritySuite.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_E2E/scripts/generateWebSecuritySuite.js) — Audits Jinja templates and static files for XSS or unescaped variables. Produces `web-security-findings.xlsx`, `web-security-review.md`, and `web-executive-summary.md`.
-
-### 3. Load Testing & Benchmarking Suite
-- **Load Test script:** [`scripts/load-test.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Backend/scripts/load-test.js) — Runs a 100-user concurrent benchmark for 60 seconds against active routes, recording metrics in `summary.json`.
-- **Summary Generator:** [`scripts/parseK6Summary.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Backend/scripts/parseK6Summary.js) — Parses latency metrics to produce `reports/latest/load-test-summary.md`.
-
-### 4. Appium Mobile Test Suite (`/NanoSafe_Analyzer_Appium`)
-- **Appium Test File:** [`tests/12_e2e/mega_android_1100.test.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Appium/tests/12_e2e/mega_android_1100.test.js) — WebDriverIO test framework covering patient records, mobile predictions, and secure sessions.
-- **Reporting Utilities:**
-  - [`utils/xlsxReporter.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Appium/utils/xlsxReporter.js) — Generates `reports/latest/android-e2e-report.xlsx`.
-  - [`utils/generateHtmlReport.js`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer_Appium/utils/generateHtmlReport.js) — Generates `reports/latest/android-execution-report.html`.
-
-### 5. Automated CI/CD GitHub Workflows (`/.github/workflows/`)
-- [`deploy-and-test.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/deploy-and-test.yml) — Builds Python/Flask backend and executes E2E selenium tests.
-- [`security-review.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/security-review.yml) — Performs nightly vulnerabilities scans.
-- [`android-e2e.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/android-e2e.yml) — Runs Appium inside Android emulator environment.
-- [`load-test.yml`](file:///C:/Users/bhumi/OneDrive/Desktop/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/NanoSafe_Analyzer/.github/workflows/load-test.yml) — Automates daily performance benchmarks.
-
----
-
-## 💻 Exact Verification Commands
-
-### 1. Start NanoSafe_Analyzer (Local Flask Server)
-```powershell
-$env:FLASK_ENV="testing"
-$env:SECRET_KEY="test-key-development-value-only"
-$env:DATABASE_URL="sqlite:///nanosafe.db"
-$env:WTF_CSRF_ENABLED="false"
-$env:ADMIN_USERNAME="admin"
-$env:ADMIN_EMAIL="admin@nanosafe.local"
-$env:ADMIN_PASSWORD="AdminPassword123!"
-.venv\Scripts\python.exe app.py
-```
-
-### 2. Run Web E2E tests & compile reports
-```powershell
-cd NanoSafe_Analyzer_E2E
-npm test
-node utils/excelReporter.js
-node utils/htmlReportGenerator.js
-```
-
-### 3. Run Android tests & compile reports
-```powershell
-cd NanoSafe_Analyzer_Appium
-npm test
-node utils/xlsxReporter.js
-node utils/generateHtmlReport.js
-```
-
-### 4. Run Security tests
-```powershell
-$env:NODE_PATH="NanoSafe_Analyzer_E2E/node_modules"
-node NanoSafe_Analyzer_Backend/scripts/generateSecuritySuite.js
-node NanoSafe_Analyzer_E2E/scripts/generateWebSecuritySuite.js
-```
-
-### 5. Run Load tests & parse summary
-```powershell
-node NanoSafe_Analyzer_Backend/scripts/load-test.js
-node NanoSafe_Analyzer_Backend/scripts/parseK6Summary.js
-```
-
+- **Python Backend Unit Tests:** Ran 14 test cases in `tests/test_nanosafe.py` — **14/14 Passed (`OK`)**.
+- **Mobile Screens Integrity Check:** Verified all React Native screens (`CompareScreen.js`, `ParticipantsScreen.js`, `SamplesScreen.js`, `NewAnalysisScreen.js`) compile cleanly without syntax errors.
+- **Flask Server:** Running live and healthy on `http://127.0.0.1:5000` and `http://172.20.10.3:5000`.

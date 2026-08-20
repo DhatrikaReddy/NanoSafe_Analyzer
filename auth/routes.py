@@ -49,7 +49,7 @@ def verify_otp():
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         session.clear()
         return redirect(url_for("auth.login"))
@@ -114,7 +114,7 @@ def verify_otp():
     session["is_verified"] = True
 
     flash("Account verified successfully! Welcome to NanoSafe Analyzer.", "success")
-    return redirect(url_for("main.upload"))
+    return redirect(url_for("auth.researcher_profile"))
 
 
 @auth_bp.route("/resend-otp", methods=["POST"])
@@ -124,7 +124,7 @@ def resend_otp():
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user or user.is_verified:
         return jsonify({"error": "Invalid request"}), 400
 
@@ -166,7 +166,7 @@ def verify_login_otp():
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         session.clear()
         return redirect(url_for("auth.login"))
@@ -220,7 +220,10 @@ def verify_login_otp():
     session.pop("pending_user_id", None)
     
     # Process remember_me if it was checked during login
-    response = redirect(url_for("main.upload"))
+    if not (user.full_name and user.institution and user.research_role):
+        response = redirect(url_for("auth.researcher_profile"))
+    else:
+        response = redirect(url_for("main.home"))
     if session.pop("pending_remember_me", False):
         token_val = secrets.token_urlsafe(64)
         user.remember_token = token_val
@@ -239,7 +242,7 @@ def resend_login_otp():
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "Invalid request"}), 400
 
@@ -299,11 +302,17 @@ def register():
         return render_template("auth/register.html", error="Email already registered. Please sign in or use a different email.")
 
     try:
+        user_role = Role.query.filter_by(name="user").first()
+        admin_role = Role.query.filter_by(name="admin").first()
+        is_admin_email = (email.strip().lower() == "dhatrikaakepati@gmail.com")
+        assigned_role_id = admin_role.id if (is_admin_email and admin_role) else (user_role.id if user_role else 1)
+
         user = User(
             full_name=full_name,
             username=username,
             email=email,
             password_hash=hash_password_bcrypt(password),
+            role_id=assigned_role_id,
             is_verified=False,
             is_active=False
         )
@@ -413,7 +422,15 @@ def login():
     _set_session(user)
     user.last_login = datetime.utcnow()
     
-    response = redirect(url_for("admin.dashboard") if user.is_admin else url_for("main.home"))
+    # Check if researcher profile is complete
+    is_profile_done = bool(user.is_profile_completed and user.full_name and user.institution and user.research_role)
+    if user.is_admin:
+        response = redirect(url_for("admin.dashboard"))
+    elif not is_profile_done:
+        flash("Welcome to NanoSafe Analyzer! Please complete your mandatory Researcher Profile Setup.", "info")
+        response = redirect(url_for("auth.researcher_profile"))
+    else:
+        response = redirect(url_for("main.home"))
     
     if remember:
         token_val = secrets.token_urlsafe(64)
@@ -533,7 +550,7 @@ def logout():
     username = session.get("username", "User")
 
     if user_id:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if user:
             user.remember_token = None
             db.session.commit()
@@ -560,7 +577,7 @@ def logout_all_devices():
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if user:
         # Invalidating the token logs out other devices using remember-me
         user.remember_token = None
@@ -589,7 +606,7 @@ def change_password():
         flash("Please login first.", "warning")
         return redirect(url_for("auth.login"))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         session.clear()
         return redirect(url_for("auth.login"))
@@ -632,3 +649,69 @@ def _set_session(user):
     session["username"] = user.username
     session["role"] = user.role  # "admin" or "user"
     session["is_verified"] = user.is_verified
+
+
+@auth_bp.route("/researcher-profile", methods=["GET", "POST"])
+def researcher_profile():
+    """First-time Researcher Profile onboarding and credential configuration."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("auth.login"))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return redirect(url_for("auth.login"))
+
+    if request.method == "GET":
+        return render_template("auth/researcher_profile.html", user=user)
+
+    # Mandatory fields
+    title_salutation = request.form.get("title_salutation", "").strip()
+    full_name = request.form.get("full_name", "").strip()
+    institution = request.form.get("institution", "").strip()
+    research_role = request.form.get("research_role", "").strip()
+    research_field = request.form.get("research_field", "In-Vitro Toxicology & Biocompatibility").strip()
+
+    if not title_salutation or not full_name or not institution or not research_role:
+        flash("Please fill in all mandatory fields (Title, Legal Name, Institution, Role).", "danger")
+        return render_template("auth/researcher_profile.html", user=user)
+
+    user.title_salutation = title_salutation
+    user.full_name = full_name
+    user.institution = institution
+    user.research_role = research_role
+    user.research_field = research_field
+
+    # Optional fields
+    user.gender_pronouns = request.form.get("gender_pronouns", "").strip()
+    user.date_of_birth = request.form.get("date_of_birth", "").strip()
+    user.secondary_email = request.form.get("secondary_email", "").strip()
+    user.office_address = request.form.get("office_address", "").strip()
+    user.city_state = request.form.get("city_state", "").strip()
+    user.country = request.form.get("country", "").strip()
+    user.preferred_language = request.form.get("preferred_language", "en").strip()
+    user.bio = request.form.get("bio", "").strip()
+
+    # Handle Photo upload if provided
+    photo_file = request.files.get("profile_photo")
+    if photo_file and photo_file.filename:
+        import os
+        ext = os.path.splitext(photo_file.filename)[1].lower()
+        if ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
+            filename = f"user_{user.id}_{int(datetime.utcnow().timestamp())}{ext}"
+            upload_folder = os.path.join(current_app.root_path, "static", "uploads", "avatars")
+            os.makedirs(upload_folder, exist_ok=True)
+            save_path = os.path.join(upload_folder, filename)
+            photo_file.save(save_path)
+            user.profile_photo = f"/static/uploads/avatars/{filename}"
+
+    user.is_profile_completed = True
+    db.session.commit()
+
+    next_action = request.form.get("next_action", "patient")
+    flash(f"Welcome, {title_salutation} {full_name}! Your researcher profile is configured and your workspace is ready.", "success")
+    if next_action == "patient":
+        return redirect(url_for("participants.patient_search"))
+    elif next_action == "research":
+        return redirect(url_for("main.upload", mode="personal"))
+    return redirect(url_for("main.analysis_choice"))

@@ -30,12 +30,88 @@
         .info-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 26px; }
         @media (max-width: 900px) { .info-grid-2 { grid-template-columns: 1fr; } }
 
-        .chart-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 22px; margin-bottom: 26px; }
-        @media (max-width: 960px) { .chart-grid-2 { grid-template-columns: 1fr; } }
-
-        .chart-box {
-            background: var(--ns-bg-input); border-radius: 14px; padding: 18px;
+        /* Analytics & KPIs */
+        .analytics-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .analytics-kpi-card {
+            background: var(--ns-bg-input);
             border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .analytics-kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+        .analytics-kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .analytics-kpi-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            line-height: 1.1;
+        }
+        .analytics-kpi-lbl {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--ns-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 3px;
+        }
+
+        .charts-container-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .chart-box-pro {
+            background: var(--ns-bg-input);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 16px;
+            padding: 22px 24px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .chart-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--ns-border-main);
+        }
+        .chart-header-row h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-canvas-wrapper {
+            position: relative;
+            height: 380px;
+            width: 100%;
         }
 
         .detail-card {
@@ -256,33 +332,180 @@
 
         <!-- Cytotoxicity & Biomarker Analytics Charts -->
         <div class="detail-card" style="margin-bottom:26px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
                 <h2 style="margin:0;">📊 Cytotoxicity &amp; Biomarker Analytics</h2>
                 {% if chart_data.has_experiment_data %}
-                <span style="font-size:12.5px; color:#0f766e; font-weight:700; background:#f0fdfa; padding:4px 10px; border-radius:12px; border:1px solid #99f6e4;">
-                    {{ chart_data.exp_labels|length }} Experiment{{ 's' if chart_data.exp_labels|length != 1 else '' }} Profiled
+                <span style="font-size:12.5px; font-weight:800; background:rgba(15,118,110,0.12); color:#0f766e; padding:5px 12px; border-radius:14px; border:1px solid rgba(15,118,110,0.25);">
+                    🧪 {{ chart_data.exp_labels|length }} Experiment{{ 's' if chart_data.exp_labels|length != 1 else '' }} Profiled
                 </span>
                 {% endif %}
             </div>
 
             {% if chart_data.has_experiment_data %}
-            <div class="chart-grid-2">
-                <!-- Grouped Biomarkers Chart -->
-                <div class="chart-box">
-                    <canvas id="participantBiomarkersChart" style="max-height:280px;"></canvas>
+            <!-- Summary KPI Pill Cards -->
+            <div class="analytics-kpi-grid">
+                <div class="analytics-kpi-card">
+                    <div class="analytics-kpi-icon" style="background:rgba(16,185,129,0.15); color:#10b981;">🌿</div>
+                    <div>
+                        <div class="analytics-kpi-val">{{ chart_data.avg_viability }}%</div>
+                        <div class="analytics-kpi-lbl">Mean Viability</div>
+                    </div>
                 </div>
-                <!-- ML Toxicity Scores Chart -->
-                <div class="chart-box">
-                    <canvas id="participantToxicityChart" style="max-height:280px;"></canvas>
+                <div class="analytics-kpi-card">
+                    <div class="analytics-kpi-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;">⚡</div>
+                    <div>
+                        <div class="analytics-kpi-val">{{ chart_data.avg_ros }}×</div>
+                        <div class="analytics-kpi-lbl">Mean ROS Stress</div>
+                    </div>
+                </div>
+                <div class="analytics-kpi-card">
+                    <div class="analytics-kpi-icon" style="background:rgba(239,68,68,0.15); color:#ef4444;">🩸</div>
+                    <div>
+                        <div class="analytics-kpi-val">{{ chart_data.avg_ldh }}%</div>
+                        <div class="analytics-kpi-lbl">Mean LDH Lysis</div>
+                    </div>
+                </div>
+                <div class="analytics-kpi-card">
+                    <div class="analytics-kpi-icon" style="background:rgba(139,92,246,0.15); color:#8b5cf6;">🧬</div>
+                    <div>
+                        <div class="analytics-kpi-val">{{ chart_data.avg_apoptosis }}%</div>
+                        <div class="analytics-kpi-lbl">Mean Apoptosis</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expanded Full-Width Stacked Charts -->
+            <div class="charts-container-stack">
+                <!-- 1. Grouped Biomarkers Chart -->
+                <div class="chart-box-pro">
+                    <div class="chart-header-row">
+                        <h3>🔬 Experimental Biomarker Multi-Assay Spectrum</h3>
+                        <div style="font-size:12px; color:var(--ns-text-muted); font-weight:600;">
+                            Viability, Oxidative Stress (ROS), Membrane Leakage (LDH) &amp; Apoptosis Rate
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrapper" style="height:380px;">
+                        <canvas id="participantBiomarkersChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 2. ML Toxicity Scores Chart -->
+                <div class="chart-box-pro">
+                    <div class="chart-header-row">
+                        <h3>🤖 Machine Learning Cytotoxicity &amp; Biocompatibility Score</h3>
+                        <div style="display:flex; gap:12px; font-size:12px; font-weight:700; flex-wrap:wrap;">
+                            <span style="color:#10b981;">● Safe (&lt;25)</span>
+                            <span style="color:#f59e0b;">● Moderate Risk (25–55)</span>
+                            <span style="color:#ef4444;">● High Toxicity (&gt;55)</span>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrapper" style="height:320px;">
+                        <canvas id="participantToxicityChart"></canvas>
+                    </div>
                 </div>
             </div>
             {% else %}
-            <div style="padding:24px; text-align:center; background:var(--ns-bg-input); border-radius:12px; color:var(--ns-text-muted);">
-                <div style="font-size:32px; margin-bottom:8px;">📈</div>
-                <b style="color:var(--ns-text-main);">No Experiment Data Available for Visual Analytics</b>
-                <p style="font-size:13px; margin:4px 0 0;">
-                    Link ZnO experiments to this participant's biological samples to view cytotoxicity biomarker trends and ML toxicity score comparisons.
+            <div style="padding:32px; text-align:center; background:var(--ns-bg-input); border-radius:14px; color:var(--ns-text-muted);">
+                <div style="font-size:36px; margin-bottom:10px;">📈</div>
+                <b style="color:var(--ns-text-main); font-size:15px;">No Experiment Data Available for Visual Analytics</b>
+                <p style="font-size:13.5px; margin:6px auto 0; max-width:550px;">
+                    Link ZnO cytotoxicity assay runs to this participant's biological samples to automatically populate multi-biomarker curves and ML hazard classifications.
                 </p>
+            </div>
+            {% endif %}
+        </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+                <h2 style="margin:0;">📜 Chronological Experiment Timeline</h2>
+                <div style="display:flex; gap:10px;">
+                    <a href="{{ url_for('main.upload') }}?participant_id={{ participant.id }}" class="ns-btn ns-btn-primary" style="background:#0f766e; padding:6px 14px; font-size:12.5px; font-weight:700;">
+                        ➕ New Experiment
+                    </a>
+                    {% if chronological_experiments and chronological_experiments|length > 1 %}
+                    <a href="{{ url_for('main.compare') }}" class="ns-btn ns-btn-secondary" style="padding:6px 14px; font-size:12.5px; font-weight:700;">
+                        📊 Compare Experiments
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if chronological_experiments %}
+            <div style="display:flex; flex-direction:column; gap:14px;">
+                {% for exp in chronological_experiments %}
+                <div style="background:var(--ns-bg-input); border:1px solid var(--ns-border-main); border-radius:14px; padding:18px 20px; transition:border-color 0.2s;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="background:rgba(20, 184, 166, 0.15); color:#14b8a6; border:1px solid rgba(20, 184, 166, 0.3); font-size:12px; font-weight:800; padding:2px 8px; border-radius:6px;">
+                                    Experiment {{ loop.index }}
+                                </span>
+                                <b style="font-size:15px; color:var(--ns-text-main);">{{ exp.sample_name or 'ZnO Formulation Assay' }}</b>
+                            </div>
+                            <div style="font-size:12px; color:var(--ns-text-muted); margin-top:4px;">
+                                📅 <b>Date:</b> {{ exp.created_at.strftime('%d-%b-%Y %H:%M') if exp.created_at else '—' }} &nbsp;·&nbsp;
+                                🧫 <b>Cell Line:</b> {{ exp.cell_line or 'Primary Culture' }} &nbsp;·&nbsp;
+                                ⏱️ <b>Exposure:</b> {{ exp.exposure_time or '24h' }}
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <a href="{{ url_for('main.history_detail', history_id=exp.id) }}" class="btn-act btn-view">👁 View Analysis</a>
+                            <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="btn-act btn-pdf">📄 PDF Report</a>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-top:10px;">
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">Cell Viability</div>
+                            <div style="font-size:14px; font-weight:800; color:{% if exp.cell_viability and exp.cell_viability >= 70 %}#22c55e{% else %}#ef4444{% endif %}; margin-top:2px;">
+                                {{ '%.1f'|format(exp.cell_viability) if exp.cell_viability is not none else '—' }}%
+                            </div>
+                        </div>
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">Estimated IC50</div>
+                            <div style="font-size:14px; font-weight:800; color:var(--ns-text-main); margin-top:2px;">
+                                {{ exp.estimated_ic50 or 'Not Reached' }} µg/mL
+                            </div>
+                        </div>
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">ROS Multiplier</div>
+                            <div style="font-size:14px; font-weight:800; color:var(--ns-text-main); margin-top:2px;">
+                                {{ '%.2f'|format(exp.ros) if exp.ros is not none else '—' }}×
+                            </div>
+                        </div>
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">LDH Release</div>
+                            <div style="font-size:14px; font-weight:800; color:var(--ns-text-main); margin-top:2px;">
+                                {{ '%.1f'|format(exp.ldh) if exp.ldh is not none else '—' }}%
+                            </div>
+                        </div>
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">Apoptosis</div>
+                            <div style="font-size:14px; font-weight:800; color:var(--ns-text-main); margin-top:2px;">
+                                {{ '%.1f'|format(exp.apoptosis) if exp.apoptosis is not none else '—' }}%
+                            </div>
+                        </div>
+                        <div style="background:var(--ns-bg-card); padding:8px 12px; border-radius:8px; border:1px solid var(--ns-border-main);">
+                            <div style="font-size:10px; color:var(--ns-text-muted); font-weight:700; text-transform:uppercase;">Risk Verdict</div>
+                            <div style="margin-top:2px;">
+                                <span class="badge-{% if exp.risk_level == 'Low' %}safe{% elif exp.risk_level == 'Moderate' %}moderate{% else %}high{% endif %}">
+                                    {{ exp.risk_level or 'Evaluated' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:32px 20px; background:var(--ns-bg-input); border-radius:12px; color:var(--ns-text-muted);">
+                <div style="font-size:36px; margin-bottom:8px;">🧪</div>
+                <b style="color:var(--ns-text-main);">No experiments conducted for this patient yet</b>
+                <p style="font-size:13px; margin:4px 0 16px;">
+                    Start Experiment 1 to evaluate ZnO nanoparticle cytotoxicity and biocompatibility on this patient's primary cells.
+                </p>
+                <a href="{{ url_for('main.upload') }}?participant_id={{ participant.id }}" class="ns-btn ns-btn-primary" style="background:#0f766e;">
+                    🧪 Launch Experiment 1
+                </a>
             </div>
             {% endif %}
         </div>
@@ -409,6 +632,16 @@
 document.addEventListener("DOMContentLoaded", () => {
     const rawData = {{ chart_data|tojson }};
 
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#f1f5f9' : '#0f172a';
+    const mutedColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)';
+    const cardBg = isDark ? '#1e293b' : '#ffffff';
+
+    // Global Chart Defaults
+    Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    Chart.defaults.color = textColor;
+
     // 1. Grouped Biomarkers Bar Chart
     const ctxBio = document.getElementById('participantBiomarkersChart');
     if (ctxBio) {
@@ -420,38 +653,112 @@ document.addEventListener("DOMContentLoaded", () => {
                     {
                         label: 'Cell Viability (%)',
                         data: rawData.viability,
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
+                        backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        maxBarThickness: 38
                     },
                     {
-                        label: 'ROS Level',
+                        label: 'ROS Level (Fold)',
                         data: rawData.ros,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 6
+                        backgroundColor: 'rgba(245, 158, 11, 0.9)',
+                        borderColor: '#f59e0b',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        maxBarThickness: 38
                     },
                     {
                         label: 'LDH Leakage (%)',
                         data: rawData.ldh,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 6
+                        backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        maxBarThickness: 38
                     },
                     {
                         label: 'Apoptosis (%)',
                         data: rawData.apoptosis,
-                        backgroundColor: '#8b5cf6',
-                        borderRadius: 6
+                        backgroundColor: 'rgba(139, 92, 246, 0.9)',
+                        borderColor: '#8b5cf6',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        maxBarThickness: 38
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
                 plugins: {
-                    title: { display: true, text: 'Experimental Biomarker Comparisons', font: { weight: 'bold' } },
-                    legend: { position: 'top' }
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            color: textColor,
+                            boxWidth: 14,
+                            boxHeight: 14,
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded',
+                            padding: 18,
+                            font: { size: 12, weight: '700' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: cardBg,
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: isDark ? '#334155' : '#cbd5e1',
+                        borderWidth: 1,
+                        padding: 14,
+                        cornerRadius: 10,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                        callbacks: {
+                            title: function(items) {
+                                const idx = items[0].dataIndex;
+                                return rawData.exp_full_labels ? rawData.exp_full_labels[idx] : items[0].label;
+                            },
+                            label: function(ctx) {
+                                const lbl = ctx.dataset.label || '';
+                                const val = ctx.parsed.y;
+                                if (lbl.includes('ROS')) {
+                                    return ` ${lbl}: ${val}× (Fold of Control)`;
+                                }
+                                return ` ${lbl}: ${val}%`;
+                            }
+                        }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Metric Value' } }
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: mutedColor,
+                            font: { size: 12, weight: '700' }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Assay Measurement Value (% / Fold)',
+                            color: textColor,
+                            font: { size: 12, weight: '800' }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 12, weight: '700' },
+                            maxRotation: 0,
+                            autoSkip: false
+                        }
+                    }
                 }
             }
         });
@@ -468,21 +775,65 @@ document.addEventListener("DOMContentLoaded", () => {
                     label: 'ML Toxicity Score (0-100)',
                     data: rawData.toxicity_scores,
                     backgroundColor: rawData.risk_colors,
-                    borderRadius: 8
+                    borderColor: 'rgba(255,255,255,0.2)',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    maxBarThickness: 48
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    title: { display: true, text: 'ML Cytotoxicity Risk Scores', font: { weight: 'bold' } },
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: cardBg,
+                        titleColor: textColor,
+                        bodyColor: textColor,
+                        borderColor: isDark ? '#334155' : '#cbd5e1',
+                        borderWidth: 1,
+                        padding: 14,
+                        cornerRadius: 10,
+                        callbacks: {
+                            title: function(items) {
+                                const idx = items[0].dataIndex;
+                                return rawData.exp_full_labels ? rawData.exp_full_labels[idx] : items[0].label;
+                            },
+                            label: function(ctx) {
+                                const val = ctx.parsed.y;
+                                let verdict = '🟢 Low Risk / Safe';
+                                if (val >= 55) verdict = '🔴 High Cytotoxicity / Hazardous';
+                                else if (val >= 25) verdict = '🟡 Moderate Risk';
+                                return `  Toxicity Score: ${val} / 100 — ${verdict}`;
+                            }
+                        }
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
-                        title: { display: true, text: 'Toxicity Score' }
+                        grid: { color: gridColor },
+                        ticks: {
+                            stepSize: 20,
+                            color: mutedColor,
+                            font: { size: 12, weight: '700' }
+                        },
+                        title: {
+                            display: true,
+                            text: 'ML Toxicity Risk Score (0 = Non-Toxic, 100 = Severe Cytotoxicity)',
+                            color: textColor,
+                            font: { size: 12, weight: '800' }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: textColor,
+                            font: { size: 12, weight: '700' },
+                            maxRotation: 0,
+                            autoSkip: false
+                        }
                     }
                 }
             }

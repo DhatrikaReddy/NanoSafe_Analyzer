@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Profile — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>
+        // Check and apply stored theme immediately before render
+        const savedTheme = localStorage.getItem('ns_theme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+    </script>
+    <style>
+        body {
+            background-color: var(--ns-bg-main, #f8fafc);
+            color: var(--ns-text-main, #0f172a);
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+        .ns-profile-container {
+            width: 100%;
+            max-width: 720px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        .ns-top-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ns-theme-btn {
+            background: var(--ns-bg-card, #ffffff);
+            border: 1px solid var(--ns-border-main, #e2e8f0);
+            color: var(--ns-text-main, #0f172a);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: var(--ns-shadow-xs, 0 1px 2px rgba(0,0,0,0.05));
+            transition: all 0.2s ease;
+        }
+        .ns-theme-btn:hover {
+            border-color: var(--ns-primary, #0f766e);
+            color: var(--ns-primary, #0f766e);
+            transform: translateY(-1px);
+        }
+        .ns-card {
+            background-color: var(--ns-bg-card, #ffffff);
+            border: 1px solid var(--ns-border-main, #e2e8f0);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--ns-shadow-md, 0 4px 12px rgba(0,0,0,0.06));
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+        }
+        .ns-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .ns-icon-circle {
+            width: 58px;
+            height: 58px;
+            border-radius: 29px;
+            background: var(--ns-primary-light, #f0fdfa);
+            border: 1.5px solid var(--ns-primary, #0f766e);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 14px var(--ns-primary-glow, rgba(15, 118, 110, 0.15));
+        }
+        .ns-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--ns-text-main, #0f172a);
+            margin: 0 0 6px 0;
+            letter-spacing: -0.5px;
+        }
+        .ns-subtitle {
+            font-size: 14px;
+            color: var(--ns-text-muted, #64748b);
+            line-height: 1.5;
+            margin: 0;
+        }
+        .ns-card-header {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ns-text-main, #0f172a);
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--ns-border-main, #e2e8f0);
+            padding-bottom: 10px;
+        }
+        .ns-form-group {
+            margin-bottom: 16px;
+        }
+        .ns-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ns-text-main, #0f172a);
+            margin-bottom: 6px;
+        }
+        .ns-req {
+            color: #ef4444;
+        }
+        .ns-input, .ns-select, .ns-textarea {
+            width: 100%;
+            background: var(--ns-bg-input, #f8fafc);
+            border: 1.5px solid var(--ns-border-input, #cbd5e1);
+            border-radius: 10px;
+            padding: 11px 14px;
+            color: var(--ns-text-main, #0f172a);
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .ns-input:focus, .ns-select:focus, .ns-textarea:focus {
+            border-color: var(--ns-primary, #0f766e);
+            background: var(--ns-bg-card, #ffffff);
+            box-shadow: 0 0 0 3.5px var(--ns-primary-glow, rgba(15, 118, 110, 0.15));
+        }
+        .ns-row {
+            display: flex;
+            gap: 16px;
+        }
+        .ns-col {
+            flex: 1;
+        }
+        .ns-btn-submit {
+            width: 100%;
+            background: var(--ns-primary, #0f766e);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px var(--ns-primary-glow, rgba(15, 118, 110, 0.3));
+            transition: all 0.2s ease;
+        }
+        .ns-btn-submit:hover {
+            background: var(--ns-primary-hover, #0d9488);
+            transform: translateY(-1px);
+        }
+        .ns-photo-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .ns-photo-preview {
+            width: 68px;
+            height: 68px;
+            border-radius: 34px;
+            background: var(--ns-bg-input, #f8fafc);
+            border: 2px solid var(--ns-primary, #0f766e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            color: var(--ns-primary, #0f766e);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .ns-photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="ns-profile-container">
+        <!-- Top Theme Toggle -->
+        <div class="ns-top-actions">
+            <button type="button" class="ns-theme-btn" onclick="toggleProfileTheme()" id="themeBtn" title="Switch Theme">
+                <span id="themeIcon">🌓</span> <span id="themeText">Theme</span>
+            </button>
+        </div>
+        <div class="ns-header">
+            <div class="ns-icon-circle">✨</div>
+            <h1 class="ns-title" data-i18n="researcherProfile">Researcher Profile</h1>
+            <p class="ns-subtitle">
+                Welcome, <strong style="color: #14b8a6;">{{ user.username }}</strong>! Please enter your credentials to initialize your workspace.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.researcher_profile') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <!-- SECTION 1: MANDATORY INFORMATION -->
+            <div class="ns-card">
+                <div class="ns-card-header">
+                    <span data-i18n="mandatoryInfo">🔴 Mandatory Information</span>
+                    <span style="font-size: 11px; color: #14b8a6; font-weight: 600;">Required to proceed</span>
+                </div>
+
+                <div class="ns-row">
+                    <div class="ns-col" style="flex: 0 0 160px;">
+                        <div class="ns-form-group">
+                            <label class="ns-label"><span data-i18n="titleSalutation">Title / Salutation</span> <span class="ns-req">*</span></label>
+                            <select name="title_salutation" class="ns-select" required>
+                                <option value="">Select...</option>
+                                <option value="Dr." {% if user.title_salutation == 'Dr.' %}selected{% endif %}>Dr.</option>
+                                <option value="Prof." {% if user.title_salutation == 'Prof.' %}selected{% endif %}>Prof.</option>
+                                <option value="Ms." {% if user.title_salutation == 'Ms.' %}selected{% endif %}>Ms.</option>
+                                <option value="Mr." {% if user.title_salutation == 'Mr.' %}selected{% endif %}>Mr.</option>
+                                <option value="Researcher" {% if user.title_salutation == 'Researcher' %}selected{% endif %}>Researcher</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label"><span data-i18n="fullName">Full Legal Name</span> <span class="ns-req">*</span></label>
+                            <input type="text" name="full_name" class="ns-input" value="{{ user.full_name or '' }}" placeholder="Enter your full legal name" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ns-form-group">
+                    <label class="ns-label"><span data-i18n="institution">Institution / Organization</span> <span class="ns-req">*</span></label>
+                    <input type="text" name="institution" class="ns-input" value="{{ user.institution or '' }}" placeholder="e.g. NanoBio Clinical Research Institute" required>
+                </div>
+
+                <div class="ns-row">
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label"><span data-i18n="researchRole">Research Role / Title</span> <span class="ns-req">*</span></label>
+                            <input type="text" name="research_role" class="ns-input" value="{{ user.research_role or '' }}" placeholder="e.g. Principal Investigator, Clinical Lead, PhD" required>
+                        </div>
+                    </div>
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label"><span>Primary Research Field</span> <span class="ns-req">*</span></label>
+                            <select name="research_field" class="ns-select" required>
+                                <option value="">Select Research Field...</option>
+                                <option value="Nanomedicine & Drug Delivery" {% if user.research_field == 'Nanomedicine & Drug Delivery' %}selected{% endif %}>💊 Nanomedicine & Drug Delivery</option>
+                                <option value="In-Vitro Toxicology & Biocompatibility" {% if user.research_field == 'In-Vitro Toxicology & Biocompatibility' or not user.research_field %}selected{% endif %}>🧫 In-Vitro Toxicology & Biocompatibility</option>
+                                <option value="Biomaterials & Tissue Engineering" {% if user.research_field == 'Biomaterials & Tissue Engineering' %}selected{% endif %}>🩹 Biomaterials & Tissue Engineering</option>
+                                <option value="Clinical Pharmacology & Safety" {% if user.research_field == 'Clinical Pharmacology & Safety' %}selected{% endif %}>🩺 Clinical Pharmacology & Safety</option>
+                                <option value="Nanotechnology & Material Science" {% if user.research_field == 'Nanotechnology & Material Science' %}selected{% endif %}>🔬 Nanotechnology & Material Science</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: OPTIONAL INFORMATION -->
+            <div class="ns-card">
+                <div class="ns-card-header">
+                    <span data-i18n="optionalInfo">⚪ Optional Information</span>
+                    <span style="font-size: 11px; color: #64748b; font-weight: 500;">Can complete now or later</span>
+                </div>
+
+                <!-- Photo Upload -->
+                <div class="ns-photo-row">
+                    <div class="ns-photo-preview" id="photoPreview">
+                        {% if user.profile_photo %}
+                            <img src="{{ user.profile_photo }}" alt="Photo">
+                        {% else %}
+                            👤
+                        {% endif %}
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="ns-label" data-i18n="uploadPhoto">Profile Photo (File Upload)</label>
+                        <input type="file" name="profile_photo" class="ns-input" accept="image/*" onchange="previewFile(this)">
+                    </div>
+                </div>
+
+                <div class="ns-row">
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="genderPronouns">Gender / Pronouns</label>
+                            <select name="gender_pronouns" class="ns-select">
+                                <option value="">Select...</option>
+                                <option value="She / Her" {% if user.gender_pronouns == 'She / Her' %}selected{% endif %}>She / Her</option>
+                                <option value="He / Him" {% if user.gender_pronouns == 'He / Him' %}selected{% endif %}>He / Him</option>
+                                <option value="They / Them" {% if user.gender_pronouns == 'They / Them' %}selected{% endif %}>They / Them</option>
+                                <option value="Prefer not to say" {% if user.gender_pronouns == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="dateOfBirth">Date of Birth / Age</label>
+                            <input type="text" name="date_of_birth" class="ns-input" value="{{ user.date_of_birth or '' }}" placeholder="e.g. 14 June 1994 or 30 yrs">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ns-row">
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="secondaryEmail">Alternative / Secondary Email</label>
+                            <input type="email" name="secondary_email" class="ns-input" value="{{ user.secondary_email or '' }}" placeholder="Secondary email address">
+                        </div>
+                    </div>
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="preferredLanguage">Preferred Language</label>
+                            <select name="preferred_language" class="ns-select" onchange="window.changeLanguage ? window.changeLanguage(this.value) : null">
+                                <option value="en" {% if user.preferred_language == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                                <option value="hi" {% if user.preferred_language == 'hi' %}selected{% endif %}>🇮🇳 हिन्दी (Hindi)</option>
+                                <option value="te" {% if user.preferred_language == 'te' %}selected{% endif %}>🇮🇳 తెలుగు (Telugu)</option>
+                                <option value="ta" {% if user.preferred_language == 'ta' %}selected{% endif %}>🇮🇳 தமிழ் (Tamil)</option>
+                                <option value="es" {% if user.preferred_language == 'es' %}selected{% endif %}>🇪🇸 Español</option>
+                                <option value="fr" {% if user.preferred_language == 'fr' %}selected{% endif %}>🇫🇷 Français</option>
+                                <option value="de" {% if user.preferred_language == 'de' %}selected{% endif %}>🇩🇪 Deutsch</option>
+                                <option value="ja" {% if user.preferred_language == 'ja' %}selected{% endif %}>🇯🇵 日本語</option>
+                                <option value="ar" {% if user.preferred_language == 'ar' %}selected{% endif %}>🇸🇦 العربية</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ns-form-group">
+                    <label class="ns-label" data-i18n="officeAddress">Office / Lab Address</label>
+                    <input type="text" name="office_address" class="ns-input" value="{{ user.office_address or '' }}" placeholder="e.g. Room 402, Bio-Engineering Wing, Block B">
+                </div>
+
+                <div class="ns-row">
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="cityState">City & State</label>
+                            <input type="text" name="city_state" class="ns-input" value="{{ user.city_state or '' }}" placeholder="e.g. Hyderabad, Telangana">
+                        </div>
+                    </div>
+                    <div class="ns-col">
+                        <div class="ns-form-group">
+                            <label class="ns-label" data-i18n="country">Country</label>
+                            <input type="text" name="country" class="ns-input" value="{{ user.country or '' }}" placeholder="e.g. India">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ns-form-group">
+                    <label class="ns-label" data-i18n="bio">Personal Bio / Research Focus</label>
+                    <textarea name="bio" class="ns-textarea" rows="3" placeholder="Write a brief 2-3 line summary of your research focus...">{{ user.bio or '' }}</textarea>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px;">
+                <button type="submit" name="next_action" value="patient" class="ns-btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #0f766e, #0d9488); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>👤</span> Save &amp; Enroll Study Patient
+                </button>
+                <button type="submit" name="next_action" value="research" class="ns-btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #334155, #1e293b); border: 1px solid #475569; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🔬</span> Save &amp; Preclinical Research
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function updateThemeButton() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+            if (icon && text) {
+                icon.textContent = isDark ? '☀️' : '🌙';
+                text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            }
+        }
+
+        function toggleProfileTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            if (newTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('ns_theme', newTheme);
+            updateThemeButton();
+        }
+
+        document.addEventListener('DOMContentLoaded', updateThemeButton);
+
+        function previewFile(input) {
+            const preview = document.getElementById('photoPreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>

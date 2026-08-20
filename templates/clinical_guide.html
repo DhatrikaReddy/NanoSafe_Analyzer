@@ -266,11 +266,12 @@
             <!-- 1. ISO 10993-5 Standards Table -->
             <div class="guide-section">
                 <div class="guide-section-header">
-                    <h2>📋 ISO 10993-5 Biological Evaluation Framework</h2>
-                    <p>International standard criteria for in vitro cytotoxicity testing of medical devices and nanomaterials.</p>
+                    <h2>📋 ISO 10993-5 &amp; ASTM F756 Biological Evaluation Framework</h2>
+                    <p>International standard criteria for in vitro cytotoxicity, membrane integrity, and hemocompatibility testing of Zinc Oxide nanomaterials.</p>
                 </div>
 
-                <div style="overflow-x: auto;">
+                <div style="overflow-x: auto; margin-bottom: 24px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: #0f766e; margin: 0 0 10px;">Part A: ISO 10993-5 In Vitro Cytotoxicity Standard</h3>
                     <table class="standards-table">
                         <thead>
                             <tr>
@@ -310,7 +311,108 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Part B: ASTM F756 Hemocompatibility Classification -->
+                <div style="overflow-x: auto; margin-bottom: 24px;">
+                    <h3 style="font-size: 14px; font-weight: 800; color: #0f766e; margin: 0 0 10px;">Part B: ASTM F756 Standard Practice for Assessment of Hemolytic Properties (Paper 3)</h3>
+                    <table class="standards-table">
+                        <thead>
+                            <tr>
+                                <th>Hemolytic Index (%)</th>
+                                <th>Classification Status</th>
+                                <th>Erythrocyte Integrity</th>
+                                <th>Biomedical Application Safety</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>&lt; 2.0%</b></td>
+                                <td><span class="ns-badge ns-badge-safe">🟢 Non-Hemolytic (Safe)</span></td>
+                                <td>Minimal RBC membrane lysis, no hemoglobin leakage</td>
+                                <td><b>PASS:</b> Safe for blood-contacting catheters, scaffolds, and systemic nanocarriers.</td>
+                            </tr>
+                            <tr>
+                                <td><b>2.0% – 5.0%</b></td>
+                                <td><span class="ns-badge ns-badge-moderate">🟡 Slightly Hemolytic (Caution)</span></td>
+                                <td>Minor hemolysis detected under high shear stress</td>
+                                <td><b>CONDITIONAL:</b> Surface functionalization (e.g. PEG coating) required to suppress hemolysis.</td>
+                            </tr>
+                            <tr>
+                                <td><b>&gt; 5.0%</b></td>
+                                <td><span class="ns-badge ns-badge-toxic">🔴 Hemolytic (Unsafe)</span></td>
+                                <td>Severe erythrocyte membrane perforation and lysis</td>
+                                <td><b>FAIL:</b> Unacceptable for vascular contact; risk of intravascular hemolysis and renal load.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Interactive Live ISO & ASTM Compliance Sandbox Widget -->
+                <div style="background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); border-radius: 14px; padding: 20px; border-left: 4px solid #0f766e;">
+                    <h4 style="margin: 0 0 12px; font-size: 15px; font-weight: 800; color: var(--ns-text-main);">🧪 Live ISO 10993-5 &amp; ASTM F756 Interactive Compliance Checker</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); display: block; margin-bottom: 4px;">Cell Viability (%):</label>
+                            <input type="number" id="guideViabInput" value="85" min="0" max="100" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-input); font-weight: 700;" oninput="evalGuideCompliance()">
+                        </div>
+                        <div>
+                            <label style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); display: block; margin-bottom: 4px;">ROS Level (× Baseline):</label>
+                            <input type="number" id="guideRosInput" value="1.2" min="0" step="0.1" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-input); font-weight: 700;" oninput="evalGuideCompliance()">
+                        </div>
+                        <div>
+                            <label style="font-size: 11.5px; font-weight: 700; color: var(--ns-text-muted); display: block; margin-bottom: 4px;">Hemolysis Rate (%):</label>
+                            <input type="number" id="guideHemoInput" value="0.8" min="0" max="100" step="0.1" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--ns-border-input); font-weight: 700;" oninput="evalGuideCompliance()">
+                        </div>
+                    </div>
+                    <div id="guideComplianceResult" style="padding: 12px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 700; background: rgba(16, 185, 129, 0.12); color: #16a34a; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        ✅ ISO 10993-5 PASS (Biocompatible, Viability &ge; 80%) | 🩸 ASTM F756 PASS (Non-Hemolytic &lt; 2%)
+                    </div>
+                </div>
             </div>
+
+            <script>
+            function evalGuideCompliance() {
+                const v = parseFloat(document.getElementById('guideViabInput').value) || 0;
+                const r = parseFloat(document.getElementById('guideRosInput').value) || 0;
+                const h = parseFloat(document.getElementById('guideHemoInput').value) || 0;
+                const resEl = document.getElementById('guideComplianceResult');
+
+                let isoText = '';
+                let isPass = false;
+                if (v >= 80 && r <= 1.5) {
+                    isoText = '✅ ISO 10993-5 PASS (Biocompatible, Viability >= 80%)';
+                    isPass = true;
+                } else if (v >= 70) {
+                    isoText = '⚠️ ISO 10993-5 CONDITIONAL (Moderate Cytotoxicity, Low-Dose Monitoring)';
+                } else {
+                    isoText = '❌ ISO 10993-5 FAIL (Cytotoxic / Significant Cell Damage)';
+                }
+
+                let hemoText = '';
+                if (h < 2.0) {
+                    hemoText = '🩸 ASTM F756 PASS (Non-Hemolytic < 2%)';
+                } else if (h <= 5.0) {
+                    hemoText = '🟡 ASTM F756 CAUTION (Slightly Hemolytic 2-5%)';
+                } else {
+                    hemoText = '🔴 ASTM F756 FAIL (Hemolytic > 5% - Blood Incompatible)';
+                }
+
+                resEl.innerHTML = `${isoText} | ${hemoText}`;
+                if (isPass && h < 2.0) {
+                    resEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                    resEl.style.color = '#16a34a';
+                    resEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else if (v < 70 || h > 5.0) {
+                    resEl.style.background = 'rgba(239, 68, 68, 0.12)';
+                    resEl.style.color = '#dc2626';
+                    resEl.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                } else {
+                    resEl.style.background = 'rgba(245, 158, 11, 0.12)';
+                    resEl.style.color = '#d97706';
+                    resEl.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                }
+            }
+            </script>
 
             <!-- 2. Biomedical Application Profiles -->
             <div class="guide-section">

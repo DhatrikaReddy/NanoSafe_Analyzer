@@ -1,7 +1,7 @@
 {
     "architecture": "Offline Local Multi-Model Ensemble (Zero API)",
     "dataset_name": "ZnO Biocompatibility & Cytotoxicity Dataset",
-    "total_samples": 5000,
+    "total_samples": 10000,
     "input_features": [
         "Cell_Line",
         "Concentration",
@@ -14,18 +14,18 @@
     "models": {
         "toxicity_regressor": {
             "algorithm": "RandomForestRegressor(n_estimators=120)",
-            "testing_r2": 0.9977,
-            "testing_mae": 1.1306,
-            "testing_mse": 2.4298
+            "testing_r2": 0.9939,
+            "testing_mae": 1.1672,
+            "testing_mse": 2.9
         },
         "risk_classifier": {
             "algorithm": "RandomForestClassifier(n_estimators=100)",
-            "accuracy": 0.981
+            "accuracy": 0.976
         },
         "ic50_estimator": {
             "algorithm": "GradientBoostingRegressor(n_estimators=120)",
-            "testing_r2": 0.9995,
-            "testing_mae": 0.2258
+            "testing_r2": 0.909,
+            "testing_mae": 5.8275
         }
     }
 }

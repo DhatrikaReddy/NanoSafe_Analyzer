@@ -8,11 +8,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { colors, spacing, borderRadius } from '../../theme/colors';
+import { ThemeContext } from '../../context/ThemeContext';
 import { AuthContext } from '../../context/AuthContext';
+import { LanguageContext } from '../../context/LanguageContext';
 import { KeyRound, CheckCircle } from 'lucide-react-native';
 
 export default function VerifyOtpScreen({ route, navigation }) {
   const { email } = route.params || {};
+  const { colors, isDark } = useContext(ThemeContext);
   const [otp, setOtp] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -36,27 +39,27 @@ export default function VerifyOtpScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.iconCircle}>
-          <KeyRound size={36} color={colors.primaryLight} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
+          <KeyRound size={36} color={colors.primary} />
         </View>
 
-        <Text style={styles.title}>Email Verification</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>Email Verification</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Enter the 6-digit OTP code sent to {'\n'}
-          <Text style={styles.emailText}>{email || 'your email'}</Text>
+          <Text style={[styles.emailText, { color: colors.primary }]}>{email || 'your email'}</Text>
         </Text>
 
         {error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.danger }]}>
+            <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
           </View>
         )}
 
         <View style={styles.inputGroup}>
           <TextInput
-            style={styles.otpInput}
+            style={[styles.otpInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.primary }]}
             placeholder="000000"
             placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
@@ -67,7 +70,7 @@ export default function VerifyOtpScreen({ route, navigation }) {
         </View>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: colors.primary }]}
           onPress={handleVerify}
           disabled={loading}
         >
@@ -88,55 +91,45 @@ export default function VerifyOtpScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    justify: 'center',
+    justifyContent: 'center',
     padding: spacing.md,
   },
   card: {
-    backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     alignItems: 'center',
   },
   iconCircle: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.inputBg,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
   title: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: 'bold',
-    color: colors.text,
   },
   subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: 16.5,
     textAlign: 'center',
     marginVertical: spacing.sm,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   emailText: {
-    color: colors.primaryLight,
     fontWeight: '600',
   },
   errorBox: {
     width: '100%',
-    backgroundColor: colors.dangerBg,
-    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: borderRadius.sm,
     padding: spacing.sm,
     marginVertical: spacing.sm,
   },
   errorText: {
-    color: colors.danger,
-    fontSize: 14,
+    fontSize: 16.5,
     textAlign: 'center',
   },
   inputGroup: {
@@ -144,12 +137,9 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   otpInput: {
-    backgroundColor: colors.inputBg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.primaryLight,
-    color: colors.text,
-    fontSize: 28,
+    fontSize: 31,
     fontWeight: 'bold',
     letterSpacing: 8,
     textAlign: 'center',
@@ -158,7 +148,6 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
@@ -167,7 +156,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18.5,
     fontWeight: '600',
   },
 });

@@ -27,8 +27,8 @@ def _is_verified() -> bool:
 def _is_user_active() -> bool:
     if "user_id" not in session:
         return False
-    from models import User
-    user = User.query.get(session["user_id"])
+    from models import db, User
+    user = db.session.get(User, session["user_id"])
     if not user or not user.is_active:
         session.clear()
         return False
@@ -82,7 +82,6 @@ def admin_required(f):
         if not _is_admin():
             if _is_mobile_request():
                 return jsonify({"error": "Administrator access required"}), 403
-            flash("Administrator access required.", "danger")
             return redirect(url_for("main.home"))
         return f(*args, **kwargs)
     return decorated
@@ -99,8 +98,28 @@ def user_required(f):
         if _is_admin():
             if _is_mobile_request():
                 return jsonify({"error": "User (non-admin) access only"}), 403
-            flash("This area is for researchers only.", "info")
             return redirect(url_for("admin.dashboard"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def profile_completed_required(f):
+    """Require completed researcher profile before accessing analysis/research features."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not _is_logged_in() or not _is_user_active():
+            if _is_mobile_request():
+                return jsonify({"error": "Authentication required"}), 401
+            return redirect(url_for("auth.login"))
+        if _is_admin():
+            return f(*args, **kwargs)
+        from models import db, User
+        user = db.session.get(User, session["user_id"])
+        if not user or not user.is_profile_completed or not (user.full_name and user.institution and user.research_role):
+            if _is_mobile_request():
+                return jsonify({"error": "Researcher Profile Setup required", "requires_profile": True}), 403
+            flash("Please complete your Researcher Profile Setup before accessing the research workspace.", "info")
+            return redirect(url_for("auth.researcher_profile"))
         return f(*args, **kwargs)
     return decorated
 
@@ -118,3 +137,4 @@ def current_username() -> str:
 def current_role() -> str:
     """Return the logged-in user's role."""
     return session.get("role", "user")
+

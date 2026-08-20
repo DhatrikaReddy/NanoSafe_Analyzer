@@ -31,6 +31,8 @@
     {% include '_sidebar.html' %}
 
     <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
+        {% include 'admin/_admin_nav.html' %}
+
         <div style="margin-bottom: 15px;">
             <a href="{{ url_for('admin.users') }}" style="color: #0f766e; text-decoration: none; font-weight: 600; font-size: 13.5px;">← Back to User List</a>
         </div>

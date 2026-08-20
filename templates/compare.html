@@ -104,101 +104,176 @@
         </form>
     </div>
 
-    <!-- Dashboard Results Section -->
-    <div id="dashboard-wrapper" style="display: none; margin-top: 20px;">
+    <!-- Dashboard Results Section (Spacious, Ergonomic & Comfortable Tabbed Layout) -->
+    <div id="dashboard-wrapper" style="display: none; margin-top: 24px;">
 
-        <div class="export-actions-bar">
-            <button type="button" class="export-btn pdf" onclick="window.print()">📄 Export PDF</button>
-            <button type="button" class="export-btn excel" onclick="downloadExcelCSV()">📊 Download Excel</button>
-            <button type="button" class="export-btn print" onclick="window.print()">🖨️ Print Report</button>
-            <button type="button" class="export-btn" style="background: #64748b; color: white;" onclick="resetComparison()">🔄 Compare Again</button>
-        </div>
+        <!-- 1. EXECUTIVE WINNER BANNER & ACTION TOOLBAR -->
+        <div style="background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%); color: white; border-radius: 20px; padding: 24px 30px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 118, 110, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="font-size: 38px; background: rgba(255,255,255,0.15); width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.25);">
+                    🏆
+                </div>
+                <div>
+                    <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #5eead4; margin-bottom: 4px;">Safest Formulation Identified</div>
+                    <h2 id="banner-winner-title" style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff;">Analyzing Candidates...</h2>
+                    <p id="banner-winner-sub" style="margin: 4px 0 0; font-size: 13.5px; opacity: 0.85; max-width: 600px;">Comparative evaluation across cell viability, oxidative stress, membrane lysis, and apoptosis.</p>
+                </div>
+            </div>
 
-        <!-- Key Highlights — clean table -->
-        <h2 class="ns-section-heading">🏆 Key Experiment Highlights</h2>
-        <div class="ns-highlights-table-wrapper">
-          <table class="ns-highlights-table">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Highlight</th>
-                <th>Experiment</th>
-              </tr>
-            </thead>
-            <tbody id="highlights-table-body">
-              <!-- Dynamic rows injected by renderDashboard() -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Comparison Table -->
-        <div class="ns-matrix-wrapper">
-            <h3 style="margin: 0 0 0 0; color: var(--ns-text-main); font-weight: 800; padding: 18px 20px 14px;">📊 Multi-Experiment Parameter Matrix</h3>
-            <div style="overflow-x: auto;">
-            <table class="ns-matrix-table">
-                <thead>
-                    <tr>
-                        <th>Experiment</th>
-                        <th>Cell Line</th>
-                        <th>Time</th>
-                        <th>Viability</th>
-                        <th>Tox Score</th>
-                        <th>Status</th>
-                        <th>IC50</th>
-                        <th>ROS</th>
-                        <th>LDH</th>
-                        <th>Apoptosis</th>
-                        <th>Safe Range</th>
-                        <th class="ml-col">Toxicity Score (Calibrated)</th>
-                        <th class="ml-col">Status (Calibrated)</th>
-                        <th class="ml-col">IC50 (Calibrated)</th>
-                        <th class="ml-col">Safe Range (Calibrated)</th>
-                        <th class="ml-col">Confidence</th>
-                    </tr>
-                </thead>
-                <tbody id="comparison-table-body">
-                    <!-- Dynamic Rows -->
-                </tbody>
-            </table>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="ns-btn ns-btn-sm" style="background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; font-weight: 700; padding: 8px 14px;" onclick="window.print()">📄 Export PDF</button>
+                <button type="button" class="ns-btn ns-btn-sm" style="background: rgba(255,255,255,0.18); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; font-weight: 700; padding: 8px 14px;" onclick="downloadExcelCSV()">📊 Download CSV</button>
+                <button type="button" class="ns-btn ns-btn-sm" style="background: #14b8a6; color: #042f2e; border: none; border-radius: 10px; font-weight: 800; padding: 8px 16px;" onclick="resetComparison()">🔄 New Comparison</button>
             </div>
         </div>
 
-        <!-- Graphs Container -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 30px;">
-            <!-- Overlaid Graph -->
-            <div style="background: var(--ns-bg-card); border-radius: 20px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); text-align: center;">
-                <h3 style="margin: 0 0 14px 0; color: var(--ns-text-main); font-weight: 800;">📈 Dose Response Overlay</h3>
-                <img id="comparison-graph-img" src="" alt="Comparison Dose Response Graph" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--ns-border-main);" />
+        <!-- 2. COMFORTABLE SEGMENTED WORKSPACE TABS -->
+        <div style="display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; background: var(--ns-bg-input); padding: 6px; border-radius: 14px; border: 1px solid var(--ns-border-main);">
+            <button type="button" class="compare-res-tab active" id="tab-btn-matrix" onclick="switchResultTab('matrix')" style="flex: 1; min-width: 140px; padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; background: #0f766e; color: white; transition: all 0.2s;">
+                📊 Parameter Matrix
+            </button>
+            <button type="button" class="compare-res-tab" id="tab-btn-graphs" onclick="switchResultTab('graphs')" style="flex: 1; min-width: 140px; padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted); transition: all 0.2s;">
+                📈 Curves &amp; Radar
+            </button>
+            <button type="button" class="compare-res-tab" id="tab-btn-cards" onclick="switchResultTab('cards')" style="flex: 1; min-width: 140px; padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted); transition: all 0.2s;">
+                🧬 Candidate Cards
+            </button>
+            <button type="button" class="compare-res-tab" id="tab-btn-guidance" onclick="switchResultTab('guidance')" style="flex: 1; min-width: 140px; padding: 10px 16px; font-size: 13px; font-weight: 800; border-radius: 10px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted); transition: all 0.2s;">
+                💡 Clinical Guidance
+            </button>
+        </div>
+
+        <!-- TAB 1: PARAMETER MATRIX (Streamlined & Clean) -->
+        <div id="res-tab-matrix" class="res-tab-panel" style="display: block;">
+            <div class="ns-matrix-wrapper" style="background: var(--ns-bg-card); border-radius: 18px; border: 1px solid var(--ns-border-main); padding: 22px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h3 style="margin: 0; color: var(--ns-text-main); font-weight: 800; font-size: 16px;">📊 Multi-Experiment Parameter Matrix</h3>
+                        <p style="margin: 3px 0 0; font-size: 12.5px; color: var(--ns-text-muted);">Side-by-side comparison of core cytotoxicity biomarkers and safety thresholds.</p>
+                    </div>
+                    <button type="button" id="btn-toggle-ml-cols" onclick="toggleMLColumns()" class="ns-btn ns-btn-sm" style="font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: var(--ns-bg-input); color: var(--ns-text-main); border: 1px solid var(--ns-border-main);">
+                        <span>🔬</span> Toggle Calibrated ML Details
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="ns-matrix-table" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;">
+                        <thead>
+                            <tr style="background: var(--ns-bg-input);">
+                                <th style="padding: 12px 14px; border-top-left-radius: 10px;">Experiment</th>
+                                <th style="padding: 12px 14px;">Cell Line</th>
+                                <th style="padding: 12px 14px;">Time</th>
+                                <th style="padding: 12px 14px;">Viability (%)</th>
+                                <th style="padding: 12px 14px;">Tox Score</th>
+                                <th style="padding: 12px 14px;">ISO Status</th>
+                                <th style="padding: 12px 14px;">4PL IC50</th>
+                                <th style="padding: 12px 14px;">ROS (×)</th>
+                                <th style="padding: 12px 14px;">LDH (%)</th>
+                                <th style="padding: 12px 14px;">Apoptosis (%)</th>
+                                <th style="padding: 12px 14px;">Safe Ceiling</th>
+                                <th class="ml-col" style="display:none; padding: 12px 14px; background: rgba(37,99,235,0.06);">Calib. Score</th>
+                                <th class="ml-col" style="display:none; padding: 12px 14px; background: rgba(37,99,235,0.06);">Calib. Status</th>
+                                <th class="ml-col" style="display:none; padding: 12px 14px; background: rgba(37,99,235,0.06);">Calib. IC50</th>
+                                <th class="ml-col" style="display:none; padding: 12px 14px; background: rgba(37,99,235,0.06); border-top-right-radius: 10px;">Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-table-body">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Radar Chart -->
-            <div style="background: var(--ns-bg-card); border-radius: 20px; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column;">
-                <h3 style="margin: 0 0 14px 0; color: var(--ns-text-main); font-weight: 800;">🕸️ Multi-Biomarker Radar</h3>
-                <div style="position: relative; flex-grow: 1; width: 100%; min-height: 250px; display: flex; justify-content: center; align-items: center;">
-                    <canvas id="compareRadarChart"></canvas>
+            <!-- Key Highlights Table -->
+            <div style="margin-top: 20px; background: var(--ns-bg-card); border-radius: 18px; border: 1px solid var(--ns-border-main); padding: 22px;">
+                <h4 style="margin: 0 0 12px; font-size: 15px; font-weight: 800; color: #0f766e;">🏆 Quick Highlights &amp; Benchmarks</h4>
+                <div class="ns-highlights-table-wrapper" style="overflow-x: auto;">
+                    <table class="ns-highlights-table" style="width: 100%; font-size: 13px;">
+                        <thead>
+                            <tr style="background: var(--ns-bg-input);">
+                                <th style="padding: 10px 14px;">Evaluation Category</th>
+                                <th style="padding: 10px 14px;">Outcome / Benchmark</th>
+                                <th style="padding: 10px 14px;">Top Performing Experiment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="highlights-table-body">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- ML Predictions Panel -->
-        <div id="ml-predictions-panel" style="background: #f0f7ff; border: 1.5px solid #bfdbfe; border-radius: 20px; padding: 24px; box-shadow: 0 8px 24px rgba(37,99,235,0.07); margin-bottom: 30px;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
-                <h3 style="margin:0; color:#1d4ed8; font-weight:800; font-size:1.05rem;">🔬 Cytotoxicity &amp; Biocompatibility Predictions — Per Experiment</h3>
-                <span style="font-size:12px; font-weight:700; background:#dbeafe; color:#1d4ed8; padding:4px 14px; border-radius:20px; border:1px solid #bfdbfe;">Biomarker Analysis Engine</span>
+        <!-- TAB 2: GRAPHS & RADAR (Roomy & Spacious) -->
+        <div id="res-tab-graphs" class="res-tab-panel" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 22px;">
+                <!-- Overlaid 4PL Curve -->
+                <div style="background: var(--ns-bg-card); border-radius: 18px; padding: 24px; border: 1px solid var(--ns-border-main); box-shadow: 0 4px 16px rgba(0,0,0,0.04); text-align: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h4 style="margin: 0; color: var(--ns-text-main); font-weight: 800; font-size: 15px;">📈 4PL Dose-Response Overlay</h4>
+                        <span style="font-size: 11px; background: rgba(16,185,129,0.1); color: #10b981; padding: 3px 8px; border-radius: 6px; font-weight: 700;">Multi-Series Overlay</span>
+                    </div>
+                    <img id="comparison-graph-img" src="" alt="Comparison Dose Response Graph" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--ns-border-main);" />
+                </div>
+
+                <!-- Multi-Biomarker Radar -->
+                <div style="background: var(--ns-bg-card); border-radius: 18px; padding: 24px; border: 1px solid var(--ns-border-main); box-shadow: 0 4px 16px rgba(0,0,0,0.04); text-align: center; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h4 style="margin: 0; color: var(--ns-text-main); font-weight: 800; font-size: 15px;">🕸️ Multi-Biomarker Radar Fingerprint</h4>
+                        <span style="font-size: 11px; background: rgba(15,118,110,0.1); color: #0f766e; padding: 3px 8px; border-radius: 6px; font-weight: 700;">5-Axis Metric Profile</span>
+                    </div>
+                    <div style="position: relative; flex-grow: 1; width: 100%; min-height: 280px; display: flex; justify-content: center; align-items: center;">
+                        <canvas id="compareRadarChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div id="ml-cards-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:14px;"></div>
         </div>
 
-        <!-- Summary & Recommendation Narrative -->
-        <div class="summary-recommendation-box">
-            <h3>💡 Automated Biomedical Decision Support &amp; Summary</h3>
-            <p><b>Optimal Performer:</b> <span id="summary-best-performer"></span></p>
-            <p><b>Toxicity Assessment:</b> <span id="summary-highest-toxicity"></span></p>
-            <p><b>Biomedical Recommendation:</b> <span id="summary-recommended-usage"></span></p>
-            <p style="margin-top: 8px; opacity: 0.9;"><b>Scientific Rationale:</b> <span id="summary-rationale"></span></p>
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.2); margin:14px 0;">
-            <p style="margin:0;"><b>🧬 Safest Option:</b> <span id="summary-ml-best"></span></p>
-            <p style="margin-top:6px;"><b>⚠️ Most Toxic Option:</b> <span id="summary-ml-worst"></span></p>
+        <!-- TAB 3: CANDIDATE CARDS (Comfortable Grid) -->
+        <div id="res-tab-cards" class="res-tab-panel" style="display: none;">
+            <div id="ml-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px;">
+                <!-- Dynamically populated candidate cards -->
+            </div>
+        </div>
+
+        <!-- TAB 4: CLINICAL GUIDANCE & DECISION SUPPORT -->
+        <div id="res-tab-guidance" class="res-tab-panel" style="display: none;">
+            <div class="summary-recommendation-box" style="background: var(--ns-bg-card); border-radius: 18px; border: 1px solid var(--ns-border-main); padding: 28px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+                <h3 style="color: #0f766e; font-size: 18px; font-weight: 800; margin-top: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>💡</span> Automated Biomedical Decision Support &amp; Formulation Verdict
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 20px 0;">
+                    <div style="background: var(--ns-bg-input); padding: 16px; border-radius: 12px; border: 1px solid var(--ns-border-main);">
+                        <span style="font-size: 11px; font-weight: 800; color: #10b981; text-transform: uppercase;">Optimal Performer</span>
+                        <div id="summary-best-performer" style="font-size: 15px; font-weight: 700; color: var(--ns-text-main); margin-top: 4px;"></div>
+                    </div>
+                    <div style="background: var(--ns-bg-input); padding: 16px; border-radius: 12px; border: 1px solid var(--ns-border-main);">
+                        <span style="font-size: 11px; font-weight: 800; color: #ef4444; text-transform: uppercase;">Highest Toxicity Warning</span>
+                        <div id="summary-highest-toxicity" style="font-size: 15px; font-weight: 700; color: var(--ns-text-main); margin-top: 4px;"></div>
+                    </div>
+                    <div style="background: var(--ns-bg-input); padding: 16px; border-radius: 12px; border: 1px solid var(--ns-border-main);">
+                        <span style="font-size: 11px; font-weight: 800; color: #3b82f6; text-transform: uppercase;">Target Application Window</span>
+                        <div id="summary-recommended-usage" style="font-size: 15px; font-weight: 700; color: var(--ns-text-main); margin-top: 4px;"></div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(15, 118, 110, 0.06); border-left: 4px solid #0f766e; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <b style="color: #0f766e; font-size: 13.5px;">Scientific Rationale &amp; Optimization Strategy:</b>
+                    <p id="summary-rationale" style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--ns-text-main);"></p>
+                </div>
+
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 220px; padding: 12px 16px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #10b981;">🧬 Safest Formulation:</span>
+                        <div id="summary-ml-best" style="font-size: 14px; font-weight: 700; color: #10b981; margin-top: 2px;"></div>
+                    </div>
+                    <div style="flex: 1; min-width: 220px; padding: 12px 16px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #ef4444;">⚠️ Most Cytotoxic Option:</span>
+                        <div id="summary-ml-worst" style="font-size: 14px; font-weight: 700; color: #ef4444; margin-top: 2px;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -208,6 +283,34 @@
 </div>
 
 <script>
+const PAST_EXPERIMENTS = {{ (past_experiments or []) | tojson | safe }};
+
+function loadPastExperimentIntoCard(cardIdx, expId) {
+    if (!expId) return;
+    const exp = PAST_EXPERIMENTS.find(e => String(e.id) === String(expId));
+    if (!exp) return;
+
+    const nameInput = document.getElementById(`exp_${cardIdx}_name`);
+    const cellLineSelect = document.getElementById(`exp_${cardIdx}_cell_line`);
+    const expTimeSelect = document.getElementById(`exp_${cardIdx}_exposure_time`);
+    
+    if (nameInput) {
+        nameInput.value = exp.participant_id 
+            ? `👤 [${exp.participant_id}] ${exp.sample_name}` 
+            : `🔬 ${exp.sample_name}`;
+    }
+    if (cellLineSelect && exp.cell_line) cellLineSelect.value = exp.cell_line;
+    if (expTimeSelect && exp.exposure_time) expTimeSelect.value = exp.exposure_time;
+
+    // Switch to manual mode and populate rows
+    toggleCardMode(cardIdx, 'manual');
+    const tbody = document.getElementById(`manual-tbody-${cardIdx}`);
+    if (tbody && exp.raw_points && exp.raw_points.length > 0) {
+        tbody.innerHTML = generateRowsHTML(cardIdx, exp.raw_points);
+    }
+    validateForm();
+}
+
 const CELL_LINES = ["HeLa", "MCF-7", "A549", "HEK293", "NIH-3T3", "HepG2", "Caco-2", "CHO", "Jurkat", "PC12"];
 const EXPOSURE_TIMES = ["6h", "12h", "24h", "48h", "72h"];
 
@@ -335,6 +438,22 @@ function generateCardHTML(i, data) {
                 <a href="/home" style="font-size: 12px; color: var(--ns-text-muted); text-decoration: none;">Home</a>
             </div>
 
+            <!-- Past Experiment Quick Loader -->
+            <div style="margin-bottom: 12px; background: rgba(15, 118, 110, 0.08); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(15, 118, 110, 0.2);">
+                <label style="font-size: 11px; font-weight: 700; color: #0f766e; display: block; margin-bottom: 4px;">
+                    📜 Load from Past Experiments (Patient / Research):
+                </label>
+                <select onchange="loadPastExperimentIntoCard(${i}, this.value)" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--ns-border-input); font-size: 12px; background: var(--ns-bg-input); color: var(--ns-text-main); font-weight: 600;">
+                    <option value="">-- Choose Past Experiment or Keep Manual --</option>
+                    <optgroup label="👤 Patient Clinical Experiments">
+                        ${PAST_EXPERIMENTS.filter(p => !!p.participant_id).map(p => `<option value="${p.id}">👤 [${p.participant_id}] ${escapeHtml(p.participant_name || 'Patient')} — ${escapeHtml(p.sample_name)} (${p.cell_line || 'HeLa'}, ${p.cell_viability}%)</option>`).join('')}
+                    </optgroup>
+                    <optgroup label="🔬 Research & Material Screening">
+                        ${PAST_EXPERIMENTS.filter(p => !p.participant_id).map(p => `<option value="${p.id}">🔬 ${escapeHtml(p.sample_name)} — (${p.cell_line || 'HeLa'}, ${p.exposure_time || '24h'}, ${p.cell_viability}%)</option>`).join('')}
+                    </optgroup>
+                </select>
+            </div>
+
             <div style="display: grid; gap: 12px; margin-bottom: 16px;">
                 <input
                     type="text"
@@ -363,6 +482,32 @@ function generateCardHTML(i, data) {
                         onchange="validateForm()"
                     >
                         ${timeOptions}
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <select
+                        id="exp_${i}_synthesis_method"
+                        name="exp_${i}_synthesis_method"
+                        style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--ns-border-input); font-size: 12px; font-weight: 600; background: var(--ns-bg-input); color: var(--ns-text-main);"
+                        onchange="validateForm()"
+                    >
+                        <option value="Green_Synthesis" ${data.synthesisMethod === 'Green_Synthesis' ? 'selected' : ''}>🌿 Green Synthesis</option>
+                        <option value="Chemical_Precipitation" ${data.synthesisMethod === 'Chemical_Precipitation' ? 'selected' : ''}>🧪 Chemical Precipitation</option>
+                        <option value="Sol-Gel" ${data.synthesisMethod === 'Sol-Gel' ? 'selected' : ''}>🔬 Sol-Gel</option>
+                        <option value="Hydrothermal" ${data.synthesisMethod === 'Hydrothermal' ? 'selected' : ''}>⚗️ Hydrothermal</option>
+                    </select>
+
+                    <select
+                        id="exp_${i}_surface_coating"
+                        name="exp_${i}_surface_coating"
+                        style="padding: 8px 10px; border-radius: 8px; border: 1px solid var(--ns-border-input); font-size: 12px; font-weight: 600; background: var(--ns-bg-input); color: var(--ns-text-main);"
+                        onchange="validateForm()"
+                    >
+                        <option value="Bare_ZnO" ${data.surfaceCoating === 'Bare_ZnO' ? 'selected' : ''}>⚪ Bare ZnO</option>
+                        <option value="PEG_Coated" ${data.surfaceCoating === 'PEG_Coated' || !data.surfaceCoating ? 'selected' : ''}>🛡️ PEG-Coated</option>
+                        <option value="Chitosan_Coated" ${data.surfaceCoating === 'Chitosan_Coated' ? 'selected' : ''}>🌱 Chitosan-Coated</option>
+                        <option value="Silica_Coated" ${data.surfaceCoating === 'Silica_Coated' ? 'selected' : ''}>💎 Silica-Coated</option>
                     </select>
                 </div>
             </div>
@@ -407,13 +552,20 @@ function generateCardHTML(i, data) {
 
             <div id="manual-section-${i}" style="overflow-x: auto; display: ${isManual ? 'block' : 'none'};">
 
-                <div style="margin-bottom: 10px;">
+                <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     <button
                         type="button"
                         onclick="addCardManualRow(${i})"
                         style="background: #0f766e; color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
                     >
                         <span>➕</span> Add Row
+                    </button>
+                    <button
+                        type="button"
+                        onclick="clearCardManualRows(${i})"
+                        style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                    >
+                        <span>🔄</span> Clear All
                     </button>
                 </div>
 
@@ -462,6 +614,35 @@ function addCardManualRow(cardIdx) {
         </td>
     `;
     tbody.appendChild(newTr);
+    updateCardDeleteIcons(cardIdx);
+    validateForm();
+}
+
+function clearCardManualRows(cardIdx) {
+    const tbody = document.getElementById(`manual-tbody-${cardIdx}`);
+    if (!tbody) return;
+    tbody.innerHTML = `
+        <tr>
+            <td style="padding: 3px;">
+                <input type="number" step="any" placeholder="0.0" name="exp_${cardIdx}_concentration[]" value="" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--ns-border-main); text-align: center;" oninput="validateForm()" />
+            </td>
+            <td style="padding: 3px;">
+                <input type="number" step="any" placeholder="100.0" name="exp_${cardIdx}_viability[]" value="" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--ns-border-main); text-align: center;" oninput="validateForm()" />
+            </td>
+            <td style="padding: 3px;">
+                <input type="number" step="any" placeholder="1.0" name="exp_${cardIdx}_ros[]" value="" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--ns-border-main); text-align: center;" oninput="validateForm()" />
+            </td>
+            <td style="padding: 3px;">
+                <input type="number" step="any" placeholder="0.5" name="exp_${cardIdx}_ldh[]" value="" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--ns-border-main); text-align: center;" oninput="validateForm()" />
+            </td>
+            <td style="padding: 3px;">
+                <input type="number" step="any" placeholder="0.2" name="exp_${cardIdx}_apoptosis[]" value="" style="width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--ns-border-main); text-align: center;" oninput="validateForm()" />
+            </td>
+            <td style="padding: 3px; text-align: center; width: 32px;">
+                <button type="button" class="row-delete-btn" title="Delete Row" onclick="removeCardSpecificRow(${cardIdx}, this)" style="display: none; background: transparent; border: none; font-size: 15px; cursor: pointer; padding: 2px 4px; line-height: 1;">🗑️</button>
+            </td>
+        </tr>
+    `;
     updateCardDeleteIcons(cardIdx);
     validateForm();
 }
@@ -715,12 +896,7 @@ function renderDashboard(data) {
             <div class="ns-stat-label">🧪 ${escapeHtml(r.name)}</div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; margin-top:6px;">
                 <span class="ns-badge ${cls}">${escapeHtml(r.ml_status)}</span>
-                <span style="font-size:11px; color: var(--ns-text-sub); font-weight:600;">Confidence: ${escapeHtml(String(r.ml_confidence))}</span>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
-                <div><div class="ns-stat-label">Toxicity Score</div><div style="font-weight:800;">${escapeHtml(String(r.ml_tox_score))}</div></div>
-                <div><div class="ns-stat-label">Risk Level</div><div style="font-weight:800;">${escapeHtml(r.ml_tox_level)}</div></div>
-                <div><div class="ns-stat-label">IC50</div><div style="font-weight:700;">${escapeHtml(String(r.ml_ic50))}</div></div>
+        <div><div class="ns-stat-label">IC50</div><div style="font-weight:700;">${escapeHtml(String(r.ml_ic50))}</div></div>
                 <div><div class="ns-stat-label">Safe Range</div><div style="font-weight:700;">${escapeHtml(String(r.ml_safe_range))}</div></div>
             </div>
         </div>`;
@@ -736,59 +912,75 @@ function renderRadarChart(results) {
     }
     
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const textColor = isDark ? '#cbd5e1' : '#64748b';
-    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const textColor = isDark ? '#ffffff' : '#0f172a';
+    const gridColor = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(15,23,42,0.14)';
     
     const ctx = document.getElementById('compareRadarChart').getContext('2d');
     
-    // Beautiful color palette for datasets
+    // Rich color palette for multiple experiment candidates
     const colors = [
-        { bg: 'rgba(15, 118, 110, 0.2)', border: '#0f766e' },  // Teal
-        { bg: 'rgba(59, 130, 246, 0.2)', border: '#3b82f6' },  // Blue
-        { bg: 'rgba(245, 158, 11, 0.2)', border: '#f59e0b' },  // Amber
-        { bg: 'rgba(139, 92, 246, 0.2)',  border: '#8b5cf6' }, // Purple
-        { bg: 'rgba(239, 68, 68, 0.2)',   border: '#ef4444' }  // Red
+        { bg: 'rgba(15, 118, 110, 0.28)', border: '#0f766e', point: '#14b8a6' },  // Teal
+        { bg: 'rgba(59, 130, 246, 0.28)', border: '#3b82f6', point: '#60a5fa' },  // Blue
+        { bg: 'rgba(245, 158, 11, 0.28)', border: '#f59e0b', point: '#fbbf24' },  // Amber
+        { bg: 'rgba(139, 92, 246, 0.28)', border: '#8b5cf6', point: '#a78bfa' },  // Purple
+        { bg: 'rgba(239, 68, 68, 0.28)',  border: '#ef4444', point: '#f87171' }   // Red
     ];
-    
-    // Normalize data so all axes are visible
-    const maxViability = Math.max(...results.map(r => r.avg_viability), 1);
-    const maxToxicity = Math.max(...results.map(r => r.toxicity_score), 1);
-    const maxROS = Math.max(...results.map(r => r.avg_ros), 1);
-    const maxLDH = Math.max(...results.map(r => r.avg_ldh), 1);
-    const maxApoptosis = Math.max(...results.map(r => r.avg_apoptosis), 1);
     
     const datasets = results.map((r, index) => {
         const color = colors[index % colors.length];
+        const v = parseFloat(r.avg_viability) || 0;
+        const ros = parseFloat(r.avg_ros) || 1.0;
+        const ldh = parseFloat(r.avg_ldh) || 0;
+        const apop = parseFloat(r.avg_apoptosis) || 0;
+        const hemo = parseFloat(r.hemolysis_rate || 0.8);
+
+        const vScore = Math.max(0, Math.min(100, v));
+        const rosScore = Math.max(0, Math.min(100, 100 - (ros - 1.0) * 20));
+        const ldhScore = Math.max(0, Math.min(100, 100 - ldh * 3));
+        const apopScore = Math.max(0, Math.min(100, 100 - apop * 4));
+        const hemoScore = Math.max(0, Math.min(100, 100 - hemo * 10));
+
         return {
             label: r.name,
-            data: [
-                (r.avg_viability / maxViability) * 100,
-                (r.toxicity_score / maxToxicity) * 100,
-                (r.avg_ros / maxROS) * 100,
-                (r.avg_ldh / maxLDH) * 100,
-                (r.avg_apoptosis / maxApoptosis) * 100
-            ],
-            raw_data: [
-                r.avg_viability,
-                r.toxicity_score,
-                r.avg_ros,
-                r.avg_ldh,
-                r.avg_apoptosis
-            ],
+            data: [vScore, rosScore, ldhScore, apopScore, hemoScore],
+            raw_data: { viab: v, ros: ros, ldh: ldh, apop: apop, hemo: hemo },
             backgroundColor: color.bg,
             borderColor: color.border,
-            pointBackgroundColor: color.border,
+            pointBackgroundColor: color.point,
             pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
             pointHoverBackgroundColor: '#fff',
             pointHoverBorderColor: color.border,
-            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2.2,
         };
+    });
+
+    // Overlaid ISO 10993-5 Safe Benchmark Polygon
+    datasets.push({
+        label: 'ISO 10993-5 Safe Line (80%)',
+        data: [80, 80, 80, 80, 80],
+        backgroundColor: 'rgba(22, 163, 74, 0.04)',
+        borderColor: '#16a34a',
+        borderWidth: 1.8,
+        borderDash: [5, 4],
+        pointBackgroundColor: '#16a34a',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 1,
+        pointRadius: 2.5
     });
     
     compareRadarChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Cell Viability (%)', 'Toxicity Score', 'ROS Level', 'LDH Release', 'Apoptosis (%)'],
+            labels: [
+                'Cell Viability (MTT)',
+                'Oxidative Defense (ROS)',
+                'Membrane Intact (LDH)',
+                'Cell Survival (Apoptosis)',
+                'Blood Safety (ASTM F756)'
+            ],
             datasets: datasets
         },
         options: {
@@ -797,14 +989,17 @@ function renderRadarChart(results) {
             scales: {
                 r: {
                     angleLines: { color: gridColor },
-                    grid: { color: gridColor },
+                    grid: { color: gridColor, circular: true },
                     pointLabels: {
                         color: textColor,
-                        font: { family: 'Inter', size: 12, weight: '600' }
+                        font: { family: 'Inter, sans-serif', size: 13, weight: '900' }
                     },
                     ticks: {
-                        display: false,
+                        display: true,
+                        stepSize: 20,
                         backdropColor: 'transparent',
+                        color: isDark ? '#ffffff' : '#0f172a',
+                        font: { size: 11, weight: '800' },
                         min: 0,
                         max: 100
                     }
@@ -815,23 +1010,35 @@ function renderRadarChart(results) {
                     position: 'bottom',
                     labels: {
                         color: textColor,
-                        font: { family: 'Inter', size: 13, weight: '600' },
-                        padding: 20
+                        font: { family: 'Inter, sans-serif', size: 12.5, weight: '800' },
+                        padding: 14,
+                        boxWidth: 12
                     }
                 },
                 tooltip: {
-                    backgroundColor: isDark ? 'rgba(30,41,59,0.9)' : 'rgba(255,255,255,0.9)',
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255,255,255,0.96)',
                     titleColor: isDark ? '#f8fafc' : '#0f172a',
                     bodyColor: isDark ? '#cbd5e1' : '#475569',
-                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                     borderWidth: 1,
                     padding: 12,
-                    boxPadding: 6,
-                    usePointStyle: true,
+                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            const rawValue = context.dataset.raw_data[context.dataIndex];
-                            return `${context.dataset.label}: ${rawValue}`;
+                            const dataset = context.dataset;
+                            if (dataset.label.includes('ISO 10993-5')) {
+                                return 'ISO Safe Line: 80% Minimum Viability';
+                            }
+                            const val = context.raw;
+                            const idx = context.dataIndex;
+                            const raw = dataset.raw_data;
+                            let rawStr = '';
+                            if (idx === 0) rawStr = `Raw Viability: ${raw.viab}%`;
+                            else if (idx === 1) rawStr = `Raw ROS: ${raw.ros}× baseline`;
+                            else if (idx === 2) rawStr = `Raw LDH: ${raw.ldh}% lysis`;
+                            else if (idx === 3) rawStr = `Raw Apoptosis: ${raw.apop}%`;
+                            else if (idx === 4) rawStr = `Raw Hemolysis: ${raw.hemo}%`;
+                            return [`${dataset.label}: ${val}% Health`, rawStr];
                         }
                     }
                 }
@@ -840,6 +1047,33 @@ function renderRadarChart(results) {
     });
 }
 
+
+
+function switchResultTab(tabName) {
+    ['matrix', 'graphs', 'cards', 'guidance'].forEach(t => {
+        const panel = document.getElementById('res-tab-' + t);
+        const btn = document.getElementById('tab-btn-' + t);
+        if (panel) panel.style.display = (t === tabName) ? 'block' : 'none';
+        if (btn) {
+            btn.style.background = (t === tabName) ? '#0f766e' : 'transparent';
+            btn.style.color = (t === tabName) ? '#ffffff' : 'var(--ns-text-muted)';
+        }
+    });
+}
+
+let isMLVisible = false;
+function toggleMLColumns() {
+    isMLVisible = !isMLVisible;
+    document.querySelectorAll('.ml-col').forEach(el => {
+        el.style.display = isMLVisible ? 'table-cell' : 'none';
+    });
+    const btn = document.getElementById('btn-toggle-ml-cols');
+    if (btn) {
+        btn.innerHTML = isMLVisible 
+            ? '<span>👁️</span> Hide Calibrated ML Details' 
+            : '<span>🔬</span> Toggle Calibrated ML Details';
+    }
+}
 
 function downloadExcelCSV() {
     if (!currentResults || !currentResults.results) return;

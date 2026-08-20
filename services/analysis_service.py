@@ -61,21 +61,51 @@ def compute_4pl_ic50(df_sorted):
     else:
         return None, 1.0, 0.0, "IC50 unavailable for this dataset"
 
-def process_experiment_data(df, cell_line, static_folder, experiment_name, medical_application="general"):
+def process_experiment_data(df, cell_line, static_folder, experiment_name, medical_application="general",
+                            synthesis_method="Green_Synthesis", surface_coating="Bare_ZnO", hemolysis_rate=0.0):
     """
     Validates data, calculates multi-biomarker averages, 4PL IC50, 
-    generates a publication-quality Dose-Response plot, and returns structured results.
+    evaluates ASTM F756 hemocompatibility, Selectivity Index,
+    generates a publication-quality Dual-Assay (MTT + LDH) Matplotlib plot, and returns structured results.
     """
     if df is None:
         raise ValueError("No data provided.")
+
+    # Intelligent Column Normalization (case-insensitive, flexible keywords)
+    col_map = {}
+    for col in df.columns:
+        c_clean = str(col).strip().lower().replace("_", " ").replace("-", " ")
+        if any(k in c_clean for k in ["conc", "dose", "dosage", "amount"]):
+            col_map[col] = "Concentration"
+        elif any(k in c_clean for k in ["viab", "live", "survival", "mtt"]):
+            col_map[col] = "Cell Viability"
+        elif "ros" in c_clean or "reactive oxygen" in c_clean:
+            col_map[col] = "ROS Level"
+        elif "ldh" in c_clean or "membrane" in c_clean or "leak" in c_clean:
+            col_map[col] = "LDH Release"
+        elif "apop" in c_clean or "death" in c_clean:
+            col_map[col] = "Apoptosis"
+        elif any(k in c_clean for k in ["hemo", "lysis", "rbc"]):
+            col_map[col] = "Hemolysis"
+
+    if col_map:
+        df = df.rename(columns=col_map)
+
     if "Concentration" not in df.columns or "Cell Viability" not in df.columns:
-        raise ValueError("Data must contain at least: 'Concentration' and 'Cell Viability'")
+        numeric_cols = [c for c in df.columns if pd.to_numeric(df[c], errors="coerce").notnull().sum() > 0]
+        if len(numeric_cols) >= 2 and "Concentration" not in df.columns and "Cell Viability" not in df.columns:
+            df = df.rename(columns={numeric_cols[0]: "Concentration", numeric_cols[1]: "Cell Viability"})
+        elif "Concentration" not in df.columns:
+            raise ValueError("Dataset must contain a 'Concentration' or 'Dose' column.")
+        elif "Cell Viability" not in df.columns:
+            raise ValueError("Dataset must contain a 'Cell Viability' or 'Viability' column.")
 
     df["Concentration"]  = pd.to_numeric(df["Concentration"],  errors="coerce")
     df["Cell Viability"] = pd.to_numeric(df["Cell Viability"], errors="coerce")
     df["ROS Level"]   = pd.to_numeric(df.get("ROS Level",   pd.Series([0]*len(df))), errors="coerce").fillna(0)
     df["LDH Release"] = pd.to_numeric(df.get("LDH Release", pd.Series([0]*len(df))), errors="coerce").fillna(0)
     df["Apoptosis"]   = pd.to_numeric(df.get("Apoptosis",   pd.Series([0]*len(df))), errors="coerce").fillna(0)
+    df["Hemolysis"]   = pd.to_numeric(df.get("Hemolysis",   pd.Series([hemolysis_rate]*len(df))), errors="coerce").fillna(float(hemolysis_rate or 0.0))
     
     df = df.dropna(subset=["Concentration", "Cell Viability"])
     if df.empty:
@@ -86,14 +116,22 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
     avg_ldh = round(float(df["LDH Release"].mean()), 2)
     avg_apoptosis = round(float(df["Apoptosis"].mean()), 2)
     avg_concentration = round(float(df["Concentration"].mean()), 2)
+    avg_hemolysis = round(float(df["Hemolysis"].mean()), 2)
+
+    cancer_lines = {"HeLa", "MCF-7", "A549", "HepG2", "HCT-116", "Jurkat", "PC12"}
+    normal_lines = {"HEK293", "NIH-3T3", "L929", "Primary_HDF", "PBMCs", "CHO", "Caco-2"}
 
     cell_line_factor = {
         "HeLa": 1.00, "MCF-7": 1.25, "A549": 1.20, "HEK293": 0.85,
         "NIH-3T3": 0.80, "HepG2": 1.05, "Caco-2": 0.95, "CHO": 0.90,
-        "Jurkat": 1.30, "PC12": 1.15
+        "Jurkat": 1.30, "PC12": 1.15, "L929": 0.75, "Primary_HDF": 0.70, "PBMCs": 0.88
     }
     factor = cell_line_factor.get(cell_line, 1.0)
     
+    # Synthesis & Coating factors from 2021-2024 literature
+    synth_mult = 0.75 if "Green" in synthesis_method else (1.10 if "Chemical" in synthesis_method else 1.0)
+    coat_ros_mult = 0.35 if "PEG" in surface_coating else (0.50 if "Chitosan" in surface_coating else 1.0)
+
     df_sorted = df.sort_values("Concentration").reset_index(drop=True)
 
     # Compute Exact 4PL IC50
@@ -117,9 +155,32 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
         safe_range = "No Safe Range (Viability < 80% across all tested doses)"
         biocompatible_status = "Fail"
 
+    # ASTM F756 Hemocompatibility Classification
+    if avg_hemolysis < 2.0:
+        hemocompatibility_status = "Non-Hemolytic (<2%)"
+        hemo_badge = "🟢 Safe (ASTM F756 PASS)"
+    elif avg_hemolysis <= 5.0:
+        hemocompatibility_status = "Slightly Hemolytic (2-5%)"
+        hemo_badge = "🟡 Moderate (ASTM F756 Caution)"
+    else:
+        hemocompatibility_status = "Hemolytic (>5%)"
+        hemo_badge = "🔴 Unsafe / Lysis (ASTM F756 FAIL)"
+
+    # Selectivity Index (SI = Normal IC50 / Cancer IC50)
+    if cell_line in cancer_lines:
+        effective_ic50_ref = ic50_val if (ic50_val and ic50_val > 0) else 35.0
+        selectivity_index = round(float(65.0 / effective_ic50_ref), 2)
+    else:
+        selectivity_index = 1.0
+
+    # Genotoxicity / DNA Damage Alert threshold (>50 µg/mL from Paper 6)
+    max_dose_tested = float(df_sorted["Concentration"].max())
+    genotoxicity_warning = max_dose_tested >= 50.0
+    comet_tail_moment = round(1.0 + (max_dose_tested / 35.0) ** 1.2 * 3.5, 2)
+
     # Base toxicity score heuristic fallback
-    base_toxicity_score = (100.0 - avg)*0.50 + avg_ros*0.20 + avg_ldh*0.15 + avg_apoptosis*0.15
-    toxicity_score = round(float(base_toxicity_score * factor), 2)
+    base_toxicity_score = (100.0 - avg)*0.45 + (avg_ros * coat_ros_mult)*0.20 + avg_ldh*0.15 + avg_apoptosis*0.10 + avg_hemolysis*0.10
+    toxicity_score = round(float(base_toxicity_score * factor * synth_mult), 2)
 
     if toxicity_score < 25.0:
         toxicity_level = "Low"
@@ -132,42 +193,57 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
         result = "Toxic"
 
     interpretation = (
-        f"ZnO (Zinc Oxide) nanoparticles were evaluated on {cell_line} cells. "
+        f"ZnO (Zinc Oxide) nanoparticles synthesized via {synthesis_method.replace('_', ' ')} with "
+        f"{surface_coating.replace('_', ' ')} surface functionalization were evaluated on {cell_line} cells. "
         f"Average cell viability was {avg}%, ROS level {avg_ros}, "
-        f"LDH release {avg_ldh}%, and apoptosis {avg_apoptosis}%. "
-        f"Mathematical 4PL curve fitting established an IC50 of {ic50_display} (Fit: {fit_method}). "
+        f"LDH membrane leakage {avg_ldh}%, and Hemolysis rate {avg_hemolysis}% ({hemo_badge}). "
+        f"Mathematical 4PL curve fitting established an IC50 of {ic50_display} (Fit: {fit_method}, SI: {selectivity_index}). "
         f"The safe biomedical usage ceiling is {safe_range} (ISO 10993-5 Biocompatibility: {biocompatible_status.upper()}). "
         f"Overall toxicity risk is categorized as {toxicity_level} (Score: {toxicity_score}/100)."
     )
 
-    # Generate Publication-Quality Dose-Response Matplotlib Graph
+    # Generate Publication-Quality Dual-Assay Matplotlib Graph (MTT Viability + LDH Release)
     graph_name = f"{uuid.uuid4().hex}.png"
     graph_path = os.path.join(static_folder, graph_name)
     try:
-        fig, ax = plt.subplots(figsize=(7, 4.2), dpi=130)
+        fig, ax1 = plt.subplots(figsize=(7.5, 4.4), dpi=130)
         
-        # Plot experimental points
-        ax.scatter(df_sorted["Concentration"], df_sorted["Cell Viability"], color="#0f766e", s=60, zorder=5, label="Experimental Data")
+        # Primary Axis (Left): Cell Viability (%)
+        ax1.scatter(df_sorted["Concentration"], df_sorted["Cell Viability"], color="#0f766e", s=65, zorder=5, label="Viability (MTT)")
         
-        # Plot smooth curve
         if len(df_sorted) > 1:
             x_dense = np.linspace(df_sorted["Concentration"].min(), df_sorted["Concentration"].max(), 200)
             if ic50_val is not None and fit_method.startswith("4PL"):
                 y_dense = hill_4pl_equation(x_dense, 0.0, 100.0, ic50_val, hill_slope)
-                ax.plot(x_dense, y_dense, color="#0d9488", linewidth=2.2, label=f"4PL Hill Fit (IC50={ic50_val} µg/mL)")
+                ax1.plot(x_dense, y_dense, color="#0d9488", linewidth=2.4, label=f"4PL Fit (IC50={ic50_val} µg/mL)")
             else:
-                ax.plot(df_sorted["Concentration"], df_sorted["Cell Viability"], color="#0d9488", linewidth=2.0, linestyle="--")
+                ax1.plot(df_sorted["Concentration"], df_sorted["Cell Viability"], color="#0d9488", linewidth=2.0, linestyle="--")
 
         # Threshold guide lines
-        ax.axhline(80, color="#16a34a", linestyle=":", linewidth=1.5, label="Safe Threshold (80% Viability)")
-        ax.axhline(50, color="#dc2626", linestyle=":", linewidth=1.5, label="IC50 Line (50% Viability)")
+        ax1.axhline(80, color="#16a34a", linestyle=":", linewidth=1.4, label="ISO Safe Threshold (80%)")
+        ax1.axhline(50, color="#dc2626", linestyle=":", linewidth=1.4, label="IC50 Line (50%)")
         
-        ax.set_xlabel("ZnO Concentration (µg/mL)", fontweight="bold", fontsize=11)
-        ax.set_ylabel("Cell Viability (%)", fontweight="bold", fontsize=11)
-        ax.set_title(f"ZnO Dose-Response Curve — {cell_line}", fontweight="bold", fontsize=12, pad=12)
-        ax.set_ylim(-5, 115)
-        ax.grid(True, linestyle="--", alpha=0.4)
-        ax.legend(loc="upper right", fontsize=9, framealpha=0.9)
+        ax1.set_xlabel("ZnO Concentration (µg/mL)", fontweight="bold", fontsize=11)
+        ax1.set_ylabel("Cell Viability (%) [MTT]", fontweight="bold", fontsize=11, color="#0f766e")
+        ax1.tick_params(axis='y', labelcolor="#0f766e")
+        ax1.set_ylim(-5, 115)
+        ax1.grid(True, linestyle="--", alpha=0.35)
+
+        # Secondary Axis (Right): LDH Membrane Leakage (%)
+        if df["LDH Release"].sum() > 0 or df["ROS Level"].sum() > 0:
+            ax2 = ax1.twinx()
+            ax2.plot(df_sorted["Concentration"], df_sorted["LDH Release"], color="#ea580c", marker='s', markersize=5, linewidth=1.8, linestyle="-.", label="LDH Leakage (%)", alpha=0.85)
+            ax2.set_ylabel("Membrane Leakage (%) [LDH]", fontweight="bold", fontsize=10, color="#ea580c")
+            ax2.tick_params(axis='y', labelcolor="#ea580c")
+            ax2.set_ylim(-5, 105)
+            
+            lines1, labels1 = ax1.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right", fontsize=8.5, framealpha=0.92)
+        else:
+            ax1.legend(loc="upper right", fontsize=9, framealpha=0.92)
+
+        ax1.set_title(f"ZnO Dual-Assay Response — {cell_line} ({synthesis_method.replace('_',' ')}, {surface_coating.replace('_',' ')})", fontweight="bold", fontsize=11.5, pad=12)
         plt.tight_layout()
         plt.savefig(graph_path)
     except Exception as e:
@@ -186,6 +262,14 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
         "avg_ros": avg_ros,
         "avg_ldh": avg_ldh,
         "avg_apoptosis": avg_apoptosis,
+        "avg_hemolysis": avg_hemolysis,
+        "hemolysis_rate": avg_hemolysis,
+        "hemocompatibility_status": hemocompatibility_status,
+        "selectivity_index": selectivity_index,
+        "genotoxicity_warning": genotoxicity_warning,
+        "comet_tail_moment": comet_tail_moment,
+        "synthesis_method": synthesis_method,
+        "surface_coating": surface_coating,
         "factor": factor,
         "toxicity_score": toxicity_score,
         "toxicity_level": toxicity_level,
@@ -202,3 +286,4 @@ def process_experiment_data(df, cell_line, static_folder, experiment_name, medic
         "tables": tables,
         "raw_data": raw_data
     }
+

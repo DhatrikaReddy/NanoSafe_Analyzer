@@ -154,6 +154,36 @@
                                value="{% if action=='edit' and sample.collection_date %}{{ sample.collection_date.strftime('%Y-%m-%d') }}{% else %}{{ form_data.get('collection_date','') }}{% endif %}">
                     </div>
 
+                    <div class="form-group">
+                        <label>Quantity / Volume</label>
+                        <input type="text" name="volume_quantity" placeholder="e.g. 1.5 mL / 2 Cryovials"
+                               value="{% if action=='edit' %}{{ sample.volume_quantity or '1.0 mL' }}{% else %}{{ form_data.get('volume_quantity','1.0 mL') }}{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Passage Number</label>
+                        <input type="text" name="passage_number" placeholder="e.g. P1, P2, Primary"
+                               value="{% if action=='edit' %}{{ sample.passage_number or 'P1' }}{% else %}{{ form_data.get('passage_number','P1') }}{% endif %}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Storage Condition</label>
+                        <select name="storage_condition">
+                            {% set sc = sample.storage_condition if action=='edit' else form_data.get('storage_condition','-80°C Cryopreservation') %}
+                            <option value="-80°C Cryopreservation" {% if sc=='-80°C Cryopreservation' %}selected{% endif %}>❄️ -80°C Cryopreservation</option>
+                            <option value="Liquid Nitrogen (-196°C)" {% if sc=='Liquid Nitrogen (-196°C)' %}selected{% endif %}>🧊 Liquid Nitrogen (-196°C)</option>
+                            <option value="-20°C Freezer" {% if sc=='-20°C Freezer' %}selected{% endif %}>❄️ -20°C Freezer</option>
+                            <option value="4°C Cold Storage" {% if sc=='4°C Cold Storage' %}selected{% endif %}>🌡️ 4°C Cold Storage</option>
+                            <option value="Room Temperature" {% if sc=='Room Temperature' %}selected{% endif %}>🏠 Room Temperature (Formalin)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Storage Location</label>
+                        <input type="text" name="storage_location" placeholder="e.g. Tank A / Rack 2 / Box 4"
+                               value="{% if action=='edit' %}{{ sample.storage_location or 'Tank A / Rack 2 / Box 4' }}{% else %}{{ form_data.get('storage_location','Tank A / Rack 2 / Box 4') }}{% endif %}">
+                    </div>
+
                     <!-- Participant -->
                     <div class="form-group">
                         <label>Participant (Consented only)</label>

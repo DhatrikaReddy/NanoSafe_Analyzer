@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiClient, { setAuthToken } from '../api/client';
+import apiClient, { setAuthToken, setOnUnauthorizedCallback } from '../api/client';
 
 export const AuthContext = createContext();
 
@@ -10,6 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setOnUnauthorizedCallback(() => {
+      logout();
+    });
     loadStoredAuth();
   }, []);
 
@@ -32,16 +35,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const response = await apiClient.post('/auth/login', { username, password });
-      const { accessToken, username: userRes, role } = response.data;
+      const { accessToken, username: userRes, email: emailRes, role, isProfileCompleted } = response.data;
 
-      const userData = { username: userRes, role };
+      const userData = {
+        username: userRes,
+        email: emailRes || '',
+        role: role || 'user',
+        isProfileCompleted: Boolean(isProfileCompleted)
+      };
       await AsyncStorage.setItem('user_token', accessToken);
       await AsyncStorage.setItem('user_data', JSON.stringify(userData));
 
       setToken(accessToken);
       setAuthToken(accessToken);
       setUser(userData);
-      return { success: true };
+      return { success: true, isProfileCompleted: userData.isProfileCompleted };
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'Invalid credentials or connection error.';
       return { success: false, error: errorMsg };
@@ -61,19 +69,38 @@ export const AuthProvider = ({ children }) => {
   const verifyOtp = async (email, otp) => {
     try {
       const response = await apiClient.post('/auth/verify-otp', { email, otp });
-      const { accessToken, username: userRes, role } = response.data;
+      const { accessToken, username: userRes, email: emailRes, role, isProfileCompleted } = response.data;
 
-      const userData = { username: userRes, role };
+      const userData = {
+        username: userRes,
+        email: emailRes || email || '',
+        role: role || 'user',
+        isProfileCompleted: Boolean(isProfileCompleted)
+      };
       await AsyncStorage.setItem('user_token', accessToken);
       await AsyncStorage.setItem('user_data', JSON.stringify(userData));
 
       setToken(accessToken);
       setAuthToken(accessToken);
       setUser(userData);
-      return { success: true };
+      return { success: true, isProfileCompleted: userData.isProfileCompleted };
     } catch (error) {
       const errorMsg = error.response?.data?.error || 'Invalid verification code.';
       return { success: false, error: errorMsg };
+    }
+  };
+
+  const completeProfileSetup = async (updatedFields = {}) => {
+    try {
+      const updatedUser = {
+        ...(user || {}),
+        ...updatedFields,
+        isProfileCompleted: true
+      };
+      await AsyncStorage.setItem('user_data', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (e) {
+      console.error('Failed to update profile completion state:', e);
     }
   };
 
@@ -91,7 +118,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, verifyOtp, logout }}>
+    <AuthContext.Provider value={{
+      user, token, isLoading,
+      login, register, verifyOtp, completeProfileSetup, logout
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -96,6 +96,8 @@
 body {
     margin: 0;
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.55;
     background-color: var(--ns-bg-main);
     color: var(--ns-text-main);
     transition: background-color 0.25s ease, color 0.25s ease;

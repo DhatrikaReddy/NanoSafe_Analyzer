@@ -634,9 +634,8 @@
                     </label>
                 </div>
 
-                <!-- 4. Appearance -->
-                <p class="ns-panel-sub" style="margin-top: 24px;">Appearance</p>
-                <div class="ns-toggle-row">
+                <!-- Dark Mode Toggle -->
+                <div class="ns-toggle-row" style="margin-top: 18px;">
                     <div>
                         <div class="ns-toggle-label">Dark Mode</div>
                         <div class="ns-toggle-sub">Apply dark theme globally across all pages</div>
@@ -703,19 +702,6 @@
                 </div>
             </div>
             
-            <div class="ns-security-row">
-                <div>
-                    <div class="ns-security-label">Firebase Authentication</div>
-                    <div class="ns-security-sub">Cloud identity provider status</div>
-                </div>
-                <div class="ns-security-value">
-                    {% if user.firebase_uid %}
-                        <span class="badge ns-badge-safe" style="font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;">🔥 Linked</span>
-                    {% else %}
-                        <span class="badge" style="background: var(--ns-bg-hover);color: var(--ns-text-muted);font-weight:700;font-size:12px;padding:3px 10px;border-radius:20px;">Not linked</span>
-                    {% endif %}
-                </div>
-            </div>
 
             <div class="ns-security-row">
                 <div>

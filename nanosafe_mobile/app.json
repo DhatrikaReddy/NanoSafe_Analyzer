@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "NanoSafe Analyzer",
+    "slug": "nanosafe-analyzer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/logo.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./src/assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/logo.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.nanosafe.analyzer",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "ios": {
+      "supportsTablet": true
+    }
+  }
+}

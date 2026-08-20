@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Analysis — Select Research Workflow — NanoSafe Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') + '?v=6' }}">
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <style>
+        .choice-main-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .choice-content-area {
+            padding: 32px 36px;
+            max-width: 1100px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .choice-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .choice-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 10px 0;
+            letter-spacing: -0.5px;
+        }
+        .choice-sub {
+            font-size: 15px;
+            color: var(--ns-text-muted);
+            max-width: 620px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            .choice-content-area {
+                padding: 20px 16px;
+            }
+        }
+        .choice-card {
+            background: var(--ns-bg-card);
+            border: 1.5px solid var(--ns-border-main);
+            border-radius: 18px;
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--ns-shadow-sm);
+            text-decoration: none;
+        }
+        .choice-card:hover {
+            transform: translateY(-4px);
+            border-color: #14b8a6;
+            box-shadow: 0 16px 36px rgba(20, 184, 166, 0.15);
+        }
+        .choice-card.personal:hover {
+            border-color: #0284c7;
+            box-shadow: 0 16px 36px rgba(2, 132, 199, 0.15);
+        }
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            width: fit-content;
+        }
+        .badge-patient {
+            background: rgba(20, 184, 166, 0.12);
+            color: #0f766e;
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+        [data-theme="dark"] .badge-patient {
+            color: #14b8a6;
+        }
+        .badge-personal {
+            background: rgba(56, 189, 248, 0.12);
+            color: #0284c7;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+        [data-theme="dark"] .badge-personal {
+            color: #38bdf8;
+        }
+        .icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 18px;
+        }
+        .icon-patient {
+            background: rgba(20, 184, 166, 0.1);
+            border: 1px solid rgba(20, 184, 166, 0.25);
+        }
+        .icon-personal {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+        .card-heading {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--ns-text-main);
+            margin: 0 0 10px 0;
+        }
+        .card-desc {
+            font-size: 14px;
+            color: var(--ns-text-muted);
+            line-height: 1.6;
+            margin-bottom: 22px;
+            flex-grow: 1;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 26px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .feature-item {
+            font-size: 13.5px;
+            color: var(--ns-text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .feature-bullet {
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .card-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-size: 14.5px;
+            font-weight: 800;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+        .btn-patient {
+            background: #0f766e;
+        }
+        .choice-card:hover .btn-patient {
+            background: #0d9488;
+        }
+        .btn-personal {
+            background: #0284c7;
+        }
+        .choice-card:hover .btn-personal {
+            background: #0369a1;
+        }
+        .quick-help-card {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--ns-shadow-xs);
+        }
+        .quick-help-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .quick-help-text {
+            font-size: 13.5px;
+            color: var(--ns-text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <div class="choice-main-wrapper">
+        {% set page_title = "Select Research Workflow" %}
+        {% include '_topbar.html' %}
+
+        <main class="choice-content-area">
+
+            <!-- Page Header -->
+            <div class="choice-header">
+                <h1 class="choice-title">Select Research Workflow</h1>
+                <p class="choice-sub">
+                    Choose whether you are conducting clinical patient-specific biomaterial testing or unlinked personal preclinical nanoparticle research.
+                </p>
+            </div>
+
+            <!-- Two Main Choices -->
+            <div class="cards-grid">
+                <!-- Choice 1: Patient Research -->
+                <a href="{{ url_for('participants.patient_search') }}" class="choice-card">
+                    <div>
+                        <div class="card-badge badge-patient">
+                            <span>Clinical Biocompatibility</span>
+                        </div>
+                        <div class="icon-circle icon-patient">
+                            <span>👤</span>
+                        </div>
+                        <h2 class="card-heading">Patient Research</h2>
+                        <p class="card-desc">
+                            Execute cell viability and nanoparticle cytotoxicity assays linked to a specific enrolled study participant or primary tissue donor.
+                        </p>
+                        <ul class="feature-list">
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0f766e;">✓</span>
+                                <span>Search &amp; select from existing patient cohort</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0f766e;">✓</span>
+                                <span>Enroll new patient with informed consent tracking</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0f766e;">✓</span>
+                                <span>Link experiments to biological samples &amp; cell lines</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0f766e;">✓</span>
+                                <span>Chronological experiment timeline (Exp 1, Exp 2, Exp 3...)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-action-btn btn-patient">
+                        <span>Search Patient &amp; Begin</span>
+                        <span>→</span>
+                    </div>
+                </a>
+
+                <!-- Choice 2: Personal Research -->
+                <a href="{{ url_for('main.upload', mode='personal') }}" class="choice-card personal">
+                    <div>
+                        <div class="card-badge badge-personal">
+                            <span>Preclinical &amp; In-Vitro Screening</span>
+                        </div>
+                        <div class="icon-circle icon-personal">
+                            <span>🔬</span>
+                        </div>
+                        <h2 class="card-heading">Personal Research</h2>
+                        <p class="card-desc">
+                            Standard independent NanoSafe laboratory analysis for nanoparticle formulations, established cell lines, and general cytotoxicity evaluations.
+                        </p>
+                        <ul class="feature-list">
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0284c7;">✓</span>
+                                <span>No patient record or donor consent required</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0284c7;">✓</span>
+                                <span>4PL Hill dose-response curve fitting &amp; IC50</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0284c7;">✓</span>
+                                <span>ML toxicity prediction &amp; ISO 10993-5 verdict</span>
+                            </li>
+                            <li class="feature-item">
+                                <span class="feature-bullet" style="color: #0284c7;">✓</span>
+                                <span>Saved directly to Personal Research History</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-action-btn btn-personal">
+                        <span>Launch Personal Analysis</span>
+                        <span>→</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Contextual Info Banner -->
+            <div class="quick-help-card">
+                <div class="quick-help-icon">💡</div>
+                <p class="quick-help-text">
+                    <strong>Research Data Governance Note:</strong> Patient-linked experiments automatically adhere to ethical consent rules and appear in the patient's chronological timeline. Personal research experiments are kept strictly isolated in your independent Personal Research History.
+                </p>
+            </div>
+        </main>
+    </div>
+</div>
+
+</body>
+</html>

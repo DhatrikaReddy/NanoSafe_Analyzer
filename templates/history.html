@@ -486,61 +486,61 @@
         </div>
     </div>
 
-    <!-- Interactive Charts Grid -->
-    <div class="charts-wrapper">
-        <h2>📈 Interactive Research Analytics</h2>
-        <div class="charts-grid">
-            <div class="chart-box">
-                <h4>Toxicity Score Trend</h4>
-                <canvas id="toxicityTrendChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">📊 No Data Available</div>
-                {% endif %}
+    <!-- DUAL MAIN HEADINGS: PATIENT CLINICAL HISTORY vs EXPERIMENTAL RESEARCH HISTORY -->
+    <div style="display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;">
+        <a href="{{ url_for('main.history', subject_type='patients') }}" style="flex: 1; min-width: 280px; padding: 18px 22px; border-radius: 16px; text-decoration: none; border: 2px solid {% if subject_type == 'patients' %}#0f766e{% else %}var(--ns-border-main){% endif %}; background: {% if subject_type == 'patients' %}rgba(15, 118, 110, 0.14){% else %}var(--ns-bg-card){% endif %}; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s;">
+            <div>
+                <div style="font-size: 16.5px; font-weight: 800; color: {% if subject_type == 'patients' %}#0f766e{% else %}var(--ns-text-main){% endif %};">👤 Patient Clinical History</div>
+                <div style="font-size: 12.5px; color: var(--ns-text-muted); margin-top: 3px;">Assays linked to enrolled study subjects &amp; biological samples</div>
             </div>
-            <div class="chart-box">
-                <h4>Risk Level Distribution</h4>
-                <canvas id="riskDistributionChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">🍩 No Data Available</div>
-                {% endif %}
+            <span style="font-size: 14px; font-weight: 800; background: {% if subject_type == 'patients' %}#0f766e{% else %}var(--ns-bg-input){% endif %}; color: {% if subject_type == 'patients' %}white{% else %}var(--ns-text-main){% endif %}; padding: 6px 14px; border-radius: 20px;">{{ patient_count or 0 }}</span>
+        </a>
+
+        <a href="{{ url_for('main.history', subject_type='material') }}" style="flex: 1; min-width: 280px; padding: 18px 22px; border-radius: 16px; text-decoration: none; border: 2px solid {% if subject_type == 'material' %}#0f766e{% else %}var(--ns-border-main){% endif %}; background: {% if subject_type == 'material' %}rgba(15, 118, 110, 0.14){% else %}var(--ns-bg-card){% endif %}; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s;">
+            <div>
+                <div style="font-size: 16.5px; font-weight: 800; color: {% if subject_type == 'material' %}#0f766e{% else %}var(--ns-text-main){% endif %};">🔬 Experimental &amp; Research History</div>
+                <div style="font-size: 12.5px; color: var(--ns-text-muted); margin-top: 3px;">Preclinical nanoparticle material screening for research</div>
             </div>
-            <div class="chart-box">
-                <h4>Average Cell Viability (%)</h4>
-                <canvas id="viabilityChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">📉 No Data Available</div>
-                {% endif %}
-            </div>
-            <div class="chart-box">
-                <h4>Average ROS Level</h4>
-                <canvas id="rosChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">🧪 No Data Available</div>
-                {% endif %}
-            </div>
-            <div class="chart-box">
-                <h4>Average LDH Release</h4>
-                <canvas id="ldhChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">🧪 No Data Available</div>
-                {% endif %}
-            </div>
-            <div class="chart-box">
-                <h4>Average Apoptosis (%)</h4>
-                <canvas id="apoptosisChart"></canvas>
-                {% if analytics.total_experiments == 0 %}
-                <div class="chart-empty-overlay">🧫 No Data Available</div>
-                {% endif %}
-            </div>
-        </div>
+            <span style="font-size: 14px; font-weight: 800; background: {% if subject_type == 'material' %}#0f766e{% else %}var(--ns-bg-input){% endif %}; color: {% if subject_type == 'material' %}white{% else %}var(--ns-text-main){% endif %}; padding: 6px 14px; border-radius: 20px;">{{ research_count or 0 }}</span>
+        </a>
+
+        <a href="{{ url_for('main.history', subject_type='all') }}" style="padding: 18px 22px; border-radius: 16px; text-decoration: none; border: 2px solid {% if subject_type == 'all' or not subject_type %}#0f766e{% else %}var(--ns-border-main){% endif %}; background: {% if subject_type == 'all' or not subject_type %}rgba(15, 118, 110, 0.14){% else %}var(--ns-bg-card){% endif %}; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+            <span style="font-size: 14.5px; font-weight: 800; color: {% if subject_type == 'all' or not subject_type %}#0f766e{% else %}var(--ns-text-main){% endif %};">📋 All</span>
+            <span style="font-size: 12.5px; font-weight: 800; background: {% if subject_type == 'all' or not subject_type %}#0f766e{% else %}var(--ns-bg-input){% endif %}; color: {% if subject_type == 'all' or not subject_type %}white{% else %}var(--ns-text-main){% endif %}; padding: 4px 10px; border-radius: 20px;">{{ total_user_count or total_count or 0 }}</span>
+        </a>
     </div>
 
     <!-- Search & Filter Controls -->
     <div class="filter-card">
         <form method="GET" action="{{ url_for('main.history') }}" class="filter-form">
+            <!-- 1. Scope / Type Filter -->
             <div>
-                <label>Sample Name</label>
-                <input type="text" name="sample_name" placeholder="Search sample..." value="{{ filter_sample_name }}">
+                <label>👤 Scope / Type</label>
+                <select name="subject_type" id="subjectTypeSelect" onchange="this.form.submit()">
+                    <option value="all" {% if subject_type == 'all' or not subject_type %}selected{% endif %}>📋 All Analyses</option>
+                    <option value="patients" {% if subject_type == 'patients' %}selected{% endif %}>👤 Enrolled Patient Assays</option>
+                    <option value="material" {% if subject_type == 'material' %}selected{% endif %}>🔬 Material Screening (No Patient)</option>
+                </select>
+            </div>
+
+            <!-- 2. Specific Patient Filter -->
+            <div>
+                <label>👤 Specific Patient</label>
+                <select name="participant_filter" onchange="this.form.submit()">
+                    <option value="">All Enrolled Patients</option>
+                    {% if participants %}
+                        {% for p in participants %}
+                        <option value="{{ p.participant_id }}" {% if participant_filter == p.participant_id %}selected{% endif %}>
+                            👤 {{ p.name if p.name else 'Patient' }} ({{ p.participant_id }})
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
+            <div>
+                <label>Sample / Evaluation Name</label>
+                <input type="text" name="sample_name" placeholder="Search title..." value="{{ filter_sample_name }}">
             </div>
             <div>
                 <label>Cell Line</label>
@@ -579,9 +579,16 @@
     </div>
 
     <!-- History Table -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin:0; font-size: 1.1rem; color: var(--ns-text-main);">Experiment Log</h3>
-        <button onclick="plotSelected()" class="ns-btn ns-btn-primary" style="padding: 6px 12px; font-size: 13px;">📊 Plot Selected</button>
+        <div style="display: flex; gap: 8px;">
+            <button type="button" onclick="compareSelected()" class="ns-btn ns-btn-primary" style="background: #0f766e; color: white; padding: 7px 14px; font-size: 13px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <span>📊</span> Compare Selected Assays
+            </button>
+            <button type="button" onclick="plotSelected()" class="ns-btn ns-btn-secondary" style="padding: 7px 14px; font-size: 13px; font-weight: 700; border-radius: 8px;">
+                <span>📈</span> Filter Chart Trends
+            </button>
+        </div>
     </div>
     <div class="table-card">
         <table class="history-table">
@@ -592,8 +599,10 @@
                     </th>
                     <th>ID</th>
                     <th>Date & Time</th>
-                    <th>Sample Name</th>
+                    <th>Patient / Subject Evaluation</th>
                     <th>Cell Line</th>
+                    <th>Formulation Route</th>
+                    <th>ASTM F756 Hemo</th>
                     <th>Toxicity Score</th>
                     <th>Risk</th>
                     <th>Folder</th>
@@ -609,8 +618,34 @@
                     </td>
                     <td><b>#{{ exp.id }}</b></td>
                     <td><small>{{ exp.date_time }}</small></td>
-                    <td><b>{{ exp.sample_name }}</b></td>
-                    <td>{{ exp.cell_line }}</td>
+                    <td>
+                        {% if exp.participant_id %}
+                        <div style="font-weight: 800; color: var(--ns-text-main); font-size: 13.5px;">
+                            👤 {{ exp.participant_name if exp.participant_name and exp.participant_name != 'General Material Screening' else 'Patient' }}
+                            <span style="font-size: 11px; background: rgba(15, 118, 110, 0.12); color: #0f766e; border: 1px solid rgba(15, 118, 110, 0.3); border-radius: 4px; padding: 1px 6px; font-weight: 700; margin-left: 4px;">{{ exp.participant_id }}</span>
+                        </div>
+                        <div style="font-size: 11.5px; color: var(--ns-text-muted); margin-top: 2px;">{{ exp.sample_name }}</div>
+                        {% else %}
+                        <div style="font-weight: 800; color: var(--ns-text-main); font-size: 13px;">
+                            🔬 {{ exp.sample_name }}
+                        </div>
+                        <div style="font-size: 11px; color: var(--ns-text-muted); margin-top: 2px;">Preclinical Material Screening Batch</div>
+                        {% endif %}
+                    </td>
+                    <td><span style="font-weight: 700;">{{ exp.cell_line }}</span></td>
+                    <td>
+                        <span style="font-size: 11px; font-weight: 700; background: var(--ns-bg-input); padding: 2px 6px; border-radius: 4px; display: inline-block;">
+                            {{ (exp.synthesis_method or 'Green_Synthesis').replace('_', ' ') }}
+                        </span>
+                        <div style="font-size: 11px; color: var(--ns-text-muted); margin-top: 2px;">
+                            🛡️ {{ (exp.surface_coating or 'Bare_ZnO').replace('_', ' ') }}
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size: 11.5px; font-weight: 700; color: {% if exp.hemolysis_rate and exp.hemolysis_rate > 5.0 %}#dc2626{% elif exp.hemolysis_rate and exp.hemolysis_rate >= 2.0 %}#d97706{% else %}#16a34a{% endif %};">
+                            {{ exp.hemocompatibility_status or 'Non-Hemolytic (<2%)' }}
+                        </span>
+                    </td>
                     <td><b>{{ exp.toxicity_score }}</b></td>
                     <td>
                         <span class="ns-badge {% if exp.risk_level == 'High' %}ns-badge-toxic{% elif exp.risk_level == 'Moderate' %}ns-badge-moderate{% else %}ns-badge-safe{% endif %}">
@@ -637,7 +672,7 @@
                 {% endfor %}
                 {% else %}
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 40px 20px;">
+                    <td colspan="11" style="text-align: center; padding: 40px 20px;">
                         <div style="color: var(--ns-text-muted);">
                             <h5 style="font-weight: 800; margin-bottom: 8px; color: var(--ns-text-main);">No experiments have been performed yet.</h5>
                             <p style="margin-bottom: 16px;">Run your first experiment to generate research analytics and history records.</p>
@@ -703,15 +738,15 @@
 const chartData = JSON.parse(document.getElementById('chart-data').textContent);
 
 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-const textColor = isDark ? '#cbd5e1' : '#64748b';
-const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+const textColor = isDark ? '#ffffff' : '#0f172a';
+const gridColor = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.12)';
 
 const commonScales = {
     x: {
         grid: { display: false },
         ticks: {
             color: textColor,
-            font: { family: 'Inter', size: 10 },
+            font: { family: 'Inter', size: 11, weight: '800' },
             maxRotation: 45,
             minRotation: 45,
             callback: function(val, index) {
@@ -722,7 +757,7 @@ const commonScales = {
     },
     y: {
         grid: { color: gridColor },
-        ticks: { color: textColor, font: { family: 'Inter', size: 11 } }
+        ticks: { color: textColor, font: { family: 'Inter', size: 11.5, weight: '800' } }
     }
 };
 
@@ -790,7 +825,7 @@ if (chartData.labels && chartData.labels.length > 0) {
                 maintainAspectRatio: false,
                 cutout: '70%',
                 plugins: { 
-                    legend: { position: 'bottom', labels: { color: textColor, padding: 15, font: {family: 'Inter', weight: '600'} } } 
+                    legend: { position: 'bottom', labels: { color: textColor, padding: 15, font: {family: 'Inter', weight: '800', size: 12} } } 
                 }
             }
         });
@@ -942,6 +977,16 @@ document.querySelectorAll('.exp-checkbox').forEach(cb => {
 function toggleSelectAll(source) {
     const checkboxes = document.querySelectorAll('.exp-checkbox');
     checkboxes.forEach(cb => cb.checked = source.checked);
+}
+
+function compareSelected() {
+    const checkboxes = document.querySelectorAll('.exp-checkbox:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value).filter(Boolean);
+    if (selectedIds.length < 2) {
+        alert("Please select at least 2 experiments using the checkboxes to compare.");
+        return;
+    }
+    window.location.href = "{{ url_for('main.compare') }}?selected_ids=" + selectedIds.join(',');
 }
 
 function plotSelected() {

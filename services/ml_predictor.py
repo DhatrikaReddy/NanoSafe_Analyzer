@@ -98,7 +98,9 @@ class MLPredictor:
 
     def predict_toxicity(self, nanoparticle="ZnO", dose=0.0, exposure_time=24.0,
                           avg_viability=None, ros=None, ldh=None, apoptosis=None,
-                          cell_line="HeLa", medical_application="general"):
+                          cell_line="HeLa", medical_application="general",
+                          synthesis_method="Green_Synthesis", surface_coating="Bare_ZnO",
+                          hemolysis=0.0, comet_tail_moment=1.0):
         try:
             viab = float(avg_viability) if avg_viability is not None else 85.0
             r_val = float(ros) if ros is not None else 0.0
@@ -106,15 +108,25 @@ class MLPredictor:
             a_val = float(apoptosis) if apoptosis is not None else 0.0
             d_val = float(dose) if dose is not None else 0.0
             e_val = float(exposure_time) if exposure_time is not None else 24.0
+            h_val = float(hemolysis) if hemolysis is not None else 0.0
             c_line = str(cell_line) if cell_line else "HeLa"
+            synth_method = str(synthesis_method) if synthesis_method else "Green_Synthesis"
+            coating = str(surface_coating) if surface_coating else "Bare_ZnO"
+            
             app_key = str(medical_application).lower().replace(" ", "_") if medical_application else "general"
             app_profile = APPLICATION_PROFILES.get(app_key, APPLICATION_PROFILES["general"])
+
+            cancer_lines = {"HeLa", "MCF-7", "A549", "HepG2", "HCT-116", "Jurkat", "PC12"}
+
+            # Coating modulation on ROS and membrane leakage
+            coat_ros_mod = 0.35 if "PEG" in coating else (0.50 if "Chitosan" in coating else 1.0)
+            synth_mult = 0.75 if "Green" in synth_method else (1.10 if "Chemical" in synth_method else 1.0)
 
             input_df = pd.DataFrame([{
                 'Cell_Line': c_line,
                 'Concentration': d_val,
                 'Exposure_Time': e_val,
-                'ROS': r_val,
+                'ROS': r_val * coat_ros_mod,
                 'LDH': l_val,
                 'Apoptosis': a_val,
                 'Cell_Viability': viab
@@ -123,70 +135,105 @@ class MLPredictor:
             # 1. Toxicity Score Prediction via Local Model
             if self.toxicity_model is not None:
                 pred = self.toxicity_model.predict(input_df)
-                ml_toxicity_score = round(float(np.clip(pred[0], 0.0, 100.0)), 2)
+                raw_score = float(pred[0]) * synth_mult
+                ml_toxicity_score = round(float(np.clip(raw_score, 0.0, 100.0)), 2)
             else:
-                base_score = (100.0 - viab) * 0.50 + r_val * 0.20 + l_val * 0.15 + a_val * 0.15
-                ml_toxicity_score = round(float(np.clip(base_score, 0.0, 100.0)), 2)
+                base_score = (100.0 - viab) * 0.45 + (r_val * coat_ros_mod) * 0.20 + l_val * 0.15 + a_val * 0.10 + h_val * 0.10
+                ml_toxicity_score = round(float(np.clip(base_score * synth_mult, 0.0, 100.0)), 2)
 
-            # 2. Risk Level Prediction via Classifier
-            if self.risk_classifier is not None:
-                toxicity_level = str(self.risk_classifier.predict(input_df)[0])
-            else:
-                if ml_toxicity_score < 25.0:
-                    toxicity_level = "Low"
-                elif ml_toxicity_score < 55.0:
-                    toxicity_level = "Moderate"
-                else:
-                    toxicity_level = "High"
-
-            # 3. IC50 Prediction via Local Estimator
+            # 2. IC50 Prediction via Local Estimator
             if self.ic50_model is not None:
                 pred_ic50 = float(self.ic50_model.predict(input_df)[0])
+                if "PEG" in coating:
+                    pred_ic50 *= 1.30
+                elif "Chitosan" in coating:
+                    pred_ic50 *= 1.20
+                if "Green" in synth_method:
+                    pred_ic50 *= 1.15
                 predicted_ic50_val = round(max(5.0, pred_ic50), 2)
                 ic50_str = f"{predicted_ic50_val} µg/mL"
             else:
-                predicted_ic50_val = round(d_val * 0.8 if d_val > 0 else 35.0, 2)
+                base_ic = 60.0 if c_line not in cancer_lines else 35.0
+                if "PEG" in coating:
+                    base_ic *= 1.30
+                predicted_ic50_val = round(base_ic, 2)
                 ic50_str = f"{predicted_ic50_val} µg/mL"
 
-            # 4. Safe Usage Range Estimation
-            if toxicity_level == "Low" and viab >= app_profile["min_viability"]:
+            # 3. Synchronized Risk Level & Status Classification
+            raw_classifier_level = None
+            if self.risk_classifier is not None:
+                try:
+                    raw_classifier_level = str(self.risk_classifier.predict(input_df)[0])
+                except Exception:
+                    pass
+
+            # Harmonize risk level across Viability, ML Score, and Classifier
+            if viab >= 80.0 and ml_toxicity_score < 30.0 and h_val < 2.0:
+                toxicity_level = "Low"
                 status = "Safe"
                 classification = "Non-toxic / Biocompatible (ISO 10993-5 PASS)"
                 safe_ceiling = round(max(d_val, predicted_ic50_val * 0.5), 1)
                 safe_range = f"0.0 - {safe_ceiling} µg/mL"
                 iso_compliance = "PASS — Biocompatible"
-            elif toxicity_level == "Moderate" or viab >= 50.0:
+            elif viab >= 50.0 or (ml_toxicity_score < 55.0 and raw_classifier_level != "High"):
+                toxicity_level = "Moderate"
                 status = "Moderate Risk"
                 classification = "Moderate Toxicity / Narrow Therapeutic Window"
                 safe_ceiling = round(predicted_ic50_val * 0.35, 1)
                 safe_range = f"0.0 - {safe_ceiling} µg/mL"
                 iso_compliance = "CONDITIONAL — Low-Dose Monitoring Required"
             else:
+                toxicity_level = "High"
                 status = "Toxic"
                 classification = "Cytotoxic / Significant Host Cell Damage (ISO 10993-5 FAIL)"
                 safe_range = "No Safe Range (Exceeds Cytotoxicity Threshold)"
                 iso_compliance = "FAIL — Cytotoxic"
 
-            # 5. Biomarker Radar Metrics (Normalized 0 - 100 for Chart.js)
+            # ASTM F756 Hemocompatibility Classification
+            if h_val < 2.0:
+                hemocompatibility_status = "Non-Hemolytic (<2%)"
+                hemo_badge = "🟢 Safe (ASTM F756 PASS)"
+            elif h_val <= 5.0:
+                hemocompatibility_status = "Slightly Hemolytic (2-5%)"
+                hemo_badge = "🟡 Moderate (ASTM F756 Caution)"
+            else:
+                hemocompatibility_status = "Hemolytic (>5%)"
+                hemo_badge = "🔴 Unsafe / Lysis (ASTM F756 FAIL)"
+
+            # Selectivity Index (SI)
+            if c_line in cancer_lines:
+                selectivity_index = round(float(65.0 / predicted_ic50_val), 2)
+            else:
+                selectivity_index = 1.0
+
+            # Genotoxicity / DNA Tail Moment (Paper 6)
+            genotoxicity_warning = d_val >= 50.0
+            calc_tail_moment = round(1.0 + (d_val / 35.0) ** 1.2 * 3.5, 2)
+
+            # 5. Biomarker Radar Metrics (Normalized 0 - 100% Cellular Health & Biocompatibility)
             radar_viability = round(float(np.clip(viab, 0, 100)), 1)
-            radar_ros = round(float(np.clip((r_val / 200.0) * 100.0, 0, 100)), 1)
-            radar_ldh = round(float(np.clip((l_val / 100.0) * 100.0, 0, 100)), 1)
-            radar_apoptosis = round(float(np.clip((a_val / 100.0) * 100.0, 0, 100)), 1)
+            eff_ros = max(1.0, r_val * coat_ros_mod)
+            radar_ros = round(float(np.clip(100.0 - (eff_ros - 1.0) * 20.0, 0, 100)), 1)
+            radar_ldh = round(float(np.clip(100.0 - l_val * 3.0, 0, 100)), 1)
+            radar_apoptosis = round(float(np.clip(100.0 - a_val * 4.0, 0, 100)), 1)
+            radar_hemolysis = round(float(np.clip(100.0 - h_val * 10.0, 0, 100)), 1)
 
             # Confidence Metric from R2 Score
-            confidence_val = 98.5
+            confidence_val = 99.4
             if self.metrics and "models" in self.metrics:
-                r2 = self.metrics["models"].get("toxicity_regressor", {}).get("testing_r2", 0.985)
+                r2 = self.metrics["models"].get("toxicity_regressor", {}).get("testing_r2", 0.9939)
                 confidence_val = round(r2 * 100.0, 1)
 
             # 6. Rich Scientific Narrative
             ml_interpretation = (
-                f"Local Scikit-Learn Ensemble Model evaluated {nanoparticle} cytotoxicity on {c_line} cells "
+                f"Local Scikit-Learn Ensemble Model evaluated {nanoparticle} ({synth_method.replace('_', ' ')}, "
+                f"{coating.replace('_', ' ')}) cytotoxicity on {c_line} cells "
                 f"under a {e_val}h exposure duration for '{app_profile['name']}'. "
-                f"Measured parameters: Viability={viab}%, ROS={r_val}, LDH={l_val}%, Apoptosis={a_val}%. "
+                f"Measured endpoints: Viability={viab}%, ROS={r_val}, LDH={l_val}%, Hemolysis={h_val}% ({hemo_badge}). "
                 f"The offline ML model computed a Toxicity Score of {ml_toxicity_score} out of 100 "
                 f"({toxicity_level} Risk Zone, ISO 10993-5 status: {iso_compliance}). "
-                f"Predicted IC50: {ic50_str}, Safe Biomedical Dosage Ceiling: {safe_range}. "
+                f"Predicted IC50: {ic50_str}, Selectivity Index: {selectivity_index}, "
+                f"Safe Biomedical Dosage Ceiling: {safe_range}. "
                 f"Clinical Rationale: {app_profile['description']} "
                 f"(Model Confidence: {confidence_val}%, 100% Offline Inference Engine)."
             )
@@ -203,6 +250,13 @@ class MLPredictor:
                 "iso_compliance": iso_compliance,
                 "medical_application": app_profile['name'],
                 "medical_application_key": app_key,
+                "synthesis_method": synth_method,
+                "surface_coating": coating,
+                "hemolysis_rate": h_val,
+                "hemocompatibility_status": hemocompatibility_status,
+                "selectivity_index": selectivity_index,
+                "genotoxicity_warning": genotoxicity_warning,
+                "comet_tail_moment": calc_tail_moment,
                 "avg_viability": viab,
                 "ros": r_val,
                 "ldh": l_val,
@@ -211,7 +265,8 @@ class MLPredictor:
                     "viability": radar_viability,
                     "ros": radar_ros,
                     "ldh": radar_ldh,
-                    "apoptosis": radar_apoptosis
+                    "apoptosis": radar_apoptosis,
+                    "hemolysis": radar_hemolysis
                 },
                 "interpretation": ml_interpretation
             }

@@ -11,10 +11,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors, spacing, borderRadius } from '../../theme/colors';
+import { ThemeContext } from '../../context/ThemeContext';
 import { AuthContext } from '../../context/AuthContext';
+import { LanguageContext } from '../../context/LanguageContext';
 import { ShieldCheck, LogIn, Mail, Lock } from 'lucide-react-native';
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useContext(LanguageContext);
+  const { colors, isDark } = useContext(ThemeContext);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -40,34 +44,34 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View var="branding" style={styles.branding}>
-          <View style={styles.iconCircle}>
-            <ShieldCheck size={44} color={colors.primaryLight} />
+        <View style={styles.branding}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
+            <ShieldCheck size={44} color={colors.primary} />
           </View>
 
-          <Text style={styles.title}>NanoSafe Analyzer</Text>
-          <Text style={styles.subtitle}>ZnO Cytotoxicity Biocompatibility Suite</Text>
+          <Text style={[styles.title, { color: colors.text }]}>NanoSafe Analyzer</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>ZnO Cytotoxicity Biocompatibility Suite</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Sign In</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.cardHeader, { color: colors.text }]}>{t('signIn', 'Sign In')}</Text>
 
           {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
+            <View style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.danger }]}>
+              <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
             </View>
           )}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address / Username</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Email Address / Username</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Mail size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter email or username"
                 placeholderTextColor={colors.textMuted}
                 value={username}
@@ -78,11 +82,11 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{t('password', 'Password')}</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Lock size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter password"
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
@@ -93,7 +97,7 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={handleLogin}
             disabled={loading}
           >
@@ -102,15 +106,15 @@ export default function LoginScreen({ navigation }) {
             ) : (
               <>
                 <LogIn size={20} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.buttonText}>Sign In</Text>
+                <Text style={styles.buttonText}>{t('signIn', 'Sign In')}</Text>
               </>
             )}
           </TouchableOpacity>
 
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>{t('dontHaveAccount', "Don't have an account? ")}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>Sign Up</Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>{t('signUp', 'Sign Up')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -122,12 +126,11 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   branding: {
     alignItems: 'center',
@@ -137,64 +140,51 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
   },
   title: {
-    fontSize: 26,
+    fontSize: 29,
     fontWeight: 'bold',
-    color: colors.text,
   },
   subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: 16.5,
     marginTop: 4,
   },
   card: {
-    backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   cardHeader: {
-    fontSize: 20,
+    fontSize: 23,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: spacing.md,
   },
   errorBox: {
-    backgroundColor: colors.dangerBg,
-    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: borderRadius.sm,
     padding: spacing.sm,
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.danger,
-    fontSize: 14,
+    fontSize: 16.5,
   },
   inputGroup: {
     marginBottom: spacing.md,
   },
   label: {
-    color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16.5,
     fontWeight: '500',
     marginBottom: 6,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.sm,
   },
   inputIcon: {
@@ -202,13 +192,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: colors.text,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 17.5,
   },
   button: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
@@ -217,7 +205,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18.5,
     fontWeight: '600',
   },
   footerRow: {
@@ -226,10 +214,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   footerText: {
-    color: colors.textSecondary,
+    fontSize: 16.5,
   },
   linkText: {
-    color: colors.primaryLight,
     fontWeight: '600',
+    fontSize: 16.5,
   },
 });

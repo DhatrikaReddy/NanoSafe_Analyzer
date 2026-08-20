@@ -1,4 +1,5 @@
 <!-- _topbar.html — Pro Enterprise Top Navigation Bar -->
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
 <header class="ns-topbar">
     <div class="ns-topbar-left">
         <div class="ns-breadcrumb">
@@ -13,12 +14,30 @@
     <div class="ns-topbar-center">
         <div class="ns-search-bar">
             <span class="ns-search-icon">🔍</span>
-            <input type="text" class="ns-search-input" placeholder="Quick search experiments, cell lines, IC50... (Press /)" id="globalSearchInput" onkeydown="if(event.key==='Enter'){ window.location.href='/history?sample_name=' + encodeURIComponent(this.value); }">
+            <input type="text" class="ns-search-input" data-i18n-placeholder="quickSearch" placeholder="Quick search experiments, cell lines, IC50... (Press /)" id="globalSearchInput" onkeydown="if(event.key==='Enter'){ window.location.href='/history?sample_name=' + encodeURIComponent(this.value); }">
             <span class="ns-search-kbd">⌘K</span>
         </div>
     </div>
 
     <div class="ns-topbar-right">
+        <!-- Language Switcher Dropdown -->
+        <div class="ns-lang-dropdown" style="position: relative; display: inline-block;">
+            <button type="button" class="ns-icon-btn" onclick="toggleLangDropdown(event)" title="Change Language" id="topbarLangBtn" style="width: auto; padding: 0 10px; font-weight: 700; font-size: 0.82rem; gap: 4px; display: flex; align-items: center;">
+                🌐 <span id="topbarLangBtnText">🇬🇧 EN</span> <span style="font-size: 0.65rem; opacity: 0.7;">▼</span>
+            </button>
+            <div id="topbarLangMenu" class="ns-lang-menu" style="display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 170px; z-index: 9999; padding: 6px 0;">
+                <a href="javascript:void(0)" onclick="selectWebLang('en')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇬🇧 English</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('hi')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇮🇳 हिन्दी</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('te')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇮🇳 తెలుగు</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('ta')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇮🇳 தமிழ்</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('es')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇪🇸 Español</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('fr')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇫🇷 Français</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('de')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇩🇪 Deutsch</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('ja')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇯🇵 日本語</a>
+                <a href="javascript:void(0)" onclick="selectWebLang('ar')" class="ns-lang-opt" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-weight: 600;">🇸🇦 العربية</a>
+            </div>
+        </div>
+
         <!-- Theme Switcher Button -->
         <button type="button" class="ns-icon-btn" onclick="toggleTheme()" title="Toggle Dark / Light Theme" id="topbarThemeBtn">
             🌓
@@ -33,6 +52,27 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('ns_theme', newTheme);
 }
+
+function toggleLangDropdown(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('topbarLangMenu');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function selectWebLang(code) {
+    if (window.changeLanguage) {
+        window.changeLanguage(code);
+    }
+    const menu = document.getElementById('topbarLangMenu');
+    if (menu) menu.style.display = 'none';
+}
+
+document.addEventListener('click', () => {
+    const menu = document.getElementById('topbarLangMenu');
+    if (menu) menu.style.display = 'none';
+});
 
 // Global shortcut key '/' or 'Ctrl+K' focuses search
 document.addEventListener('keydown', function(e) {

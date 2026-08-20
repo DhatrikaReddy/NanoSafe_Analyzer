@@ -167,9 +167,9 @@
                     Selected Files (<span id="fileCount">0</span>): <span id="fileNames" style="color: #0f766e;"></span>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 18px;">
                     <div>
-                        <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--ns-text-main); margin-bottom: 6px;">Default Cell Line (If not specified in file)</label>
+                        <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--ns-text-main); margin-bottom: 6px;">Default Cell Line</label>
                         <select name="default_cell_line" class="ns-form-group" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--ns-border-input); background: var(--ns-bg-input); color: var(--ns-text-main);">
                             <option value="A549">A549</option>
                             <option value="HeLa" selected>HeLa</option>
@@ -194,6 +194,26 @@
                             <option value="72 h">72 h</option>
                         </select>
                     </div>
+
+                    <div>
+                        <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--ns-text-main); margin-bottom: 6px;">Default Synthesis Route</label>
+                        <select name="default_synthesis_method" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--ns-border-input); background: var(--ns-bg-input); color: var(--ns-text-main);">
+                            <option value="Green_Synthesis" selected>🌿 Green Synthesis</option>
+                            <option value="Chemical_Precipitation">🧪 Chemical Precipitation</option>
+                            <option value="Sol-Gel">🔬 Sol-Gel</option>
+                            <option value="Hydrothermal">⚗️ Hydrothermal</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--ns-text-main); margin-bottom: 6px;">Default Surface Coating</label>
+                        <select name="default_surface_coating" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--ns-border-input); background: var(--ns-bg-input); color: var(--ns-text-main);">
+                            <option value="Bare_ZnO">⚪ Bare ZnO</option>
+                            <option value="PEG_Coated" selected>🛡️ PEG-Coated</option>
+                            <option value="Chitosan_Coated">🌱 Chitosan-Coated</option>
+                            <option value="Silica_Coated">💎 Silica-Coated</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end;">
@@ -207,9 +227,14 @@
         <!-- Batch Results Display (If Processed) -->
         {% if batch_results %}
         <div class="batch-card">
-            <h2 style="margin: 0 0 16px; font-size: 18px; font-weight: 800; color: var(--ns-text-main);">
-                🏁 High-Throughput Batch Screening Results ({{ batch_results | length }} Plates)
-            </h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--ns-text-main);">
+                    🏁 High-Throughput Batch Screening Results ({{ batch_results | length }} Plates)
+                </h2>
+                <a href="{{ url_for('main.batch_import', clear=1) }}" class="ns-btn ns-btn-secondary" style="padding: 6px 14px; font-size: 12.5px; font-weight: 700; border-radius: 8px;">
+                    🔄 Clear &amp; Import New Batch
+                </a>
+            </div>
 
             <div class="summary-kpi-row">
                 <div class="kpi-box" style="border-left: 4px solid #16a34a;">
@@ -235,49 +260,42 @@
                 <table class="batch-table">
                     <thead>
                         <tr>
-                            <th>Rank</th>
-                            <th>Experiment / Plate Name</th>
+                            <th>Plate / Sample</th>
                             <th>Cell Line</th>
-                            <th>Exposure</th>
-                            <th>Mean Viability</th>
-                            <th>4PL IC50</th>
-                            <th>Safe Window</th>
-                            <th>ML Risk Classification</th>
-                            <th style="text-align: right;">Action</th>
+                            <th>Synthesis &amp; Coating</th>
+                            <th>MTT Viability</th>
+                            <th>ASTM F756 Hemo</th>
+                            <th>Selectivity (SI)</th>
+                            <th>Tox Score</th>
+                            <th>Risk Status</th>
+                            <th>Estimated IC50</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in batch_results %}
+                        {% for r in batch_results %}
                         <tr>
+                            <td><b>{{ r.name }}</b></td>
+                            <td><span style="background: var(--ns-bg-input); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">{{ r.cell_line }}</span></td>
+                            <td style="font-size: 12px; color: var(--ns-text-muted);">{{ r.synthesis_method or 'Green' }} · {{ r.surface_coating or 'Bare' }}</td>
+                            <td><b>{{ r.viability }}%</b></td>
+                            <td><span style="font-size: 11px; font-weight: 700; color: #16a34a;">{{ r.hemocompatibility_status or 'Non-Hemolytic' }}</span></td>
+                            <td><b>{{ r.selectivity_index or '1.0' }}</b></td>
+                            <td>{{ r.score }} / 100</td>
                             <td>
-                                {% if loop.index == 1 %}
-                                    <span style="font-size: 16px;">🥇</span>
-                                {% elif loop.index == 2 %}
-                                    <span style="font-size: 16px;">🥈</span>
-                                {% elif loop.index == 3 %}
-                                    <span style="font-size: 16px;">🥉</span>
+                                {% if r.risk_level == 'Low' %}
+                                <span class="ns-badge safe">🟢 Safe</span>
+                                {% elif r.risk_level == 'Moderate' %}
+                                <span class="ns-badge moderate">🟡 Moderate</span>
                                 {% else %}
-                                    <b>#{{ loop.index }}</b>
+                                <span class="ns-badge danger">🔴 Toxic</span>
                                 {% endif %}
                             </td>
-                            <td><b>{{ item.name }}</b></td>
-                            <td><span style="color: #0f766e; font-weight: 700;">{{ item.cell_line }}</span></td>
-                            <td>{{ item.exposure_time }}</td>
-                            <td><b>{{ item.viability }}%</b></td>
-                            <td style="font-size: 12.5px;">{{ item.ic50 }}</td>
-                            <td style="font-size: 12.5px; color: var(--ns-text-muted);">{{ item.safe_range }}</td>
+                            <td>{{ r.ic50 }}</td>
                             <td>
-                                {% if item.risk_level == 'Low' %}
-                                    <span class="ns-badge ns-badge-safe">🟢 Safe</span>
-                                {% elif item.risk_level == 'Moderate' %}
-                                    <span class="ns-badge ns-badge-moderate">🟡 Moderate</span>
-                                {% else %}
-                                    <span class="ns-badge ns-badge-toxic">🔴 Toxic</span>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <a href="{{ url_for('main.history_detail', history_id=item.history_id) }}" style="color: #2563eb; font-size: 12.5px; font-weight: 700; text-decoration: none; margin-right: 10px;">👁️ View</a>
-                                <a href="{{ url_for('main.download_history_report', history_id=item.history_id) }}" style="color: #16a34a; font-size: 12.5px; font-weight: 700; text-decoration: none;">⬇ PDF</a>
+                                <a href="{{ url_for('main.history_detail', history_id=r.history_id) }}" class="ns-btn ns-btn-secondary" style="padding: 5px 10px; font-size: 12px;">
+                                    View Report →
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -291,6 +309,38 @@
 </div>
 
 <script>
+const dropzone = document.querySelector('.dropzone-box');
+const fileInput = document.getElementById('batchFilesInput');
+
+if (dropzone && fileInput) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.background = '#ccfbf1';
+            dropzone.style.borderColor = '#0d9488';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.background = '#f0fdfa';
+            dropzone.style.borderColor = '#0f766e';
+        }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+            fileInput.files = files;
+            onFilesSelected(fileInput);
+        }
+    }, false);
+}
+
 function onFilesSelected(input) {
     const display = document.getElementById('fileListDisplay');
     const count = document.getElementById('fileCount');
@@ -298,8 +348,8 @@ function onFilesSelected(input) {
     
     if (input.files.length > 0) {
         count.innerText = input.files.length;
-        const fileArr = Array.from(input.files).map(f => f.name);
-        names.innerText = fileArr.join(', ');
+        const fileArr = Array.from(input.files).map(f => `<span style="background: rgba(15,118,110,0.12); color: #0f766e; padding: 4px 10px; border-radius: 8px; font-size: 12px; margin: 3px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(15,118,110,0.25); font-weight: 700;">📄 ${f.name} <small style="opacity:0.75;">(${(f.size/1024).toFixed(1)} KB)</small></span>`);
+        names.innerHTML = fileArr.join(' ');
         display.style.display = 'block';
     } else {
         display.style.display = 'none';

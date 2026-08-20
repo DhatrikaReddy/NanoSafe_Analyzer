@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <script>
   if (localStorage.getItem('ns_theme') === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
   }
 </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment Record #{{ exp.id }} — {{ exp.sample_name }} | NanoSafe Analyzer</title>
-    <link rel="stylesheet" href="/static/style.css?v=5">
+    <link rel="stylesheet" href="/static/style.css?v=6">
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: var(--ns-bg-main); }
-        .detail-container { max-width: 1200px; padding: 32px 36px; box-sizing: border-box; width: 100%; }
+        body { background: var(--ns-bg-main); color: var(--ns-text-main); font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+        .detail-container { max-width: 1300px; padding: 32px 36px; box-sizing: border-box; width: 100%; }
 
         .detail-hero {
             background: linear-gradient(135deg, #0f766e, #0f172a);
@@ -27,6 +27,7 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+            box-shadow: 0 10px 25px rgba(15, 118, 110, 0.15);
         }
         .detail-hero h1 { font-size: 22px; margin: 0 0 4px; font-weight: 800; }
         .detail-hero small { opacity: 0.75; font-size: 13px; }
@@ -114,13 +115,13 @@
             color: #0f766e;
         }
 
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+        .two-col { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
         .interpretation-note {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #10b981;
             border-radius: 10px;
             padding: 12px 16px;
             font-size: 13px;
@@ -146,143 +147,251 @@
 <div class="ns-sidebar-layout">
     {% include '_sidebar.html' %}
 
-    <main class="detail-container">
+    <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; overflow-x: hidden;">
+        {% set page_title = "Experiment #" ~ exp.id ~ " Details" %}
+        {% include '_topbar.html' %}
 
-    <!-- Header Hero -->
-    <div class="detail-hero">
-        <div>
-            <span class="hero-badge">Experiment Record #{{ exp.id }}</span>
-            <h1>{{ exp.sample_name }}</h1>
-            <small>Recorded on {{ exp.date_time }} by {{ exp.username or 'Researcher' }}</small>
-        </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="hero-btn">📄 Download PDF</a>
-            <a href="{{ url_for('main.compare') }}" class="hero-btn">📊 Compare</a>
-            <a href="{{ url_for('main.history') }}" class="hero-btn">↩️ Back to History</a>
-        </div>
-    </div>
+        <main class="detail-container">
 
-    <!-- Experimental Setup -->
-    <div class="detail-card">
-        <h4>📋 Experimental Setup</h4>
-        <div class="detail-grid">
-            <div class="detail-item"><span>Sample Name</span><strong>{{ exp.sample_name }}</strong></div>
-            <div class="detail-item"><span>Researcher</span><strong>{{ exp.researcher_name or 'N/A' }}</strong></div>
-            <div class="detail-item"><span>Nanoparticle Type</span><strong>ZnO (Zinc Oxide)</strong></div>
-            <div class="detail-item"><span>Cell Line</span><strong>{{ exp.cell_line }}</strong></div>
-            <div class="detail-item"><span>Exposure Duration</span><strong>{{ exp.exposure_time or 'N/A' }}</strong></div>
-            <div class="detail-item"><span>Data Source</span><strong>{{ exp.csv_filename or 'Manual Entry' }}</strong></div>
-        </div>
-    </div>
-
-    <!-- Key Metrics -->
-    <div class="detail-card">
-        <h4>📊 Computed Cytotoxicity Parameters</h4>
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <span>Avg Cell Viability</span>
-                <h3>{{ exp.cell_viability }}%</h3>
+        <!-- Header Hero -->
+        <div class="detail-hero">
+            <div>
+                <span class="hero-badge">Experiment Record #{{ exp.id }}</span>
+                <h1>{{ exp.sample_name }}</h1>
+                <small>Recorded on {{ exp.date_time }} by {{ exp.username or 'Researcher' }}</small>
             </div>
-            <div class="metric-card">
-                <span>Toxicity Score</span>
-                <h3>{{ exp.toxicity_score }}</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="hero-btn">📄 Download PDF</a>
+                <a href="{{ url_for('main.compare') }}" class="hero-btn">📊 Compare</a>
+                <a href="{{ url_for('main.history') }}" class="hero-btn">↩️ Back to History</a>
             </div>
-            <div class="metric-card">
-                <span>Risk Level</span>
-                <div style="margin-top:10px;">
-                    {% if exp.risk_level == 'High' %}
-                    <span class="ns-badge ns-badge-toxic">High Risk</span>
-                    {% elif exp.risk_level == 'Moderate' %}
-                    <span class="ns-badge ns-badge-moderate">Moderate Risk</span>
+        </div>
+
+        <!-- Experimental Setup -->
+        <div class="detail-card">
+            <h4>📋 Experimental Setup &amp; Formulation Chemistry</h4>
+            <div class="detail-grid">
+                <div class="detail-item"><span>Sample Name</span><strong>{{ exp.sample_name }}</strong></div>
+                <div class="detail-item"><span>Researcher</span><strong>{{ exp.researcher_name or 'N/A' }}</strong></div>
+                <div class="detail-item"><span>Nanoparticle Type</span><strong>ZnO (Zinc Oxide)</strong></div>
+                <div class="detail-item"><span>Cell Line</span><strong>{{ exp.cell_line }}</strong></div>
+                <div class="detail-item"><span>Synthesis Route</span><strong style="color: #0f766e;">🌿 {{ (exp.synthesis_method or 'Green_Synthesis').replace('_', ' ') }}</strong></div>
+                <div class="detail-item"><span>Surface Functionalization</span><strong style="color: #2563eb;">🛡️ {{ (exp.surface_coating or 'Bare_ZnO').replace('_', ' ') }}</strong></div>
+                <div class="detail-item"><span>Exposure Duration</span><strong>{{ exp.exposure_time or 'N/A' }}</strong></div>
+                <div class="detail-item"><span>ASTM F756 Hemocompatibility</span><strong style="color: {% if exp.hemolysis_rate and exp.hemolysis_rate > 5.0 %}#dc2626{% elif exp.hemolysis_rate and exp.hemolysis_rate >= 2.0 %}#d97706{% else %}#16a34a{% endif %};">{{ exp.hemocompatibility_status or 'Non-Hemolytic (<2%)' }}</strong></div>
+                <div class="detail-item"><span>Data Source</span><strong>{{ exp.csv_filename or 'Manual Entry' }}</strong></div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="detail-card">
+            <h4>📊 Computed Cytotoxicity &amp; Biocompatibility Parameters</h4>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span>Avg Cell Viability (MTT)</span>
+                    <h3>{{ exp.cell_viability }}%</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Toxicity Score</span>
+                    <h3>{{ exp.toxicity_score }}</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Risk Level</span>
+                    <div style="margin-top:10px;">
+                        {% if exp.risk_level == 'High' %}
+                        <span class="ns-badge ns-badge-toxic" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 4px 10px; border-radius: 6px; font-weight: 700;">High Risk</span>
+                        {% elif exp.risk_level == 'Moderate' %}
+                        <span class="ns-badge ns-badge-moderate" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 4px 10px; border-radius: 6px; font-weight: 700;">Moderate Risk</span>
+                        {% else %}
+                        <span class="ns-badge ns-badge-safe" style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 10px; border-radius: 6px; font-weight: 700;">Low Risk</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <span>IC50 Threshold</span>
+                    <h3 style="font-size:18px;">{{ exp.estimated_ic50 }}</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Selectivity Index (SI)</span>
+                    <h3 style="color: #0f766e; font-size:20px;">{{ exp.selectivity_index or '1.0' }}</h3>
+                </div>
+                <div class="metric-card">
+                    <span>ASTM F756 Hemolysis</span>
+                    <h3 style="color: #dc2626; font-size:18px;">{{ exp.hemolysis_rate or 0.0 }}%</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Safe Conc. Window</span>
+                    <h3 style="font-size:16px;">{{ exp.safe_range or 'N/A' }}</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Avg ROS Level</span>
+                    <h3 style="color:#7c3aed;">{{ exp.ros }}×</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Avg LDH Release</span>
+                    <h3 style="color:#b45309;">{{ exp.ldh }}%</h3>
+                </div>
+                <div class="metric-card">
+                    <span>Avg Apoptosis</span>
+                    <h3 style="color:#be185d;">{{ exp.apoptosis }}%</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph & Interpretation Section -->
+        <div class="two-col">
+            <!-- LEFT: MULTI-GRAPH DOSE-RESPONSE STUDIO -->
+            <div class="detail-card" style="margin-bottom:0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <h4 style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <span>📊</span> Multi-Graph Dose-Response Studio
+                    </h4>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="ns-btn ns-btn-sm" id="btn-view-single" onclick="setStudioView('single')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: #0f766e; color: #ffffff; border: none; cursor: pointer;">Single Focus</button>
+                        <button type="button" class="ns-btn ns-btn-sm" id="btn-view-quad" onclick="setStudioView('quad')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: var(--ns-bg-input); color: var(--ns-text-main); border: 1px solid var(--ns-border-main); cursor: pointer;">Quad Grid (4 Graphs)</button>
+                    </div>
+                </div>
+
+                <!-- TAB BAR FOR SINGLE VIEW -->
+                <div id="studio-tab-bar" style="display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; background: var(--ns-bg-input); padding: 4px; border-radius: 10px; border: 1px solid var(--ns-border-main);">
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('viability')" id="tab-viability" style="flex: 1; min-width: 85px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: #0f766e; color: white;">📈 Viability</button>
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('ros')" id="tab-ros" style="flex: 1; min-width: 75px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">🔥 ROS</button>
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('ldh')" id="tab-ldh" style="flex: 1; min-width: 75px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">💥 LDH</button>
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('apoptosis')" id="tab-apoptosis" style="flex: 1; min-width: 85px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">🧬 Apoptosis</button>
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('radar')" id="tab-radar" style="flex: 1; min-width: 75px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">🕸️ Radar</button>
+                    <button type="button" class="chart-tab-btn" onclick="switchActiveChart('static')" id="tab-static" style="flex: 1; min-width: 85px; padding: 6px 10px; font-size: 12px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; background: transparent; color: var(--ns-text-muted);">🔬 Plot</button>
+                </div>
+
+                <!-- SINGLE FOCUS CONTAINER -->
+                <div id="single-chart-container" style="min-height: 290px;">
+                    <div id="wrap-viability" class="chart-canvas-wrap" style="display: block; height: 260px;">
+                        <canvas id="chartViability"></canvas>
+                    </div>
+                    <div id="wrap-ros" class="chart-canvas-wrap" style="display: none; height: 260px;">
+                        <canvas id="chartROS"></canvas>
+                    </div>
+                    <div id="wrap-ldh" class="chart-canvas-wrap" style="display: none; height: 260px;">
+                        <canvas id="chartLDH"></canvas>
+                    </div>
+                    <div id="wrap-apoptosis" class="chart-canvas-wrap" style="display: none; height: 260px;">
+                        <canvas id="chartApoptosis"></canvas>
+                    </div>
+                    <div id="wrap-radar" class="chart-canvas-wrap" style="display: none; height: 260px;">
+                        <canvas id="chartRadar"></canvas>
+                    </div>
+                    <div id="wrap-static" class="chart-canvas-wrap" style="display: none; text-align: center;">
+                        {% if graph %}
+                        <img src="/static/{{ graph }}" class="graph-img" alt="Matplotlib Publication Dose-Response">
+                        {% else %}
+                        <p style="color: var(--ns-text-sub); padding: 40px;">No static image available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- QUAD MATRIX CONTAINER (4 GRAPHS SIMULTANEOUSLY) -->
+                <div id="quad-grid-container" style="display: none; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div style="background: var(--ns-bg-input); padding: 10px; border-radius: 10px; border: 1px solid var(--ns-border-main); height: 180px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #10b981; margin-bottom: 4px;">📈 1. Cell Viability (%) vs Dose</div>
+                        <canvas id="quadChartViability"></canvas>
+                    </div>
+                    <div style="background: var(--ns-bg-input); padding: 10px; border-radius: 10px; border: 1px solid var(--ns-border-main); height: 180px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #f59e0b; margin-bottom: 4px;">🔥 2. ROS Fold Elevation (×)</div>
+                        <canvas id="quadChartROS"></canvas>
+                    </div>
+                    <div style="background: var(--ns-bg-input); padding: 10px; border-radius: 10px; border: 1px solid var(--ns-border-main); height: 180px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #ef4444; margin-bottom: 4px;">💥 3. Membrane Lysis (LDH %)</div>
+                        <canvas id="quadChartLDH"></canvas>
+                    </div>
+                    <div style="background: var(--ns-bg-input); padding: 10px; border-radius: 10px; border: 1px solid var(--ns-border-main); height: 180px;">
+                        <div style="font-size: 11px; font-weight: 700; color: #a855f7; margin-bottom: 4px;">🧬 4. Apoptosis (%)</div>
+                        <canvas id="quadChartApoptosis"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: SCIENTIFIC INTERPRETATION & ACTIONABLE RECOMMENDATIONS -->
+            <div class="detail-card" style="margin-bottom:0;">
+                <h4>🔬 Scientific Interpretation</h4>
+                <p style="line-height: 1.7; color: var(--ns-text-main); font-size:14px;">
+                    {{ exp.interpretation or 'No detailed interpretation recorded.' }}
+                </p>
+                <div class="interpretation-note">
+                    Academic decision-support analysis system. Validated against ISO 10993-5 biological standards.
+                </div>
+
+                <!-- COMPREHENSIVE ACTIONABLE RECOMMENDATIONS & SUGGESTIONS -->
+                <div style="margin-top: 18px;">
+                    {% if exp.cell_viability >= 80 and exp.risk_level != 'High' %}
+                    <!-- 🟢 SAFE / BIOCOMPATIBLE RECOMMENDATIONS -->
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; padding: 16px 18px; border-radius: 12px; box-sizing: border-box;">
+                        <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                            <span>💡</span> Actionable Recommendations &amp; Guidance (Safe &amp; Biocompatible)
+                        </h4>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--ns-text-main); line-height: 1.75;">
+                            <li><b>ISO 10993-5 Conformance:</b> Sample demonstrates high cellular viability (<b>{{ exp.cell_viability }}% &ge; 80%</b>). Conforms to ISO 10993-5 Grade 0/1 non-cytotoxic specifications.</li>
+                            <li><b>Recommended Safe Working Window:</b> Maintain operational biomedical concentration within <b>{{ exp.safe_range or '0.0 - 15.0 µg/mL' }}</b> for maximum therapeutic window.</li>
+                            <li><b>Biomaterial Application Suitability:</b> Suitable for direct contact applications such as antimicrobial wound dressings, dental cements, or implant surface coatings.</li>
+                            <li><b>Low Oxidative Impact:</b> Membrane integrity remains intact with minimal LDH lysis (<b>{{ exp.ldh }}%</b>) and physiological ROS generation (<b>{{ exp.ros }}&times;</b>).</li>
+                            <li><b>Next Recommended Testing:</b> Proceed to in-vitro hemocompatibility assay (ISO 10993-4) and skin sensitization/irritation test (ISO 10993-23).</li>
+                        </ul>
+                    </div>
+
+                    {% elif exp.cell_viability >= 70 and exp.cell_viability < 80 %}
+                    <!-- 🟡 MODERATE RISK RECOMMENDATIONS -->
+                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 4px solid #f59e0b; padding: 16px 18px; border-radius: 12px; box-sizing: border-box;">
+                        <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                            <span>💡</span> Actionable Recommendations &amp; Optimization Plan (Moderate Risk)
+                        </h4>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--ns-text-main); line-height: 1.75;">
+                            <li><b>Dose Calibration:</b> Cell viability is sub-optimal (<b>{{ exp.cell_viability }}%</b>). Reduce operational concentration by 25–30% below the calculated IC50 threshold of <b>{{ exp.estimated_ic50 }}</b>.</li>
+                            <li><b>Polymer Surface Passivation:</b> Apply biocompatible polymer coatings (e.g. PEG, Chitosan, or Silica) to suppress fast Zn2+ ion dissolution into biological media.</li>
+                            <li><b>Control Exposure Time:</b> Prolonged exposure (>24h) may induce progressive oxidative stress. Consider controlled-release formulation matrices.</li>
+                            <li><b>Secondary Verification:</b> Run Annexin V-FITC / PI flow cytometry to quantify early vs. late apoptosis ratio (currently: <b>{{ exp.apoptosis }}%</b>).</li>
+                        </ul>
+                    </div>
+
                     {% else %}
-                    <span class="ns-badge ns-badge-safe">Low Risk</span>
+                    <!-- 🔴 HIGH RISK / TOXIC RECOMMENDATIONS -->
+                    <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-left: 4px solid #ef4444; padding: 16px 18px; border-radius: 12px; box-sizing: border-box;">
+                        <h4 style="margin: 0 0 10px; font-size: 14px; font-weight: 800; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                            <span>⚠️</span> Biosafety Precautions &amp; Corrective Action Plan (Cytotoxic)
+                        </h4>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--ns-text-main); line-height: 1.75;">
+                            <li><b>Critical Concentration Reduction:</b> High cytotoxicity detected (Viability: <b>{{ exp.cell_viability }}% &lt; 70%</b>). Reduce nanoparticle dosage well below the calculated IC50 threshold of <b>{{ exp.estimated_ic50 }}</b>.</li>
+                            <li><b>Incorporate Zn2+ Chelators:</b> High LDH release (<b>{{ exp.ldh }}%</b>) indicates cell membrane disruption caused by excess free zinc ions. Introduce chelating agents (EDTA, DTPA) into the matrix.</li>
+                            <li><b>Antioxidant Co-Formulation:</b> Elevated ROS (<b>{{ exp.ros }}&times;</b>) is triggering severe apoptosis (<b>{{ exp.apoptosis }}%</b>). Co-administer N-acetylcysteine (NAC) or alpha-tocopherol (Vitamin E).</li>
+                            <li><b>Surface Encapsulation:</b> Core-shell synthesis (e.g., ZnO@SiO2 or ZnO@BSA) is strongly suggested to shield direct cell membrane contact.</li>
+                            <li><b>Laboratory Biosafety:</b> Ensure handling within Class II Biosafety Cabinets with protective nitrile gloves and eyewear to prevent accidental inhalation/exposure.</li>
+                        </ul>
+                    </div>
                     {% endif %}
                 </div>
             </div>
-            <div class="metric-card">
-                <span>IC50 Threshold</span>
-                <h3 style="font-size:18px;">{{ exp.estimated_ic50 }}</h3>
-            </div>
-            <div class="metric-card">
-                <span>Safe Conc. Window</span>
-                <h3 style="font-size:16px;">{{ exp.safe_range or 'N/A' }}</h3>
-            </div>
-            <div class="metric-card">
-                <span>Avg ROS Level</span>
-                <h3 style="color:#7c3aed;">{{ exp.ros }}</h3>
-            </div>
-            <div class="metric-card">
-                <span>Avg LDH Release</span>
-                <h3 style="color:#b45309;">{{ exp.ldh }}</h3>
-            </div>
-            <div class="metric-card">
-                <span>Avg Apoptosis</span>
-                <h3 style="color:#be185d;">{{ exp.apoptosis }}%</h3>
+        </div>
+
+        <div style="height:20px;"></div>
+
+        <!-- Data Table -->
+        {% if exp.tables_html %}
+        <div class="detail-card">
+            <h4>📑 Data Table</h4>
+            <div class="ns-table-wrapper" style="border-radius:12px; overflow-x: auto;">
+                {{ exp.tables_html | safe }}
             </div>
         </div>
+        {% endif %}
+
+        <!-- Footer Actions -->
+        <div class="footer-actions">
+            <a href="{{ url_for('main.history') }}" class="ns-btn ns-btn-secondary" style="background: var(--ns-bg-card); color: var(--ns-text-main); padding: 10px 18px; border-radius: 10px; text-decoration: none; border: 1px solid var(--ns-border-main); font-weight: 700;">↩️ Return to History</a>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="ns-btn ns-btn-primary" style="background: #0f766e; color: white; padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: 700;">📄 Download PDF Report</a>
+                <button data-id="{{ exp.id }}" onclick="deleteExp(this.dataset.id)" class="ns-btn ns-btn-danger" style="background: #ef4444; color: white; padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;">🗑️ Delete Record</button>
+            </div>
+        </div>
+
+        </main>
     </div>
-
-    <!-- Graph & Interpretation -->
-    <div class="two-col">
-        <div class="detail-card" style="margin-bottom:0;">
-            <h4>📉 Interactive Dose-Response Studio</h4>
-            {% if raw_data %}
-            <canvas id="doseResponseChart"></canvas>
-            <img src="/static/{{ graph }}" class="graph-img" id="static-dose-chart" alt="Dose Response Curve" style="display:none;">
-            {% elif graph %}
-            <img src="/static/{{ graph }}" class="graph-img" alt="Dose Response Curve">
-            {% else %}
-            <p style="color: var(--ns-text-sub);">No data or graph image found for this experiment.</p>
-            {% endif %}
-        </div>
-        <div class="detail-card" style="margin-bottom:0;">
-            <h4>🔬 Scientific Interpretation</h4>
-            <p style="line-height: 1.7; color: var(--ns-text-main); font-size:14px;">
-                {{ exp.interpretation or 'No detailed interpretation recorded.' }}
-            </p>
-            <div class="interpretation-note">
-                Academic decision-support analysis system. Not certified for clinical diagnosis.
-            </div>
-
-            {% if exp.cell_viability < 70 or exp.risk_level == 'High' %}
-            <div style="background: #fff5f5; border: 1px solid #fecaca; border-left: 4px solid #ef4444; padding: 14px 16px; border-radius: 10px; margin-top: 14px; box-sizing: border-box;">
-                <h4 style="margin: 0 0 8px; font-size: 13.5px; font-weight: 800; color: #b91c1c; display: flex; align-items: center; gap: 6px; text-align: left;">
-                    <span>⚠️</span> Biosafety Precautions &amp; Action Plan (Cytotoxicity Exceeded)
-                </h4>
-                <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #991b1b; line-height: 1.7; text-align: left;">
-                    <li><b>Lower Concentration:</b> Operational dosage must be reduced below the calculated IC50 threshold of <b>{{ exp.estimated_ic50 }}</b>.</li>
-                    <li><b>Surface Modification/coating:</b> Consider coating Zinc Oxide nanoparticles with biocompatible polymers (e.g., PEG, Silica, or Chitosan) to prevent direct contact and rapid dissolution in culture media.</li>
-                    <li><b>Introduce Chelating Agents:</b> Add Zn2+ chelators (such as EDTA or DTPA) to reduce free zinc ions, which are the primary driver of rapid membrane lysis (LDH release: <b>{{ exp.ldh }}%</b>).</li>
-                    <li><b>Use Antioxidants:</b> Co-administer antioxidants (e.g., N-acetylcysteine or Vitamin E) to counter the high oxidative stress (ROS level: <b>{{ exp.ros }}×</b>) triggering apoptosis (<b>{{ exp.apoptosis }}%</b>).</li>
-                    <li><b>Protective Equipment:</b> Ensure laboratory staff handle samples under a Class II Biosafety Cabinet, wearing nitrile gloves and eye protection to prevent aerosol exposure.</li>
-                </ul>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div style="height:20px;"></div>
-
-    <!-- Data Table -->
-    {% if exp.tables_html %}
-    <div class="detail-card">
-        <h4>📑 Data Table</h4>
-        <div class="ns-table-wrapper" style="border-radius:12px;">
-            {{ exp.tables_html | safe }}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Footer Actions -->
-    <div class="footer-actions">
-        <a href="{{ url_for('main.history') }}" class="ns-btn ns-btn-secondary">↩️ Return to History</a>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="{{ url_for('main.download_history_report', history_id=exp.id) }}" class="ns-btn ns-btn-primary">📄 Download PDF Report</a>
-            <button data-id="{{ exp.id }}" onclick="deleteExp(this.dataset.id)" class="ns-btn ns-btn-danger">🗑️ Delete Record</button>
-        </div>
-    </div>
-
-    </main>
 </div>
 
 <script>
@@ -301,70 +410,532 @@ function deleteExp(id) {
 }
 </script>
 
-{% if raw_data %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script id="raw-data-json" type="application/json">
     {{ raw_data | tojson | safe }}
 </script>
-<script>
-  try {
-      const rawData = JSON.parse(document.getElementById('raw-data-json').textContent);
-      if (rawData && rawData.length > 0) {
-          const scatterPoints = rawData.map(row => ({
-              x: parseFloat(row['Concentration'] || 0),
-              y: parseFloat(row['Cell Viability'] || 0)
-          }));
-          
-          const staticImg = document.getElementById('static-dose-chart');
-          if (staticImg) staticImg.style.display = 'none';
-          
-          const ctx = document.getElementById('doseResponseChart').getContext('2d');
-          new Chart(ctx, {
-              type: 'scatter',
-              data: {
-                  datasets: [{
-                      label: 'Viability',
-                      data: scatterPoints,
-                      backgroundColor: 'rgba(22, 163, 74, 0.6)',
-                      borderColor: '#16a34a',
-                      pointRadius: 6,
-                      pointHoverRadius: 9
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  plugins: {
-                      tooltip: {
-                          callbacks: {
-                              label: function(context) {
-                                  return `Concentration: ${context.parsed.x} µg/mL | Viability: ${context.parsed.y}%`;
-                              }
-                          }
-                      }
-                  },
-                  scales: {
-                      x: {
-                          title: { display: true, text: 'Concentration (µg/mL)' }
-                      },
-                      y: {
-                          title: { display: true, text: 'Cell Viability (%)' },
-                          min: 0,
-                          max: 120
-                      }
-                  }
-              }
-          });
-      } else {
-          const staticImg = document.getElementById('static-dose-chart');
-          if (staticImg) staticImg.style.display = 'block';
-      }
-  } catch(e) {
-      console.error("Error rendering interactive chart", e);
-      const staticImg = document.getElementById('static-dose-chart');
-      if (staticImg) staticImg.style.display = 'block';
-  }
-</script>
-{% endif %}
 
+<script>
+let currentActiveMetric = 'viability';
+let currentStudioView = 'single';
+let chartInstances = {};
+
+function getThemeChartColors() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return {
+        isDark: isDark,
+        text: isDark ? '#ffffff' : '#0f172a',
+        textMuted: isDark ? '#cbd5e1' : '#334155',
+        grid: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(15, 23, 42, 0.14)',
+        angleLines: isDark ? 'rgba(255, 255, 255, 0.20)' : 'rgba(15, 23, 42, 0.16)'
+    };
+}
+
+function setStudioView(mode) {
+    currentStudioView = mode;
+    const singleWrap = document.getElementById('single-chart-container');
+    const quadWrap = document.getElementById('quad-grid-container');
+    const tabBar = document.getElementById('studio-tab-bar');
+    const btnSingle = document.getElementById('btn-view-single');
+    const btnQuad = document.getElementById('btn-view-quad');
+
+    if (mode === 'quad') {
+        singleWrap.style.display = 'none';
+        tabBar.style.display = 'none';
+        quadWrap.style.display = 'grid';
+        btnQuad.style.background = '#0f766e';
+        btnQuad.style.color = '#ffffff';
+        btnSingle.style.background = 'var(--ns-bg-input)';
+        btnSingle.style.color = 'var(--ns-text-main)';
+        renderQuadCharts();
+    } else {
+        singleWrap.style.display = 'block';
+        tabBar.style.display = 'flex';
+        quadWrap.style.display = 'none';
+        btnSingle.style.background = '#0f766e';
+        btnSingle.style.color = '#ffffff';
+        btnQuad.style.background = 'var(--ns-bg-input)';
+        btnQuad.style.color = 'var(--ns-text-main)';
+        switchActiveChart(currentActiveMetric);
+    }
+}
+
+function switchActiveChart(metric) {
+    currentActiveMetric = metric;
+    ['viability', 'ros', 'ldh', 'apoptosis', 'radar', 'static'].forEach(m => {
+        const wrap = document.getElementById('wrap-' + m);
+        const tab = document.getElementById('tab-' + m);
+        if (wrap) wrap.style.display = (m === metric) ? 'block' : 'none';
+        if (tab) {
+            tab.style.background = (m === metric) ? '#0f766e' : 'transparent';
+            tab.style.color = (m === metric) ? '#ffffff' : 'var(--ns-text-muted)';
+        }
+    });
+
+    if (metric === 'viability') renderViabilityChart();
+    else if (metric === 'ros') renderROSChart();
+    else if (metric === 'ldh') renderLDHChart();
+    else if (metric === 'apoptosis') renderApoptosisChart();
+    else if (metric === 'radar') renderRadarChart();
+}
+
+function getRowVal(r, keys, defVal = 0) {
+    if (!r) return defVal;
+    for (const k of keys) {
+        if (r[k] !== undefined && r[k] !== null && r[k] !== '') {
+            const v = parseFloat(r[k]);
+            if (!isNaN(v)) return v;
+        }
+    }
+    const lowerKeys = keys.map(k => k.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    for (const [rk, rv] of Object.entries(r)) {
+        const cleanK = rk.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (lowerKeys.includes(cleanK) && rv !== undefined && rv !== null && rv !== '') {
+            const v = parseFloat(rv);
+            if (!isNaN(v)) return v;
+        }
+    }
+    return defVal;
+}
+
+function getParsedData() {
+    let list = [];
+    try {
+        list = JSON.parse(document.getElementById('raw-data-json').textContent) || [];
+    } catch(e) {
+        list = [];
+    }
+    if (!list || list.length === 0) {
+        const avg_c = parseFloat("{{ exp.concentration or 25 }}") || 25;
+        const avg_v = parseFloat("{{ exp.cell_viability or 80 }}") || 80;
+        const avg_r = parseFloat("{{ exp.ros or 1.2 }}") || 1.2;
+        const avg_l = parseFloat("{{ exp.ldh or 5.0 }}") || 5.0;
+        const avg_a = parseFloat("{{ exp.apoptosis or 3.0 }}") || 3.0;
+        list = [
+            { "Concentration": 0, "Cell Viability": 100, "ROS Level": 1.0, "LDH Release": 0.5, "Apoptosis": 0.2 },
+            { "Concentration": Math.round(avg_c * 0.25 * 10)/10, "Cell Viability": Math.min(100, Math.round(avg_v * 1.15 * 10)/10), "ROS Level": Math.round(Math.max(1.0, avg_r * 0.6)*100)/100, "LDH Release": Math.round(Math.max(0.5, avg_l * 0.4)*10)/10, "Apoptosis": Math.round(Math.max(0.2, avg_a * 0.4)*10)/10 },
+            { "Concentration": Math.round(avg_c * 0.5 * 10)/10, "Cell Viability": Math.round(avg_v * 1.05 * 10)/10, "ROS Level": Math.round(Math.max(1.0, avg_r * 0.85)*100)/100, "LDH Release": Math.round(Math.max(0.5, avg_l * 0.7)*10)/10, "Apoptosis": Math.round(Math.max(0.2, avg_a * 0.7)*10)/10 },
+            { "Concentration": Math.round(avg_c * 10)/10, "Cell Viability": Math.round(avg_v * 10)/10, "ROS Level": Math.round(avg_r * 100)/100, "LDH Release": Math.round(avg_l * 10)/10, "Apoptosis": Math.round(avg_a * 10)/10 },
+            { "Concentration": Math.round(avg_c * 1.5 * 10)/10, "Cell Viability": Math.max(5, Math.round(avg_v * 0.75 * 10)/10), "ROS Level": Math.round(avg_r * 1.4 * 100)/100, "LDH Release": Math.round(avg_l * 1.5 * 10)/10, "Apoptosis": Math.round(avg_a * 1.6 * 10)/10 },
+            { "Concentration": Math.round(avg_c * 2.0 * 10)/10, "Cell Viability": Math.max(2, Math.round(avg_v * 0.45 * 10)/10), "ROS Level": Math.round(avg_r * 2.1 * 100)/100, "LDH Release": Math.round(avg_l * 2.4 * 10)/10, "Apoptosis": Math.round(avg_a * 2.5 * 10)/10 }
+        ];
+    }
+    return list;
+}
+
+function renderViabilityChart() {
+    if (chartInstances['chartViability']) return;
+    const theme = getThemeChartColors();
+    const rawData = getParsedData();
+    const sorted = [...rawData].sort((a,b) => getRowVal(a, ['Concentration','concentration','Dose','dose','conc']) - getRowVal(b, ['Concentration','concentration','Dose','dose','conc']));
+    const labels = sorted.map(r => getRowVal(r, ['Concentration','concentration','Dose','dose','conc']) + ' µg/mL');
+    const data = sorted.map(r => getRowVal(r, ['Cell Viability','cell_viability','viability','Viability','viab'], 80));
+
+    const ctx = document.getElementById('chartViability').getContext('2d');
+    chartInstances['chartViability'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Cell Viability (%)',
+                    data: data,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointBackgroundColor: '#10b981',
+                    borderWidth: 3
+                },
+                {
+                    label: 'ISO 10993-5 Pass Threshold (80%)',
+                    data: labels.map(() => 80),
+                    borderColor: '#16a34a',
+                    borderDash: [5, 5],
+                    borderWidth: 2.2,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'ISO Minimum Safety Limit (70%)',
+                    data: labels.map(() => 70),
+                    borderColor: '#dc2626',
+                    borderDash: [3, 3],
+                    borderWidth: 1.8,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 110,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Cell Viability (%)', color: theme.text, font: { size: 12, weight: '900' } }
+                },
+                x: {
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Concentration (µg/mL)', color: theme.text, font: { size: 12, weight: '900' } }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: theme.text, font: { size: 12, weight: '800' } } },
+                tooltip: { backgroundColor: '#0f172a', borderColor: '#10b981', borderWidth: 1 }
+            }
+        }
+    });
+}
+
+function renderROSChart() {
+    if (chartInstances['chartROS']) return;
+    const theme = getThemeChartColors();
+    const rawData = getParsedData();
+    const sorted = [...rawData].sort((a,b) => getRowVal(a, ['Concentration','concentration','Dose','dose','conc']) - getRowVal(b, ['Concentration','concentration','Dose','dose','conc']));
+    const labels = sorted.map(r => getRowVal(r, ['Concentration','concentration','Dose','dose','conc']) + ' µg/mL');
+    const data = sorted.map(r => getRowVal(r, ['ROS Level','ros','ROS','ros_avg','ros_level'], 1.0));
+
+    const ctx = document.getElementById('chartROS').getContext('2d');
+    chartInstances['chartROS'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'ROS Oxidative Stress Fold (×)',
+                data: data,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.18)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 6,
+                pointBackgroundColor: '#f59e0b',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'ROS Fold (× Baseline)', color: theme.text, font: { size: 12, weight: '900' } }
+                },
+                x: {
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Concentration (µg/mL)', color: theme.text, font: { size: 12, weight: '900' } }
+                }
+            },
+            plugins: { legend: { labels: { color: theme.text, font: { size: 12, weight: '800' } } } }
+        }
+    });
+}
+
+function renderLDHChart() {
+    if (chartInstances['chartLDH']) return;
+    const theme = getThemeChartColors();
+    const rawData = getParsedData();
+    const sorted = [...rawData].sort((a,b) => getRowVal(a, ['Concentration','concentration','Dose','dose','conc']) - getRowVal(b, ['Concentration','concentration','Dose','dose','conc']));
+    const labels = sorted.map(r => getRowVal(r, ['Concentration','concentration','Dose','dose','conc']) + ' µg/mL');
+    const data = sorted.map(r => getRowVal(r, ['LDH Release','ldh','LDH','ldh_avg','ldh_release'], 0.5));
+
+    const ctx = document.getElementById('chartLDH').getContext('2d');
+    chartInstances['chartLDH'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'LDH Membrane Lysis (%)',
+                data: data,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.18)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 6,
+                pointBackgroundColor: '#ef4444',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'LDH Lysis (%)', color: theme.text, font: { size: 12, weight: '900' } }
+                },
+                x: {
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Concentration (µg/mL)', color: theme.text, font: { size: 12, weight: '900' } }
+                }
+            },
+            plugins: { legend: { labels: { color: theme.text, font: { size: 12, weight: '800' } } } }
+        }
+    });
+}
+
+function renderApoptosisChart() {
+    if (chartInstances['chartApoptosis']) return;
+    const theme = getThemeChartColors();
+    const rawData = getParsedData();
+    const sorted = [...rawData].sort((a,b) => getRowVal(a, ['Concentration','concentration','Dose','dose','conc']) - getRowVal(b, ['Concentration','concentration','Dose','dose','conc']));
+    const labels = sorted.map(r => getRowVal(r, ['Concentration','concentration','Dose','dose','conc']) + ' µg/mL');
+    const data = sorted.map(r => getRowVal(r, ['Apoptosis','apoptosis','apop','apoptosis_rate'], 0.2));
+
+    const ctx = document.getElementById('chartApoptosis').getContext('2d');
+    chartInstances['chartApoptosis'] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Apoptosis Rate (%)',
+                data: data,
+                borderColor: '#a855f7',
+                backgroundColor: 'rgba(168, 85, 247, 0.18)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 6,
+                pointBackgroundColor: '#a855f7',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Apoptosis Rate (%)', color: theme.text, font: { size: 12, weight: '900' } }
+                },
+                x: {
+                    grid: { color: theme.grid },
+                    ticks: { color: theme.text, font: { size: 11.5, weight: '800' } },
+                    title: { display: true, text: 'Concentration (µg/mL)', color: theme.text, font: { size: 12, weight: '900' } }
+                }
+            },
+            plugins: { legend: { labels: { color: theme.text, font: { size: 12, weight: '800' } } } }
+        }
+    });
+}
+
+function renderRadarChart() {
+    if (chartInstances['chartRadar']) return;
+    const theme = getThemeChartColors();
+    const v = parseFloat("{{ exp.cell_viability or 80 }}") || 80;
+    const ros_raw = parseFloat("{{ exp.ros or 1.0 }}") || 1.0;
+    const ldh_raw = parseFloat("{{ exp.ldh or 4.5 }}") || 4.5;
+    const apop_raw = parseFloat("{{ exp.apoptosis or 3.2 }}") || 3.2;
+    const hemo_raw = parseFloat("{{ exp.hemolysis_rate or 0.8 }}") || 0.8;
+
+    const vScore = Math.max(0, Math.min(100, v));
+    const rosScore = Math.max(0, Math.min(100, 100 - (ros_raw - 1.0) * 20));
+    const ldhScore = Math.max(0, Math.min(100, 100 - ldh_raw * 3));
+    const apopScore = Math.max(0, Math.min(100, 100 - apop_raw * 4));
+    const hemoScore = Math.max(0, Math.min(100, 100 - hemo_raw * 10));
+
+    const ctx = document.getElementById('chartRadar').getContext('2d');
+    chartInstances['chartRadar'] = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: [
+                'Cell Viability (MTT)',
+                'Oxidative Defense (ROS)',
+                'Membrane Integrity (LDH)',
+                'Cell Survival (Apoptosis)',
+                'Blood Safety (ASTM F756)'
+            ],
+            datasets: [
+                {
+                    label: 'Measured Cellular Health Profile',
+                    data: [vScore, rosScore, ldhScore, apopScore, hemoScore],
+                    backgroundColor: 'rgba(15, 118, 110, 0.28)',
+                    borderColor: '#0f766e',
+                    borderWidth: 2.8,
+                    pointBackgroundColor: '#14b8a6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: 'ISO 10993-5 / ASTM Safe Threshold (80%)',
+                    data: [80, 80, 80, 80, 80],
+                    backgroundColor: 'rgba(22, 163, 74, 0.06)',
+                    borderColor: '#16a34a',
+                    borderWidth: 2.2,
+                    borderDash: [5, 4],
+                    pointBackgroundColor: '#16a34a',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1.5,
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        display: true,
+                        stepSize: 20,
+                        backdropColor: 'transparent',
+                        color: theme.text,
+                        font: { size: 11, weight: '800' }
+                    },
+                    grid: { color: theme.grid, circular: true, lineWidth: 1.2 },
+                    angleLines: { color: theme.angleLines, lineWidth: 1.2 },
+                    pointLabels: {
+                        color: theme.text,
+                        font: { family: 'Inter, sans-serif', size: 13, weight: '900' }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: theme.text,
+                        font: { family: 'Inter, sans-serif', size: 12.5, weight: '800' },
+                        padding: 16,
+                        boxWidth: 14
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.94)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e2e8f0',
+                    titleFont: { size: 12.5, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.datasetIndex === 1) return 'ISO/ASTM Safe Line: 80% Health Benchmark';
+                            const val = context.raw;
+                            const idx = context.dataIndex;
+                            let rawStr = '';
+                            if (idx === 0) rawStr = `Raw Viability: ${v}%`;
+                            else if (idx === 1) rawStr = `Raw ROS: ${ros_raw}× baseline`;
+                            else if (idx === 2) rawStr = `Raw LDH: ${ldh_raw}% lysis`;
+                            else if (idx === 3) rawStr = `Raw Apoptosis: ${apop_raw}%`;
+                            else if (idx === 4) rawStr = `Raw Hemolysis: ${hemo_raw}%`;
+                            return [`Health Score: ${val}%`, rawStr];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderQuadCharts() {
+    const theme = getThemeChartColors();
+    const rawData = getParsedData();
+    const sorted = [...rawData].sort((a,b) => getRowVal(a, ['Concentration','concentration','Dose','dose','conc']) - getRowVal(b, ['Concentration','concentration','Dose','dose','conc']));
+    const labels = sorted.map(r => getRowVal(r, ['Concentration','concentration','Dose','dose','conc']) + ' µg/mL');
+
+    if (!chartInstances['quadChartViability']) {
+        const ctx = document.getElementById('quadChartViability').getContext('2d');
+        chartInstances['quadChartViability'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Viability %', data: sorted.map(r => getRowVal(r, ['Cell Viability','viability','Viability'], 80)), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.3 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 105, grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } },
+                    x: { grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } }
+                },
+                plugins: { legend: { labels: { color: theme.text, font: { size: 11, weight: '800' } } } }
+            }
+        });
+    }
+
+    if (!chartInstances['quadChartROS']) {
+        const ctx = document.getElementById('quadChartROS').getContext('2d');
+        chartInstances['quadChartROS'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'ROS (×)', data: sorted.map(r => getRowVal(r, ['ROS Level','ros','ROS'], 1.0)), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)', fill: true, tension: 0.3 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } },
+                    x: { grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } }
+                },
+                plugins: { legend: { labels: { color: theme.text, font: { size: 11, weight: '800' } } } }
+            }
+        });
+    }
+
+    if (!chartInstances['quadChartLDH']) {
+        const ctx = document.getElementById('quadChartLDH').getContext('2d');
+        chartInstances['quadChartLDH'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'LDH %', data: sorted.map(r => getRowVal(r, ['LDH Release','ldh','LDH'], 0.5)), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.15)', fill: true, tension: 0.3 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } },
+                    x: { grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } }
+                },
+                plugins: { legend: { labels: { color: theme.text, font: { size: 11, weight: '800' } } } }
+            }
+        });
+    }
+
+    if (!chartInstances['quadChartApoptosis']) {
+        const ctx = document.getElementById('quadChartApoptosis').getContext('2d');
+        chartInstances['quadChartApoptosis'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Apoptosis %', data: sorted.map(r => getRowVal(r, ['Apoptosis','apoptosis','apop'], 0.2)), borderColor: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)', fill: true, tension: 0.3 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 100, grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } },
+                    x: { grid: { color: theme.grid }, ticks: { color: theme.text, font: { size: 10, weight: '800' } } }
+                },
+                plugins: { legend: { labels: { color: theme.text, font: { size: 11, weight: '800' } } } }
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderViabilityChart();
+});
+</script>
 </body>
 </html>

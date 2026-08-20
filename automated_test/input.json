@@ -1,0 +1,13 @@
+{
+  "baseUrl": "http://127.0.0.1:5000",
+  "admin": {
+    "username": "dhatrikaakepati@gmail.com",
+    "password": "Dhatrika@123",
+    "role": "admin"
+  },
+  "user": {
+    "username": "researcher_test",
+    "password": "UserTest@123",
+    "role": "user"
+  }
+}

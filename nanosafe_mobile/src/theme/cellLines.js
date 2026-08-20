@@ -1,0 +1,18 @@
+export const ALL_CELL_LINES = [
+  { id: 'HeLa', name: 'HeLa', origin: 'Human Cervical Epithelial', model: 'Standard Epithelial Model' },
+  { id: 'A549', name: 'A549', origin: 'Human Lung Carcinoma', model: 'Inhalation / Dermal Model' },
+  { id: 'MCF-7', name: 'MCF-7', origin: 'Human Breast Carcinoma', model: 'Adenocarcinoma Screen' },
+  { id: 'HEK293', name: 'HEK293', origin: 'Human Embryonic Kidney', model: 'Renal Biocompatibility' },
+  { id: 'NIH-3T3', name: 'NIH-3T3', origin: 'Mouse Fibroblast', model: 'Wound Healing / Dermal' },
+  { id: 'HepG2', name: 'HepG2', origin: 'Human Hepatocellular Carcinoma', model: 'Liver Clearance Screen' },
+  { id: 'Caco-2', name: 'Caco-2', origin: 'Human Colorectal Carcinoma', model: 'Oral / Gastrointestinal' },
+  { id: 'CHO', name: 'CHO', origin: 'Chinese Hamster Ovary', model: 'Biopharma Reference' },
+  { id: 'Jurkat', name: 'Jurkat', origin: 'Human T-Lymphocyte', model: 'Immune System Screen' },
+  { id: 'PC12', name: 'PC12', origin: 'Rat Pheochromocytoma', model: 'Neuronal / Synaptic Model' },
+  { id: 'RAW264.7', name: 'RAW264.7', origin: 'Mouse Macrophage', model: 'Inflammatory / Uptake' },
+  { id: 'HUVEC', name: 'HUVEC', origin: 'Human Umbilical Vein Endothelial', model: 'Vascular Endothelial' },
+  { id: 'HaCaT', name: 'HaCaT', origin: 'Human Keratinocyte', model: 'Epidermal / Topical Barrier' },
+  { id: 'Primary Keratinocytes', name: 'Primary Keratinocytes', origin: 'Human Epidermis', model: 'Primary Dermal' },
+  { id: 'Primary Osteoblasts', name: 'Primary Osteoblasts', origin: 'Human Bone Marrow', model: 'Bone Scaffold' },
+  { id: 'Other', name: 'Other / Custom', origin: 'User Custom Line', model: 'Custom Cell Line' },
+];

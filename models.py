@@ -45,18 +45,31 @@ class User(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
 
     # Role relationship
-    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False, default=2)
+    role_id = db.Column(db.Integer, db.ForeignKey("roles.id"), nullable=False, default=1)
     role_obj = db.relationship("Role", back_populates="users")
 
     # Account status
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    is_profile_completed = db.Column(db.Boolean, default=False, nullable=True)
 
     # Profile
     full_name = db.Column(db.String(120), default="")
     institution = db.Column(db.String(200), default="")
     department = db.Column(db.String(200), default="")
     research_role = db.Column(db.String(100), default="")  # e.g. PhD Student, PI
+    research_field = db.Column(db.String(150), default="") # e.g. Nanomedicine, Toxicology
+
+    # Personal Information & Contact
+    title_salutation = db.Column(db.String(20), default="")
+    gender_pronouns = db.Column(db.String(50), default="")
+    date_of_birth = db.Column(db.String(50), default="")
+    secondary_email = db.Column(db.String(120), default="")
+    office_address = db.Column(db.String(255), default="")
+    city_state = db.Column(db.String(100), default="")
+    country = db.Column(db.String(100), default="")
+    preferred_language = db.Column(db.String(50), default="")
+    bio = db.Column(db.Text, default="")
 
     # Research Preferences
     default_cell_line = db.Column(db.String(80), default="HeLa")
@@ -86,9 +99,9 @@ class User(db.Model):
     def is_admin(self):
         return self.role == "admin"
 
-    def __init__(self, username=None, email=None, password_hash=None, role_id=2,
-                 is_verified=False, is_active=True, full_name="", firebase_uid=None,
-                 created_at=None, institution="", department="", research_role="",
+    def __init__(self, username=None, email=None, password_hash=None, role_id=1,
+                 is_verified=False, is_active=True, is_profile_completed=False, full_name="", firebase_uid=None,
+                 created_at=None, institution="", department="", research_role="", research_field="",
                  default_cell_line="HeLa", default_exposure_time="24h",
                  preferred_report_format="pdf", dark_mode=False,
                  notify_analysis_completed=True, notify_report_generated=True, notify_security_alerts=True):
@@ -101,10 +114,12 @@ class User(db.Model):
         self.role_id = role_id
         self.is_verified = is_verified
         self.is_active = is_active
+        self.is_profile_completed = is_profile_completed
         self.full_name = full_name
         self.institution = institution
         self.department = department
         self.research_role = research_role
+        self.research_field = research_field
         self.default_cell_line = default_cell_line
         self.default_exposure_time = default_exposure_time
         self.preferred_report_format = preferred_report_format
@@ -184,6 +199,12 @@ class Experiment(db.Model):
     nanoparticle_type = db.Column(db.String(50), default="ZnO")
     cell_line = db.Column(db.String(100), default="")
     exposure_time = db.Column(db.String(50), default="")
+    synthesis_method = db.Column(db.String(80), default="Green_Synthesis")
+    surface_coating = db.Column(db.String(80), default="Bare_ZnO")
+    hemolysis_rate = db.Column(db.Float, default=0.0)
+    hemocompatibility_status = db.Column(db.String(50), default="Non-Hemolytic (<2%)")
+    selectivity_index = db.Column(db.Float, default=1.0)
+    comet_tail_moment = db.Column(db.Float, default=1.0)
     csv_filename = db.Column(db.String(200), default="Manual Entry")
 
     # Timestamps
@@ -200,7 +221,9 @@ class Experiment(db.Model):
 
     def __init__(self, user_id=None, exp_uuid=None, sample_name="Untitled Sample",
                  researcher_name="", nanoparticle_type="ZnO", cell_line="",
-                 exposure_time="", csv_filename="Manual Entry", created_at=None, **kwargs):
+                 exposure_time="", synthesis_method="Green_Synthesis", surface_coating="Bare_ZnO",
+                 hemolysis_rate=0.0, hemocompatibility_status="Non-Hemolytic (<2%)",
+                 selectivity_index=1.0, comet_tail_moment=1.0, csv_filename="Manual Entry", created_at=None, **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
         self.exp_uuid = exp_uuid
@@ -209,6 +232,12 @@ class Experiment(db.Model):
         self.nanoparticle_type = nanoparticle_type
         self.cell_line = cell_line
         self.exposure_time = exposure_time
+        self.synthesis_method = synthesis_method
+        self.surface_coating = surface_coating
+        self.hemolysis_rate = hemolysis_rate
+        self.hemocompatibility_status = hemocompatibility_status
+        self.selectivity_index = selectivity_index
+        self.comet_tail_moment = comet_tail_moment
         self.csv_filename = csv_filename
         if created_at is not None:
             self.created_at = created_at
@@ -232,6 +261,12 @@ class ExperimentResult(db.Model):
     ros = db.Column(db.Float, default=0.0)
     ldh = db.Column(db.Float, default=0.0)
     apoptosis = db.Column(db.Float, default=0.0)
+    hemolysis_rate = db.Column(db.Float, default=0.0)
+    hemocompatibility_status = db.Column(db.String(50), default="Non-Hemolytic (<2%)")
+    selectivity_index = db.Column(db.Float, default=1.0)
+    comet_tail_moment = db.Column(db.Float, default=1.0)
+    synthesis_method = db.Column(db.String(80), default="Green_Synthesis")
+    surface_coating = db.Column(db.String(80), default="Bare_ZnO")
 
     # Analysis outputs
     toxicity_score = db.Column(db.Float, default=0.0)
@@ -250,7 +285,10 @@ class ExperimentResult(db.Model):
     experiment = db.relationship("Experiment", back_populates="result")
 
     def __init__(self, experiment_id=None, avg_concentration=0.0, cell_viability=0.0,
-                 ros=0.0, ldh=0.0, apoptosis=0.0, toxicity_score=0.0, risk_level="Low",
+                 ros=0.0, ldh=0.0, apoptosis=0.0, hemolysis_rate=0.0,
+                 hemocompatibility_status="Non-Hemolytic (<2%)", selectivity_index=1.0,
+                 comet_tail_moment=1.0, synthesis_method="Green_Synthesis",
+                 surface_coating="Bare_ZnO", toxicity_score=0.0, risk_level="Low",
                  estimated_ic50="Not Reached", safe_range="", interpretation="",
                  graph_path="", tables_html="", generated_at=None, **kwargs):
         super().__init__(**kwargs)
@@ -260,6 +298,12 @@ class ExperimentResult(db.Model):
         self.ros = ros
         self.ldh = ldh
         self.apoptosis = apoptosis
+        self.hemolysis_rate = hemolysis_rate
+        self.hemocompatibility_status = hemocompatibility_status
+        self.selectivity_index = selectivity_index
+        self.comet_tail_moment = comet_tail_moment
+        self.synthesis_method = synthesis_method
+        self.surface_coating = surface_coating
         self.toxicity_score = toxicity_score
         self.risk_level = risk_level
         self.estimated_ic50 = estimated_ic50
@@ -350,6 +394,12 @@ class History(db.Model):
     ros = db.Column(db.Float, default=0.0)
     ldh = db.Column(db.Float, default=0.0)
     apoptosis = db.Column(db.Float, default=0.0)
+    hemolysis_rate = db.Column(db.Float, default=0.0)
+    hemocompatibility_status = db.Column(db.String(50), default="Non-Hemolytic (<2%)")
+    selectivity_index = db.Column(db.Float, default=1.0)
+    comet_tail_moment = db.Column(db.Float, default=1.0)
+    synthesis_method = db.Column(db.String(80), default="Green_Synthesis")
+    surface_coating = db.Column(db.String(80), default="Bare_ZnO")
     toxicity_score = db.Column(db.Float, default=0.0)
     risk_level = db.Column(db.String(20), default="Low")
     estimated_ic50 = db.Column(db.String(50), default="Not Reached")
@@ -362,6 +412,9 @@ class History(db.Model):
     interpretation = db.Column(db.Text, default="")
     tables_html = db.Column(db.Text, default="")
     username = db.Column(db.String(80), default="")
+    participant_id = db.Column(db.String(50), default="")    # e.g. "PAT-2026-001" or ""
+    participant_name = db.Column(db.String(150), default="") # e.g. "Jane D."
+    study_group = db.Column(db.String(100), default="")      # e.g. "Wound Care Cohort A"
 
     experiment = db.relationship("Experiment", back_populates="history")
     project = db.relationship("Project", back_populates="histories")
@@ -379,6 +432,12 @@ class History(db.Model):
             "ros": self.ros,
             "ldh": self.ldh,
             "apoptosis": self.apoptosis,
+            "hemolysis_rate": self.hemolysis_rate or 0.0,
+            "hemocompatibility_status": self.hemocompatibility_status or "Non-Hemolytic (<2%)",
+            "selectivity_index": self.selectivity_index or 1.0,
+            "comet_tail_moment": self.comet_tail_moment or 1.0,
+            "synthesis_method": self.synthesis_method or "Green_Synthesis",
+            "surface_coating": self.surface_coating or "Bare_ZnO",
             "toxicity_score": self.toxicity_score,
             "risk_level": self.risk_level,
             "estimated_ic50": self.estimated_ic50,
@@ -391,14 +450,21 @@ class History(db.Model):
             "interpretation": self.interpretation,
             "tables_html": self.tables_html,
             "username": self.username,
+            "participant_id": self.participant_id or "",
+            "participant_name": self.participant_name or "",
+            "study_group": self.study_group or "",
         }
 
     def __init__(self, experiment_id=None, user_id=None, date_time="", sample_name="",
                  nanoparticle_type="ZnO", cell_line="", concentration=0.0, cell_viability=0.0,
-                 ros=0.0, ldh=0.0, apoptosis=0.0, toxicity_score=0.0, risk_level="Low",
+                 ros=0.0, ldh=0.0, apoptosis=0.0, hemolysis_rate=0.0,
+                 hemocompatibility_status="Non-Hemolytic (<2%)", selectivity_index=1.0,
+                 comet_tail_moment=1.0, synthesis_method="Green_Synthesis",
+                 surface_coating="Bare_ZnO", toxicity_score=0.0, risk_level="Low",
                  estimated_ic50="Not Reached", safe_range="", csv_filename="", pdf_path="",
                  graph_path="", researcher_name="", exposure_time="", interpretation="",
-                 tables_html="", username="", **kwargs):
+                 tables_html="", username="", participant_id="", participant_name="",
+                 study_group="", **kwargs):
         super().__init__(**kwargs)
         self.experiment_id = experiment_id
         self.user_id = user_id
@@ -411,6 +477,12 @@ class History(db.Model):
         self.ros = ros
         self.ldh = ldh
         self.apoptosis = apoptosis
+        self.hemolysis_rate = hemolysis_rate
+        self.hemocompatibility_status = hemocompatibility_status
+        self.selectivity_index = selectivity_index
+        self.comet_tail_moment = comet_tail_moment
+        self.synthesis_method = synthesis_method
+        self.surface_coating = surface_coating
         self.toxicity_score = toxicity_score
         self.risk_level = risk_level
         self.estimated_ic50 = estimated_ic50
@@ -423,6 +495,9 @@ class History(db.Model):
         self.interpretation = interpretation
         self.tables_html = tables_html
         self.username = username
+        self.participant_id = participant_id
+        self.participant_name = participant_name
+        self.study_group = study_group
 
     def __repr__(self):
         return f"<History #{self.id} '{self.sample_name}'>"
@@ -703,9 +778,18 @@ class BiologicalSample(db.Model):
                                                           ondelete="SET NULL"), nullable=True)
 
     # Sample metadata
+    researcher_id = db.Column(db.String(80), default="")
+    study_id = db.Column(db.String(80), default="")
     sample_type = db.Column(db.String(100), default="")         # Blood/Tissue/Cell Culture/Serum/Plasma
+    sample_category = db.Column(db.String(80), default="Primary Cell Culture")
     cell_type = db.Column(db.String(100), default="")           # HeLa/MCF-7/A549/etc.
+    source = db.Column(db.String(150), default="")              # Hospital Biorepository / Cell Line Bank
+    volume_quantity = db.Column(db.String(50), default="1.0 mL")
+    passage_number = db.Column(db.String(30), default="P1")
+    storage_condition = db.Column(db.String(80), default="-80°C Cryopreservation")
+    storage_location = db.Column(db.String(100), default="Tank A / Rack 2 / Box 4")
     collection_date = db.Column(db.Date, nullable=True)
+    collection_time = db.Column(db.String(30), default="")
     sample_status = db.Column(db.String(30), default="Active")  # Active/Processing/Completed/Archived
     notes = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -717,16 +801,28 @@ class BiologicalSample(db.Model):
     user = db.relationship("User", backref=db.backref("biological_samples", lazy="dynamic",
                                                        cascade="all, delete-orphan"))
 
-    def __init__(self, user_id=None, sample_id="", participant_fk=None, sample_type="",
-                 cell_type="", collection_date=None, sample_status="Active", notes="",
+    def __init__(self, user_id=None, sample_id="", participant_fk=None, researcher_id="",
+                 study_id="", sample_type="", sample_category="Primary Cell Culture",
+                 cell_type="", source="", volume_quantity="1.0 mL", passage_number="P1",
+                 storage_condition="-80°C Cryopreservation", storage_location="Tank A / Rack 2 / Box 4",
+                 collection_date=None, collection_time="", sample_status="Active", notes="",
                  created_at=None, **kwargs):
         super().__init__(**kwargs)
         self.user_id = user_id
         self.sample_id = sample_id
         self.participant_fk = participant_fk
+        self.researcher_id = researcher_id
+        self.study_id = study_id
         self.sample_type = sample_type
+        self.sample_category = sample_category
         self.cell_type = cell_type
+        self.source = source
+        self.volume_quantity = volume_quantity
+        self.passage_number = passage_number
+        self.storage_condition = storage_condition
+        self.storage_location = storage_location
         self.collection_date = collection_date
+        self.collection_time = collection_time
         self.sample_status = sample_status
         self.notes = notes
         if created_at is not None:

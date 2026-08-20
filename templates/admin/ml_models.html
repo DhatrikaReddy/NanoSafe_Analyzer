@@ -149,15 +149,7 @@
     <main class="admin-container">
 
         <!-- Admin Subnav -->
-        <div class="admin-subnav">
-            <a href="{{ url_for('admin.dashboard') }}">📊 Overview</a>
-            <a href="{{ url_for('admin.users') }}">👥 User Accounts</a>
-            <a href="{{ url_for('admin.all_experiments') }}">🧪 All Experiments</a>
-            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
-            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
-            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
-            <a href="{{ url_for('admin.ml_models') }}" class="active">🤖 ML Diagnostics &amp; Retraining</a>
-        </div>
+        {% include 'admin/_admin_nav.html' %}
 
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}

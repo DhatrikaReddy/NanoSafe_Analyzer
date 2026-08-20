@@ -50,6 +50,44 @@ def _get_participant_stats(uid):
 
 
 # ============================================================
+# PATIENT RESEARCH SEARCH GATEWAY
+# ============================================================
+@participants_bp.route("/search")
+@verified_required
+def patient_search():
+    uid = current_user_id()
+    q = request.args.get("q", "").strip()
+    query = StudyParticipant.query.filter_by(user_id=uid)
+    if q:
+        query = query.filter(
+            (StudyParticipant.participant_id.ilike(f"%{q}%")) |
+            (StudyParticipant.name.ilike(f"%{q}%")) |
+            (StudyParticipant.study_group.ilike(f"%{q}%")) |
+            (StudyParticipant.blood_group.ilike(f"%{q}%"))
+        )
+    participants = query.order_by(StudyParticipant.created_at.desc()).all()
+
+    sample_counts = {}
+    experiment_counts = {}
+    for p in participants:
+        sample_counts[p.id] = p.samples.count()
+        s_ids = [s.id for s in p.samples.all()]
+        if s_ids:
+            exp_cnt = SampleExperimentLink.query.filter(SampleExperimentLink.sample_id.in_(s_ids)).distinct().count()
+        else:
+            exp_cnt = History.query.filter_by(user_id=uid, participant_id=p.participant_id).count()
+        experiment_counts[p.id] = exp_cnt
+
+    return render_template(
+        "participants/patient_search.html",
+        participants=participants,
+        sample_counts=sample_counts,
+        experiment_counts=experiment_counts,
+        query=q,
+    )
+
+
+# ============================================================
 # PARTICIPANTS LIST
 # ============================================================
 @participants_bp.route("/")
@@ -107,7 +145,6 @@ def participants_list():
 
 
 # ============================================================
-# ============================================================
 # CREATE PARTICIPANT
 # ============================================================
 @participants_bp.route("/new", methods=["GET", "POST"])
@@ -130,17 +167,19 @@ def participant_new():
         research_notes = request.form.get("research_notes", "").strip()
 
         if not pid:
-            flash("Participant ID is required.", "danger")
-            return render_template("participants/participant_form.html",
-                                   action="new", form_data=request.form)
-
-        # Duplicate check (per user)
-        existing = StudyParticipant.query.filter_by(
-            user_id=uid, participant_id=pid).first()
-        if existing:
-            flash(f"Participant ID '{pid}' already exists. Use a unique ID.", "danger")
-            return render_template("participants/participant_form.html",
-                                   action="new", form_data=request.form)
+            count = StudyParticipant.query.filter_by(user_id=uid).count() + 1
+            pid = f"PAT-{date.today().year}-{count:03d}"
+            while StudyParticipant.query.filter_by(user_id=uid, participant_id=pid).first():
+                count += 1
+                pid = f"PAT-{date.today().year}-{count:03d}"
+        else:
+            # Duplicate check (per user)
+            existing = StudyParticipant.query.filter_by(
+                user_id=uid, participant_id=pid).first()
+            if existing:
+                flash(f"Participant ID '{pid}' already exists. Use a unique ID.", "danger")
+                return render_template("participants/participant_form.html",
+                                       action="new", form_data=request.form)
 
         age = None
         if age_str:
@@ -199,11 +238,20 @@ def participant_new():
             ip_address=request.remote_addr or "",
         ))
         db.session.commit()
-        flash(f"Participant {name or pid} added successfully.", "success")
-        return redirect(url_for("participants.participants_list"))
+        flash(f"Patient / Participant {name or pid} enrolled successfully.", "success")
+        next_step = request.form.get("next") or request.args.get("next")
+        if next_step == "experiment":
+            return redirect(url_for("main.upload", participant_id=participant.id))
+        return redirect(url_for("participants.participant_detail", participant_pk=participant.id))
+
+    count = StudyParticipant.query.filter_by(user_id=uid).count() + 1
+    default_pid = f"PAT-{date.today().year}-{count:03d}"
+    while StudyParticipant.query.filter_by(user_id=uid, participant_id=default_pid).first():
+        count += 1
+        default_pid = f"PAT-{date.today().year}-{count:03d}"
 
     return render_template("participants/participant_form.html",
-                           action="new", form_data={})
+                           action="new", form_data={"participant_id": default_pid})
 
 
 # ============================================================
@@ -222,13 +270,33 @@ def participant_detail(participant_pk):
 
     consent_logs = participant.consent_logs.all()
 
+    # Collect all experiments for this patient in chronological order
+    chronological_experiments = History.query.filter_by(
+        user_id=uid, participant_id=participant.participant_id
+    ).order_by(History.id.asc()).all()
+
+    # Also collect via biological samples
+    sample_ids = [s.id for s in samples]
+    if sample_ids:
+        links = SampleExperimentLink.query.filter(SampleExperimentLink.sample_id.in_(sample_ids)).all()
+        link_exp_ids = [l.experiment_id for l in links]
+        if link_exp_ids:
+            linked_hist = History.query.filter(History.user_id == uid, History.experiment_id.in_(link_exp_ids)).all()
+            seen_ids = {h.id for h in chronological_experiments}
+            for h in linked_hist:
+                if h.id not in seen_ids:
+                    chronological_experiments.append(h)
+                    seen_ids.add(h.id)
+
+    chronological_experiments.sort(key=lambda h: h.id)
+
     # Build the full chain: Sample → linked Experiments → Results → Reports
     chain_data = []
     for sample in samples:
         links = SampleExperimentLink.query.filter_by(sample_id=sample.id).all()
         exp_entries = []
         for link in links:
-            exp = Experiment.query.get(link.experiment_id)
+            exp = db.session.get(Experiment, link.experiment_id)
             if not exp or exp.user_id != uid:
                 continue
             result = ExperimentResult.query.filter_by(experiment_id=exp.id).first()
@@ -247,7 +315,8 @@ def participant_detail(participant_pk):
         })
 
     # Compute Chart Analytics for Linked Experiments & Samples
-    exp_names = []
+    exp_short_names = []
+    exp_full_names = []
     viability_scores = []
     ros_scores = []
     ldh_scores = []
@@ -260,20 +329,39 @@ def participant_detail(participant_pk):
             res = exp_entry["result"]
             exp = exp_entry["experiment"]
             if res:
-                label = f"{exp.sample_name or 'Exp'} (#{exp.id})"
-                exp_names.append(label)
-                viability_scores.append(float(res.cell_viability or 0))
-                ros_scores.append(float(res.ros or 0))
-                ldh_scores.append(float(res.ldh or 0))
-                apoptosis_scores.append(float(res.apoptosis or 0))
-                tox_score = float(res.toxicity_score or 0)
+                raw_name = exp.sample_name or f"Experiment #{exp.id}"
+                if "—" in raw_name:
+                    short_display = raw_name.split("—")[-1].strip()
+                elif "-" in raw_name and len(raw_name) > 20:
+                    short_display = raw_name.split("-")[-1].strip()
+                else:
+                    short_display = raw_name
+                if len(short_display) > 24:
+                    short_display = short_display[:22] + "…"
+                
+                short_label = f"EXP-{exp.id}: {short_display}"
+                full_label = f"EXP-{exp.id} · {raw_name}"
+
+                exp_short_names.append(short_label)
+                exp_full_names.append(full_label)
+                viability_scores.append(round(float(res.cell_viability or 0), 1))
+                ros_scores.append(round(float(res.ros or 0), 2))
+                ldh_scores.append(round(float(res.ldh or 0), 1))
+                apoptosis_scores.append(round(float(res.apoptosis or 0), 1))
+                tox_score = round(float(res.toxicity_score or 0), 1)
                 toxicity_scores.append(tox_score)
                 if tox_score < 25:
-                    risk_colors.append("#16a34a")
+                    risk_colors.append("#10b981")
                 elif tox_score < 55:
                     risk_colors.append("#f59e0b")
                 else:
-                    risk_colors.append("#dc2626")
+                    risk_colors.append("#ef4444")
+
+    avg_viability = round(sum(viability_scores) / len(viability_scores), 1) if viability_scores else 0
+    avg_ros = round(sum(ros_scores) / len(ros_scores), 2) if ros_scores else 0
+    avg_ldh = round(sum(ldh_scores) / len(ldh_scores), 1) if ldh_scores else 0
+    avg_apoptosis = round(sum(apoptosis_scores) / len(apoptosis_scores), 1) if apoptosis_scores else 0
+    avg_toxicity = round(sum(toxicity_scores) / len(toxicity_scores), 1) if toxicity_scores else 0
 
     sample_status_dist = {}
     sample_type_dist = {}
@@ -284,16 +372,22 @@ def participant_detail(participant_pk):
         sample_type_dist[tp] = sample_type_dist.get(tp, 0) + 1
 
     chart_data = {
-        "exp_labels": exp_names,
+        "exp_labels": exp_short_names,
+        "exp_full_labels": exp_full_names,
         "viability": viability_scores,
         "ros": ros_scores,
         "ldh": ldh_scores,
         "apoptosis": apoptosis_scores,
         "toxicity_scores": toxicity_scores,
         "risk_colors": risk_colors,
+        "avg_viability": avg_viability,
+        "avg_ros": avg_ros,
+        "avg_ldh": avg_ldh,
+        "avg_apoptosis": avg_apoptosis,
+        "avg_toxicity": avg_toxicity,
         "sample_status": sample_status_dist,
         "sample_types": sample_type_dist,
-        "has_experiment_data": len(exp_names) > 0,
+        "has_experiment_data": len(exp_short_names) > 0,
     }
 
     return render_template(
@@ -301,6 +395,7 @@ def participant_detail(participant_pk):
         participant=participant,
         samples=samples,
         chain_data=chain_data,
+        chronological_experiments=chronological_experiments,
         consent_logs=consent_logs,
         chart_data=chart_data,
     )
@@ -403,7 +498,6 @@ def participant_edit(participant_pk):
         participant.medical_history = medical_history
         participant.consent_status = consent_status
         if consent_status == "Withdrawn":
-            from models import BiologicalSample, SampleExperimentLink
             samples = BiologicalSample.query.filter_by(participant_fk=participant.id).all()
             for s in samples:
                 s.sample_status = "Archived"
@@ -604,12 +698,21 @@ def sample_new():
                                        consented_participants=consented_participants,
                                        user_experiments=user_experiments)
 
+        volume_quantity = request.form.get("volume_quantity", "1.0 mL").strip()
+        passage_number = request.form.get("passage_number", "P1").strip()
+        storage_condition = request.form.get("storage_condition", "-80°C Cryopreservation").strip()
+        storage_location = request.form.get("storage_location", "Tank A / Rack 2 / Box 4").strip()
+
         sample = BiologicalSample(
             user_id=uid,
             sample_id=sid,
             participant_fk=participant_fk,
             sample_type=sample_type,
             cell_type=cell_type,
+            volume_quantity=volume_quantity,
+            passage_number=passage_number,
+            storage_condition=storage_condition,
+            storage_location=storage_location,
             collection_date=collection_date,
             sample_status=sample_status,
             notes=notes,
@@ -728,6 +831,10 @@ def sample_edit(sample_pk):
         sample.participant_fk = participant_fk
         sample.sample_type = sample_type
         sample.cell_type = cell_type
+        sample.volume_quantity = request.form.get("volume_quantity", "1.0 mL").strip()
+        sample.passage_number = request.form.get("passage_number", "P1").strip()
+        sample.storage_condition = request.form.get("storage_condition", "-80°C Cryopreservation").strip()
+        sample.storage_location = request.form.get("storage_location", "Tank A / Rack 2 / Box 4").strip()
         sample.collection_date = collection_date
         sample.sample_status = sample_status
         sample.notes = notes

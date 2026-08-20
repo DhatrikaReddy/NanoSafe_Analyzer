@@ -84,15 +84,7 @@
 
     <main style="padding: 32px 36px; max-width: 1300px; box-sizing: border-box; width: 100%;">
 
-        <div class="admin-subnav">
-            <a href="{{ url_for('admin.dashboard') }}" class="active">📊 Overview</a>
-            <a href="{{ url_for('admin.users') }}">👥 User Accounts</a>
-            <a href="{{ url_for('admin.all_experiments') }}">🧪 All Experiments</a>
-            <a href="{{ url_for('participants.participants_list') }}">🧑‍🔬 Study Participants</a>
-            <a href="{{ url_for('participants.samples_list') }}">🧫 Biological Samples</a>
-            <a href="{{ url_for('admin.audit_log') }}">📋 Audit Trail</a>
-            <a href="{{ url_for('admin.ml_models') }}">🤖 ML Diagnostics</a>
-        </div>
+        {% include 'admin/_admin_nav.html' %}
 
         <h1 style="text-align: left; font-size: 26px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 6px;">System Overview</h1>
         <p style="text-align: left; color: var(--ns-text-muted); margin: 0 0 20px; font-size: 14px;">Welcome back, <b>{{ username }}</b> (Administrator)</p>

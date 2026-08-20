@@ -11,10 +11,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors, spacing, borderRadius } from '../../theme/colors';
+import { ThemeContext } from '../../context/ThemeContext';
 import { AuthContext } from '../../context/AuthContext';
+import { LanguageContext } from '../../context/LanguageContext';
 import { UserPlus, User, Mail, Lock } from 'lucide-react-native';
 
 export default function RegisterScreen({ navigation }) {
+  const { t } = useContext(LanguageContext);
+  const { colors, isDark } = useContext(ThemeContext);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,25 +47,25 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Create Account</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.cardHeader, { color: colors.text }]}>{t('register', 'Create Account')}</Text>
 
           {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
+            <View style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.danger }]}>
+              <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
             </View>
           )}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Username</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Username</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <User size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Choose a username"
                 placeholderTextColor={colors.textMuted}
                 value={username}
@@ -72,11 +76,11 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email Address</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Email Address</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Mail size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter valid email"
                 placeholderTextColor={colors.textMuted}
                 value={email}
@@ -88,11 +92,11 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Lock size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Create password"
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
@@ -103,7 +107,7 @@ export default function RegisterScreen({ navigation }) {
           </View>
 
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.primary }]}
             onPress={handleRegister}
             disabled={loading}
           >
@@ -118,9 +122,9 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
 
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={[styles.footerText, { color: colors.textSecondary }]}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.linkText}>Sign In</Text>
+              <Text style={[styles.linkText, { color: colors.primary }]}>Sign In</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -132,7 +136,6 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -140,46 +143,37 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   card: {
-    backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   cardHeader: {
-    fontSize: 22,
+    fontSize: 24.5,
     fontWeight: '600',
-    color: colors.text,
     marginBottom: spacing.md,
   },
   errorBox: {
-    backgroundColor: colors.dangerBg,
-    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: borderRadius.sm,
     padding: spacing.sm,
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.danger,
-    fontSize: 14,
+    fontSize: 16.5,
   },
   inputGroup: {
     marginBottom: spacing.md,
   },
   label: {
-    color: colors.textSecondary,
-    fontSize: 14,
+    fontSize: 16.5,
     fontWeight: '500',
     marginBottom: 6,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBg,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.sm,
   },
   inputIcon: {
@@ -187,13 +181,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: colors.text,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 17.5,
   },
   button: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
@@ -202,7 +194,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18.5,
     fontWeight: '600',
   },
   footerRow: {
@@ -211,10 +203,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   footerText: {
-    color: colors.textSecondary,
+    fontSize: 16.5,
   },
   linkText: {
-    color: colors.primaryLight,
     fontWeight: '600',
+    fontSize: 16.5,
   },
 });

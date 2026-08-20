@@ -18,7 +18,7 @@ from datetime import datetime
 from . import admin_bp
 from auth.decorators import admin_required, current_user_id, current_username
 from auth.email_service import send_admin_password_reset
-from models import (
+from models import (db, 
     db, User, Role, History, Experiment, AuditLog, Report,
     StudyParticipant, BiologicalSample, SampleExperimentLink
 )
@@ -27,6 +27,7 @@ from models import (
 # ────────────────────────────────────────────────────────────
 # ADMIN DASHBOARD
 # ────────────────────────────────────────────────────────────
+@admin_bp.route("/")
 @admin_bp.route("/dashboard")
 @admin_required
 def dashboard():
@@ -531,7 +532,7 @@ def analytics_view():
 @admin_bp.route("/profile")
 @admin_required
 def admin_profile():
-    admin_user = User.query.get(current_user_id())
+    admin_user = db.session.get(User, current_user_id())
     admin_actions = AuditLog.query.filter_by(user_id=admin_user.id).order_by(AuditLog.timestamp.desc()).limit(20).all()
     return render_template("admin/profile.html",
         username=current_username(),

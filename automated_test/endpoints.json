@@ -1,0 +1,835 @@
+[
+  {
+    "path": "/",
+    "endpoint": "main.index",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/",
+    "endpoint": "admin.dashboard",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/analytics",
+    "endpoint": "admin.analytics_view",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/analytics-data",
+    "endpoint": "admin.analytics_data",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/audit-log",
+    "endpoint": "admin.audit_log",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/dashboard",
+    "endpoint": "admin.dashboard",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/experiments",
+    "endpoint": "admin.all_experiments",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/ml-models",
+    "endpoint": "admin.ml_models",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/ml-models/retrain",
+    "endpoint": "admin.retrain_ml_models",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/profile",
+    "endpoint": "admin.admin_profile",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/reports",
+    "endpoint": "admin.reports_monitoring",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/security",
+    "endpoint": "admin.security_monitoring",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users",
+    "endpoint": "admin.users",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>",
+    "endpoint": "admin.user_details",
+    "method": "GET",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/change-role",
+    "endpoint": "admin.change_role",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/clear-history",
+    "endpoint": "admin.clear_user_history",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/delete",
+    "endpoint": "admin.delete_user",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/reset-password",
+    "endpoint": "admin.reset_user_password",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/toggle-active",
+    "endpoint": "admin.toggle_active",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/admin/users/<int:user_id>/toggle-verified",
+    "endpoint": "admin.toggle_verified",
+    "method": "POST",
+    "expected_role": "admin_only",
+    "requires_auth": true
+  },
+  {
+    "path": "/ajax/compare",
+    "endpoint": "main.ajax_compare",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/ajax/get_history_experiment/<int:history_id>",
+    "endpoint": "main.get_history_experiment",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/analysis/choice",
+    "endpoint": "main.analysis_choice",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/api/simulate-dose",
+    "endpoint": "main.api_simulate_dose",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/auth/",
+    "endpoint": "auth.login",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/",
+    "endpoint": "auth.login",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/change-password",
+    "endpoint": "auth.change_password",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/change-password",
+    "endpoint": "auth.change_password",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/forgot-password",
+    "endpoint": "auth.forgot_password",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/forgot-password",
+    "endpoint": "auth.forgot_password",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/login",
+    "endpoint": "auth.login",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/login",
+    "endpoint": "auth.login",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/logout",
+    "endpoint": "auth.logout",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/logout-all",
+    "endpoint": "auth.logout_all_devices",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/register",
+    "endpoint": "auth.register",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/register",
+    "endpoint": "auth.register",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/researcher-profile",
+    "endpoint": "auth.researcher_profile",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/researcher-profile",
+    "endpoint": "auth.researcher_profile",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/resend-login-otp",
+    "endpoint": "auth.resend_login_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/resend-otp",
+    "endpoint": "auth.resend_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/reset-password/<token>",
+    "endpoint": "auth.reset_password",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/reset-password/<token>",
+    "endpoint": "auth.reset_password",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/verify-login-otp",
+    "endpoint": "auth.verify_login_otp",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/verify-login-otp",
+    "endpoint": "auth.verify_login_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/verify-otp",
+    "endpoint": "auth.verify_otp",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/auth/verify-otp",
+    "endpoint": "auth.verify_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/backup/create",
+    "endpoint": "main.backup_create",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/backup/list",
+    "endpoint": "main.backup_list",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/batch-import",
+    "endpoint": "main.batch_import",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/batch-import",
+    "endpoint": "main.batch_import",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/clinical-guide",
+    "endpoint": "main.clinical_guide",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/compare",
+    "endpoint": "main.compare",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/compare",
+    "endpoint": "main.compare",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/delete_history/<int:history_id>",
+    "endpoint": "main.delete_history",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/download_report/<int:history_id>",
+    "endpoint": "main.download_history_report",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/export/csv",
+    "endpoint": "main.export_csv",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/export/db",
+    "endpoint": "main.export_db",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/export/excel",
+    "endpoint": "main.export_excel",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/history",
+    "endpoint": "main.history",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/history/<int:history_id>",
+    "endpoint": "main.history_detail",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/history/archive/<int:history_id>",
+    "endpoint": "main.archive_experiment_route",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/history/move_to_project",
+    "endpoint": "main.move_to_project",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/home",
+    "endpoint": "main.home",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/analysis/calculate",
+    "endpoint": "mobile.calculate",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/analysis/compare",
+    "endpoint": "mobile.evaluate",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/analysis/upload",
+    "endpoint": "mobile.upload",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/auth/change-password",
+    "endpoint": "mobile.api_change_password",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/login",
+    "endpoint": "mobile.login",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/profile",
+    "endpoint": "mobile.api_get_profile",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/profile",
+    "endpoint": "mobile.api_update_profile",
+    "method": "PUT",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/register",
+    "endpoint": "mobile.api_register",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/resend-otp",
+    "endpoint": "mobile.api_resend_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/auth/verify-otp",
+    "endpoint": "mobile.api_verify_otp",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/mobile/v1/compare/evaluate",
+    "endpoint": "mobile.evaluate",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/history/",
+    "endpoint": "mobile.history",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/participants/",
+    "endpoint": "mobile.mobile_participants_list",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/participants/",
+    "endpoint": "mobile.mobile_participant_create",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/participants/<int:participant_pk>",
+    "endpoint": "mobile.mobile_participant_detail",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/participants/stats",
+    "endpoint": "mobile.mobile_participants_stats",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/reports/",
+    "endpoint": "mobile.reports",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/reports/<int:history_id>/pdf",
+    "endpoint": "mobile.download_mobile_report_pdf",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/reports/compare/pdf",
+    "endpoint": "mobile.download_mobile_compare_pdf",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/reports/compare/pdf",
+    "endpoint": "mobile.download_mobile_compare_pdf",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/reports/latest/pdf",
+    "endpoint": "mobile.download_mobile_latest_report_pdf",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/samples/",
+    "endpoint": "mobile.mobile_samples_list",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/samples/",
+    "endpoint": "mobile.mobile_sample_create",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/mobile/v1/simulator/dose",
+    "endpoint": "mobile.mobile_simulate_dose",
+    "method": "POST",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/participants/",
+    "endpoint": "participants.participants_list",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/<int:participant_pk>",
+    "endpoint": "participants.participant_detail",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/<int:participant_pk>/delete",
+    "endpoint": "participants.participant_delete",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/<int:participant_pk>/edit",
+    "endpoint": "participants.participant_edit",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/<int:participant_pk>/edit",
+    "endpoint": "participants.participant_edit",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/api/stats",
+    "endpoint": "participants.api_stats",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/export/csv",
+    "endpoint": "participants.export_participants_csv",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/new",
+    "endpoint": "participants.participant_new",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/new",
+    "endpoint": "participants.participant_new",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples",
+    "endpoint": "participants.samples_list",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/<int:sample_pk>/delete",
+    "endpoint": "participants.sample_delete",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/<int:sample_pk>/edit",
+    "endpoint": "participants.sample_edit",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/<int:sample_pk>/edit",
+    "endpoint": "participants.sample_edit",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/bulk-import",
+    "endpoint": "participants.sample_bulk_import",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/bulk-import",
+    "endpoint": "participants.sample_bulk_import",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/export/csv",
+    "endpoint": "participants.export_samples_csv",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/import/template",
+    "endpoint": "participants.sample_import_template",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/new",
+    "endpoint": "participants.sample_new",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/samples/new",
+    "endpoint": "participants.sample_new",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/participants/search",
+    "endpoint": "participants.patient_search",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/profile",
+    "endpoint": "main.profile",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/profile/clear-history",
+    "endpoint": "main.clear_history",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/profile/delete-account",
+    "endpoint": "main.delete_account",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/profile/download-data",
+    "endpoint": "main.download_data",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/profile/update",
+    "endpoint": "main.profile_update",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/projects/create",
+    "endpoint": "main.create_project",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/projects/delete/<int:project_id>",
+    "endpoint": "main.delete_project",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/report",
+    "endpoint": "main.report",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/reports/rename/<int:report_id>",
+    "endpoint": "main.rename_report",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/simulator",
+    "endpoint": "main.simulator",
+    "method": "GET",
+    "expected_role": "public",
+    "requires_auth": false
+  },
+  {
+    "path": "/upload",
+    "endpoint": "main.upload",
+    "method": "GET",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  },
+  {
+    "path": "/upload",
+    "endpoint": "main.upload",
+    "method": "POST",
+    "expected_role": "authenticated_user",
+    "requires_auth": true
+  }
+]
