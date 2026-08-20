@@ -19,7 +19,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Selenium Web Tests
         run: |
@@ -41,7 +40,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_Appium
           npm install
       - name: Run 450 Appium Android Tests
         run: |
@@ -63,7 +61,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Unit API Tests
         run: |
@@ -85,7 +82,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Validation Tests
         run: |
@@ -107,7 +103,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Deployment Status Tests
         run: |
@@ -129,7 +124,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Load Performance Tests
         run: |
@@ -151,7 +145,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 DAST Vulnerability Tests
         run: |
@@ -173,7 +166,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Run 450 Full E2E Tests
         run: |
@@ -204,16 +196,12 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: |
-          cd NanoSafe_Analyzer_E2E
           npm install
       - name: Download all test reports
         uses: actions/download-artifact@v4
         with:
-          path: reports/latest/downloaded
-      - name: Flatten Artifacts
-        run: |
-          mkdir -p reports/latest
-          cp -r reports/latest/downloaded/*/* reports/latest/ || true
+          path: reports/latest
+          merge-multiple: true
       - name: Compile Master Excel Workbook & HTML
         run: |
           node scripts/compile_master_excel_report.js
