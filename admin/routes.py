@@ -5,11 +5,13 @@ Separate admin dashboard with user management, system overview, and audit log.
 All routes require admin role.
 """
 
+import os
+import sqlite3
 import secrets
 
 from flask import (
     request, render_template, redirect, url_for,
-    flash, jsonify, session,
+    flash, jsonify, session, current_app,
 )
 from werkzeug.security import generate_password_hash
 from collections import defaultdict
@@ -538,4 +540,55 @@ def admin_profile():
         username=current_username(),
         user=admin_user,
         logs=admin_actions
+    )
+
+
+# ────────────────────────────────────────────────────────────
+# SQL DATABASE EXPLORER
+# ────────────────────────────────────────────────────────────
+@admin_bp.route("/database")
+@admin_required
+def database_viewer():
+    db_path = current_app.config.get("SQLALCHEMY_DATABASE_URI", "").replace("sqlite:///", "")
+    if not db_path or not os.path.isabs(db_path):
+        db_path = os.path.join(current_app.root_path, "nanosafe.db")
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+    tables = [r[0] for r in c.fetchall() if not r[0].startswith('sqlite_')]
+
+    selected_table = request.args.get("table", tables[0] if tables else "")
+    search_query = request.args.get("q", "").strip()
+
+    table_counts = {}
+    for t in tables:
+        c.execute(f'SELECT COUNT(*) FROM "{t}"')
+        table_counts[t] = c.fetchone()[0]
+
+    columns = []
+    rows = []
+    if selected_table and selected_table in tables:
+        c.execute(f'PRAGMA table_info("{selected_table}")')
+        columns = [col[1] for col in c.fetchall()]
+
+        if search_query and columns:
+            where_clauses = [f'CAST("{col}" AS TEXT) LIKE ?' for col in columns]
+            sql = f'SELECT * FROM "{selected_table}" WHERE (' + " OR ".join(where_clauses) + ') LIMIT 100'
+            c.execute(sql, [f"%{search_query}%"] * len(columns))
+        else:
+            c.execute(f'SELECT * FROM "{selected_table}" LIMIT 100')
+
+        rows = c.fetchall()
+
+    conn.close()
+
+    return render_template("admin/database.html",
+        username=current_username(),
+        tables=tables,
+        table_counts=table_counts,
+        selected_table=selected_table,
+        columns=columns,
+        rows=rows,
+        search_query=search_query
     )

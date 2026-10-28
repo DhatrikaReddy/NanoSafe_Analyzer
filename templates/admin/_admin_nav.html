@@ -8,6 +8,7 @@
         <a href="{{ url_for('participants.samples_list') }}" class="{% if request.endpoint == 'participants.samples_list' %}active{% endif %}">🧫 Biological Samples</a>
         <a href="{{ url_for('admin.audit_log') }}" class="{% if request.endpoint == 'admin.audit_log' %}active{% endif %}">📋 Audit Trail</a>
         <a href="{{ url_for('admin.ml_models') }}" class="{% if request.endpoint == 'admin.ml_models' %}active{% endif %}">🤖 ML Diagnostics</a>
+        <a href="{{ url_for('admin.database_viewer') }}" class="{% if request.endpoint == 'admin.database_viewer' %}active{% endif %}">🗄️ Database</a>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
         <a href="{{ url_for('main.home') }}" style="background: var(--ns-bg-input); border: 1px solid var(--ns-border-main); color: var(--ns-text-main); font-weight: 700; padding: 7px 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 4px;" title="Switch back to Research Workspace">

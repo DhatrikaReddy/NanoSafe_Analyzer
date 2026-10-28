@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  if (localStorage.getItem('ns_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+  }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Database Explorer — Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css?v=5">
+    <style>
+        .admin-subnav {
+            display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+            background: var(--ns-bg-card); padding: 8px 12px; border-radius: 12px;
+            border: 1px solid var(--ns-border-main);
+        }
+        .admin-subnav a {
+            color: var(--ns-text-muted); text-decoration: none; padding: 7px 14px;
+            border-radius: 8px; font-weight: 600; font-size: 13px; transition: all 0.15s;
+        }
+        .admin-subnav a:hover { background: var(--ns-bg-hover); color: var(--ns-text-main); }
+        .admin-subnav a.active { background: #f0fdfa; color: #0f766e; font-weight: 700; }
+
+        .db-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            margin-top: 16px;
+        }
+        @media (max-width: 900px) {
+            .db-container { grid-template-columns: 1fr; }
+        }
+
+        .db-sidebar {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 16px;
+            height: fit-content;
+        }
+        .db-table-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 550px;
+            overflow-y: auto;
+        }
+        .db-table-item a {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 9px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--ns-text-main);
+            font-size: 13.5px;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .db-table-item a:hover {
+            background: var(--ns-bg-hover);
+        }
+        .db-table-item a.active {
+            background: rgba(15, 118, 110, 0.12);
+            color: #0f766e;
+            border-left: 3px solid #0f766e;
+            font-weight: 700;
+        }
+        .row-badge {
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background: var(--ns-bg-input);
+            color: var(--ns-text-muted);
+            font-weight: 700;
+        }
+
+        .db-content {
+            background: var(--ns-bg-card);
+            border: 1px solid var(--ns-border-main);
+            border-radius: 14px;
+            padding: 20px;
+            min-width: 0;
+        }
+        .db-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--ns-border-main);
+        }
+        .db-table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--ns-border-main);
+            max-height: 600px;
+        }
+        .db-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .db-table th {
+            position: sticky;
+            top: 0;
+            background: var(--ns-bg-input);
+            color: var(--ns-text-main);
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 2px solid var(--ns-border-main);
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .db-table td {
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--ns-border-main);
+            white-space: nowrap;
+            color: var(--ns-text-main);
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .db-table tr:hover {
+            background: var(--ns-bg-hover);
+        }
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-bar input {
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--ns-border-input);
+            background: var(--ns-bg-input);
+            color: var(--ns-text-main);
+            font-size: 13px;
+            width: 220px;
+        }
+        .search-bar button {
+            padding: 7px 14px;
+            border-radius: 8px;
+            background: #0f766e;
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ns-sidebar-layout">
+    {% include '_sidebar.html' %}
+
+    <main style="padding: 28px 32px; max-width: 1400px; box-sizing: border-box; width: 100%;">
+        {% include 'admin/_admin_nav.html' %}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
+            <div>
+                <h1 style="font-size: 24px; font-weight: 800; color: var(--ns-text-main); margin: 0 0 4px;">
+                    🗄️ SQL Database Explorer
+                </h1>
+                <p style="color: var(--ns-text-muted); font-size: 13.5px; margin: 0;">
+                    Live browser viewer for <code>nanosafe.db</code> SQLite database
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="font-size: 12px; background: rgba(16, 185, 129, 0.12); color: #10b981; font-weight: 700; padding: 4px 10px; border-radius: 20px;">
+                    SQLite 3 Live
+                </span>
+            </div>
+        </div>
+
+        <div class="db-container">
+            <!-- Sidebar with table list -->
+            <div class="db-sidebar">
+                <div style="font-size: 13px; font-weight: 700; color: var(--ns-text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    Tables ({{ tables|length }})
+                </div>
+                <ul class="db-table-list">
+                    {% for t in tables %}
+                    <li class="db-table-item">
+                        <a href="{{ url_for('admin.database_viewer', table=t) }}" class="{% if selected_table == t %}active{% endif %}">
+                            <span>📄 {{ t }}</span>
+                            <span class="row-badge">{{ table_counts.get(t, 0) }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Content Area: Table Data -->
+            <div class="db-content">
+                <div class="db-header">
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 700; margin: 0 0 4px; color: var(--ns-text-main);">
+                            Table: <code>{{ selected_table }}</code>
+                        </h2>
+                        <span style="font-size: 12.5px; color: var(--ns-text-muted);">
+                            Showing {{ rows|length }} row(s) &bull; {{ columns|length }} column(s)
+                        </span>
+                    </div>
+
+                    <!-- Search within selected table -->
+                    <form method="GET" action="{{ url_for('admin.database_viewer') }}" class="search-bar">
+                        <input type="hidden" name="table" value="{{ selected_table }}">
+                        <input type="text" name="q" placeholder="Filter rows..." value="{{ search_query }}">
+                        <button type="submit">Search</button>
+                        {% if search_query %}
+                            <a href="{{ url_for('admin.database_viewer', table=selected_table) }}" style="font-size: 12px; color: var(--ns-text-muted); text-decoration: underline;">Clear</a>
+                        {% endif %}
+                    </form>
+                </div>
+
+                {% if columns %}
+                <div class="db-table-wrapper">
+                    <table class="db-table">
+                        <thead>
+                            <tr>
+                                {% for col in columns %}
+                                <th>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if rows %}
+                                {% for row in rows %}
+                                <tr>
+                                    {% for val in row %}
+                                    <td title="{{ val if val is not none else 'NULL' }}">
+                                        {% if val is none %}
+                                            <span style="color: var(--ns-text-muted); font-style: italic;">NULL</span>
+                                        {% else %}
+                                            {{ val }}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="{{ columns|length }}" style="text-align: center; padding: 30px; color: var(--ns-text-muted);">
+                                        No records found in table <strong>{{ selected_table }}</strong>.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: var(--ns-text-muted);">
+                    Select a table from the left to inspect its schema and data.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
