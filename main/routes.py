@@ -1759,3 +1759,37 @@ def _compute_chart_data(chart_history, analytics):
             "Low": analytics.get("low_risk_count", 0),
         },
     }
+
+
+# ============================================================
+# DATASET DOWNLOAD ROUTES
+# ============================================================
+@main_bp.route("/download-dataset/<dataset_type>")
+def download_dataset(dataset_type):
+    """Allows downloading the project datasets directly in the browser."""
+    dataset_dir = os.path.join(PROJECT_DIR, "dataset")
+
+    file_map = {
+        "master": ("zno_biocompatibility_master_10k.csv", "text/csv"),
+        "training": ("nanosafe_training_dataset.csv", "text/csv"),
+        "benchmark": ("real_nanoparticles_toxicity_benchmark.csv", "text/csv"),
+        "all": ("NanoSafe_Complete_Datasets.zip", "application/zip"),
+    }
+
+    if dataset_type not in file_map:
+        flash("Requested dataset not found.", "error")
+        return redirect(url_for("main.home"))
+
+    filename, mimetype = file_map[dataset_type]
+    file_path = os.path.join(dataset_dir, filename)
+
+    if not os.path.exists(file_path):
+        flash("Dataset file is not available.", "error")
+        return redirect(url_for("main.home"))
+
+    return send_file(
+        file_path,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=filename
+    )
