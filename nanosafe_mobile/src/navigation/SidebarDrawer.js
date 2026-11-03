@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useContext } from 'react';
 import {
   StyleSheet, Text, View, TouchableOpacity, Animated,
-  TouchableWithoutFeedback, Dimensions, ScrollView, Image
+  TouchableWithoutFeedback, Dimensions, ScrollView, Image, Modal
 } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { ThemeContext } from '../context/ThemeContext';
@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FlaskConical, History,
   ChartBar, FileText, SlidersHorizontal, BookOpen,
   Users, TestTubes, User, Settings, LogOut,
-  X, Globe
+  X
 } from 'lucide-react-native';
 import { LanguageContext } from '../context/LanguageContext';
 
@@ -54,7 +54,7 @@ export const NAV_SECTIONS = [
 export const NAV_ITEMS = NAV_SECTIONS.flatMap(s => s.items);
 
 export default function SidebarDrawer({ isOpen, onClose, currentScreen, onSelectScreen, user, onLogout }) {
-  const { t, currentLangObj, setShowLanguageModal } = useContext(LanguageContext);
+  const { t } = useContext(LanguageContext);
   const { colors, isDark } = useContext(ThemeContext);
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -73,100 +73,112 @@ export default function SidebarDrawer({ isOpen, onClose, currentScreen, onSelect
     }
   }, [isOpen]);
 
-  if (!isOpen && slideAnim._value === -SIDEBAR_WIDTH) {
+  if (!isOpen) {
     return null;
   }
 
   return (
-    <View style={StyleSheet.absoluteFillObject} pointerEvents={isOpen ? 'auto' : 'none'}>
-      {/* Backdrop */}
-      <TouchableWithoutFeedback onPress={onClose}>
-        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
-      </TouchableWithoutFeedback>
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <View style={styles.modalOverlay}>
+        {/* Backdrop */}
+        <TouchableWithoutFeedback onPress={onClose}>
+          <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]} />
+        </TouchableWithoutFeedback>
 
-      {/* Sliding Sidebar */}
-      <Animated.View style={[styles.sidebarContainer, { width: SIDEBAR_WIDTH, transform: [{ translateX: slideAnim }], backgroundColor: colors.sidebar, borderRightColor: colors.border }]}>
+        {/* Sliding Sidebar */}
+        <Animated.View style={[styles.sidebarContainer, { width: SIDEBAR_WIDTH, transform: [{ translateX: slideAnim }], backgroundColor: colors.sidebar, borderRightColor: colors.border }]}>
 
-        {/* Brand Header */}
-        <View style={[styles.brandHeader, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderBottomColor: colors.border }]}>
-          <View style={styles.brandRow}>
-            <Image source={APP_LOGO} style={[styles.sidebarLogo, { borderColor: colors.primary }]} resizeMode="cover" />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={[styles.brandTitle, { color: colors.text }]}>NanoSafe</Text>
-              <Text style={[styles.brandSubtitle, { color: colors.primary }]}>Biomedical Analyzer</Text>
+          {/* Brand Header */}
+          <View style={[styles.brandHeader, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderBottomColor: colors.border }]}>
+            <View style={styles.brandRow}>
+              <Image source={APP_LOGO} style={[styles.sidebarLogo, { borderColor: colors.primary }]} resizeMode="cover" />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[styles.brandTitle, { color: colors.text }]}>NanoSafe</Text>
+                <Text style={[styles.brandSubtitle, { color: colors.primary }]}>Biomedical Analyzer</Text>
+              </View>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <X size={20} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={20} color={colors.textMuted} />
+
+            {/* User Profile Mini Banner */}
+            <View style={[styles.userBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.avatarMini, { backgroundColor: colors.primary }]}>
+                <Text style={styles.avatarLetter}>{(user?.username || 'R')[0].toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>{user?.username || 'Researcher'}</Text>
+                <Text style={[styles.userRole, { color: colors.textMuted }]}>
+                  <Text style={{ color: '#22c55e' }}>● </Text>
+                  {(user?.role || 'user').charAt(0).toUpperCase() + (user?.role || 'user').slice(1)} · Online
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Navigation — sectioned exactly like the web sidebar */}
+          <ScrollView style={styles.navScroll} contentContainerStyle={{ paddingVertical: 10 }}>
+            {NAV_SECTIONS.map((section, sIdx) => (
+              <View key={section.sectionKey}>
+                {/* Divider between sections (except before first) */}
+                {sIdx > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+
+                <Text style={[styles.navSectionLabel, { color: isDark ? '#475569' : '#94a3b8' }]}>{section.sectionLabel}</Text>
+
+                {section.items.map(({ key, translationKey, defaultLabel, icon: Icon, badge }) => {
+                  const isActive = currentScreen === key;
+                  const label = t(translationKey, defaultLabel);
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      style={[styles.navItem, isActive && { backgroundColor: colors.primaryLight, borderLeftWidth: 3, borderLeftColor: colors.primary }]}
+                      onPress={() => {
+                        onSelectScreen(key);
+                        onClose();
+                      }}
+                    >
+                      <Icon size={18} color={isActive ? colors.primary : colors.textSecondary} style={{ marginRight: 12 }} />
+                      <Text style={[styles.navItemText, { color: isActive ? colors.primary : colors.textSecondary }, isActive && { fontWeight: '700' }]}>{label}</Text>
+                      {badge && (
+                        <View style={[styles.navBadge, { backgroundColor: colors.inputBg }, isActive && { backgroundColor: colors.primary }]}>
+                          <Text style={[styles.navBadgeText, { color: colors.textMuted }, isActive && { color: '#fff' }]}>{badge}</Text>
+                        </View>
+                      )}
+                      {isActive && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Footer: Sign Out (Mirrors Web Sidebar Footer) */}
+          <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.sidebar }]}>
+            <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+              <LogOut size={18} color={colors.danger} style={{ marginRight: 10 }} />
+              <Text style={styles.logoutText}>{t('logout', 'Sign Out')}</Text>
             </TouchableOpacity>
           </View>
-
-          {/* User Profile Mini Banner */}
-          <View style={[styles.userBanner, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.avatarMini, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarLetter}>{(user?.username || 'R')[0].toUpperCase()}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.userName, { color: colors.text }]} numberOfLines={1}>{user?.username || 'Researcher'}</Text>
-              <Text style={[styles.userRole, { color: colors.textMuted }]}>
-                <Text style={{ color: '#22c55e' }}>● </Text>
-                {(user?.role || 'user').charAt(0).toUpperCase() + (user?.role || 'user').slice(1)} · Online
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Navigation — sectioned exactly like the web sidebar */}
-        <ScrollView style={styles.navScroll} contentContainerStyle={{ paddingVertical: 10 }}>
-          {NAV_SECTIONS.map((section, sIdx) => (
-            <View key={section.sectionKey}>
-              {/* Divider between sections (except before first) */}
-              {sIdx > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-
-              <Text style={[styles.navSectionLabel, { color: isDark ? '#475569' : '#94a3b8' }]}>{section.sectionLabel}</Text>
-
-              {section.items.map(({ key, translationKey, defaultLabel, icon: Icon, badge }) => {
-                const isActive = currentScreen === key;
-                const label = t(translationKey, defaultLabel);
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    style={[styles.navItem, isActive && { backgroundColor: colors.primaryLight, borderLeftWidth: 3, borderLeftColor: colors.primary }]}
-                    onPress={() => {
-                      onSelectScreen(key);
-                      onClose();
-                    }}
-                  >
-                    <Icon size={18} color={isActive ? colors.primary : colors.textSecondary} style={{ marginRight: 12 }} />
-                    <Text style={[styles.navItemText, { color: isActive ? colors.primary : colors.textSecondary }, isActive && { fontWeight: '700' }]}>{label}</Text>
-                    {badge && (
-                      <View style={[styles.navBadge, { backgroundColor: colors.inputBg }, isActive && { backgroundColor: colors.primary }]}>
-                        <Text style={[styles.navBadgeText, { color: colors.textMuted }, isActive && { color: '#fff' }]}>{badge}</Text>
-                      </View>
-                    )}
-                    {isActive && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Footer: Sign Out (Mirrors Web Sidebar Footer) */}
-        <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.sidebar }]}>
-          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-            <LogOut size={18} color={colors.danger} style={{ marginRight: 10 }} />
-            <Text style={styles.logoutText}>{t('logout', 'Sign Out')}</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </View>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    position: 'relative',
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     zIndex: 100,
   },
   sidebarContainer: {
@@ -174,6 +186,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     left: 0,
+    height: '100%',
     borderRightWidth: 1,
     zIndex: 101,
     display: 'flex',

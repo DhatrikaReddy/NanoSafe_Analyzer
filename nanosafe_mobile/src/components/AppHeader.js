@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { ThemeContext } from '../context/ThemeContext';
-import { Moon, Sun } from 'lucide-react-native';
+import { Moon, Sun, Menu } from 'lucide-react-native';
 
 const APP_LOGO = require('../assets/logo.png');
 
@@ -12,19 +12,16 @@ export default function AppHeader({ title, onOpenSidebar }) {
   return (
     <View style={[styles.headerWrapper, { backgroundColor: colors.sidebar, borderBottomColor: colors.border }]}>
       <View style={[styles.header, { backgroundColor: colors.card }]}>
-        {/* Left: 3-Bars + App Logo Icon Button */}
+        {/* Left: Hamburger Menu Button */}
         <TouchableOpacity
           style={[styles.hamburgerBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
           onPress={onOpenSidebar}
           activeOpacity={0.7}
           accessibilityLabel="Open Navigation Menu"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
+          <Menu size={22} color={colors.primary} />
           <Image source={APP_LOGO} style={styles.logoImage} resizeMode="cover" />
-          <View style={styles.dashIcon}>
-            <View style={[styles.dashLine, { backgroundColor: colors.primary, width: 14 }]} />
-            <View style={[styles.dashLine, { backgroundColor: colors.primary, width: 9 }]} />
-            <View style={[styles.dashLine, { backgroundColor: colors.primary, width: 14 }]} />
-          </View>
         </TouchableOpacity>
 
         {/* Center: Title */}
