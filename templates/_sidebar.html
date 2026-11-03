@@ -49,6 +49,10 @@
                 <span class="ns-nav-icon">👤</span>
                 <span class="ns-nav-label">Admin Profile</span>
             </a>
+            <a href="{{ url_for('main.download_defense_guide') }}" class="ns-nav-item" target="_blank">
+                <span class="ns-nav-icon">🎓</span>
+                <span class="ns-nav-label">Examiner Guide (PDF)</span>
+            </a>
         </div>
         <div class="ns-nav-divider"></div>
         <div class="ns-nav-group">
@@ -118,6 +122,10 @@
             <a href="{{ url_for('main.profile', tab='security') }}" class="ns-nav-item {% if request.endpoint == 'main.profile' and request.args.get('tab') == 'security' %}active{% endif %}">
                 <span class="ns-nav-icon">🔐</span>
                 <span class="ns-nav-label" data-i18n="security">Security &amp; Auth</span>
+            </a>
+            <a href="{{ url_for('main.download_defense_guide') }}" class="ns-nav-item" target="_blank">
+                <span class="ns-nav-icon">🎓</span>
+                <span class="ns-nav-label">Examiner &amp; Viva Guide</span>
             </a>
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin.dashboard') }}" class="ns-nav-item">

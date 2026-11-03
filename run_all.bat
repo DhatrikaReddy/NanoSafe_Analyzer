@@ -18,3 +18,4 @@ echo.
 echo Keep both windows open while using the apps!
 echo ===================================================
 pause
+

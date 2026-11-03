@@ -1793,3 +1793,31 @@ def download_dataset(dataset_type):
         as_attachment=True,
         download_name=filename
     )
+
+
+# ============================================================
+# EXAMINER & DEFENSE GUIDE DOWNLOAD
+# ============================================================
+@main_bp.route("/download-guide")
+@main_bp.route("/download-defense-guide")
+def download_defense_guide():
+    """Allows downloading the official NanoSafe Project Defense & Viva Guide PDF."""
+    pdf_path = os.path.join(STATIC_FOLDER, "downloads", "NanoSafe_Project_Defense_Viva_Guide.pdf")
+    if not os.path.exists(pdf_path):
+        # Generate on-the-fly if missing
+        try:
+            import subprocess
+            script_path = os.path.join(PROJECT_DIR, "scripts", "generate_examiner_guide.py")
+            subprocess.run(["python", script_path], check=True)
+        except Exception as e:
+            current_app.logger.error(f"Failed to auto-generate defense guide: {e}")
+            flash("Examiner guide PDF could not be generated. Please contact system administrator.", "error")
+            return redirect(url_for("main.home"))
+
+    return send_file(
+        pdf_path,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="NanoSafe_Project_Defense_Viva_Guide.pdf"
+    )
+
