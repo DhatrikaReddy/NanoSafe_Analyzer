@@ -2,14 +2,12 @@ import React, { useContext } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { ThemeContext } from '../context/ThemeContext';
-import { ShieldCheck, Globe } from 'lucide-react-native';
-import { LanguageContext } from '../context/LanguageContext';
+import { Moon, Sun } from 'lucide-react-native';
 
 const APP_LOGO = require('../assets/logo.png');
 
 export default function AppHeader({ title, onOpenSidebar }) {
-  const { currentLangObj, setShowLanguageModal } = useContext(LanguageContext);
-  const { colors, isDark } = useContext(ThemeContext);
+  const { colors, isDark, toggleTheme } = useContext(ThemeContext);
 
   return (
     <View style={[styles.headerWrapper, { backgroundColor: colors.sidebar, borderBottomColor: colors.border }]}>
@@ -32,14 +30,18 @@ export default function AppHeader({ title, onOpenSidebar }) {
         {/* Center: Title */}
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{title}</Text>
 
-        {/* Right: Language Selector Pill */}
+        {/* Right: Theme Toggle (Dark / Light) — Mirrors Web Topbar */}
         <TouchableOpacity
-          style={[styles.langBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
-          onPress={() => setShowLanguageModal(true)}
+          style={[styles.themeBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+          onPress={toggleTheme}
           activeOpacity={0.7}
+          accessibilityLabel="Toggle Dark / Light Theme"
         >
-          <Globe size={14} color={colors.primary} />
-          <Text style={[styles.langBtnText, { color: colors.primary }]}>{(currentLangObj?.code || 'EN').toUpperCase()}</Text>
+          {isDark ? (
+            <Sun size={16} color={colors.primary} />
+          ) : (
+            <Moon size={16} color={colors.primary} />
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -87,17 +89,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 6,
   },
-  langBtn: {
-    flexDirection: 'row',
+  themeBtn: {
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.2,
     borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    gap: 5,
-  },
-  langBtnText: {
-    fontSize: 13.5,
-    fontWeight: '800',
+    width: 36,
+    height: 36,
   },
 });

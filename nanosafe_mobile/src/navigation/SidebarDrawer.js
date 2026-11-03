@@ -151,22 +151,8 @@ export default function SidebarDrawer({ isOpen, onClose, currentScreen, onSelect
           ))}
         </ScrollView>
 
-        {/* Footer: Language + Sign Out */}
+        {/* Footer: Sign Out (Mirrors Web Sidebar Footer) */}
         <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.sidebar }]}>
-          <TouchableOpacity
-            style={[styles.langSelectorBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => {
-              onClose();
-              setShowLanguageModal(true);
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Globe size={16} color={colors.primary} />
-              <Text style={[styles.langSelectorText, { color: colors.text }]}>{currentLangObj?.flag} {currentLangObj?.native}</Text>
-            </View>
-            <Text style={[styles.langChangeTag, { color: colors.primary }]}>{t('changeLang', 'Change')}</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
             <LogOut size={18} color={colors.danger} style={{ marginRight: 10 }} />
             <Text style={styles.logoutText}>{t('logout', 'Sign Out')}</Text>
