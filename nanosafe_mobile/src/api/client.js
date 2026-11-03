@@ -17,7 +17,7 @@ const getBaseUrl = () => {
 
   // If running on physical device where host is detected as localhost, fallback to known Wi-Fi IP
   if (host === 'localhost' && Platform.OS !== 'web') {
-    host = '172.20.10.3';
+    host = '172.20.10.2';
   }
 
   return `http://${host}:5000/mobile/v1`;
