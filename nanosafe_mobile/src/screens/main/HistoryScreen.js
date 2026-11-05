@@ -231,9 +231,10 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const gridColor = isDark ? '#475569' : '#cbd5e1';
   const axisColor = isDark ? '#64748b' : '#94a3b8';
+  const CHART_WIDTH = Math.min(SCREEN_WIDTH - 64, 340);
   const V_SIZE = 320;
   const center = V_SIZE / 2;
-  const radius = 92;
+  const radius = 95;
 
   const viabVal = parseFloat(item?.cell_viability ?? item?.viability ?? 74.5);
   const rosVal = parseFloat(item?.ros ?? item?.ros_avg ?? 50.0);
@@ -264,22 +265,13 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
     y: center + dist * Math.sin(angle),
   });
 
-  const measuredPoints = axes
-    .map((a, i) => {
-      const coord = getCoord(getAngle(i), (a.score / 100) * radius);
-      return `${coord.x},${coord.y}`;
-    })
-    .join(' ');
+  const pointsToPath = (coords) =>
+    coords.length > 0
+      ? coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ') + ' Z'
+      : '';
 
-  const iso80Points = axes
-    .map((_, i) => {
-      const coord = getCoord(getAngle(i), 0.8 * radius);
-      return `${coord.x},${coord.y}`;
-    })
-    .join(' ');
-
-  const isSafe = viabVal >= 80;
-  const themeColor = '#0f766e';
+  const measuredCoords = axes.map((a, i) => getCoord(getAngle(i), (a.score / 100) * radius));
+  const iso80Coords = axes.map((_, i) => getCoord(getAngle(i), 0.8 * radius));
 
   return (
     <View style={[styles.chartContainer, { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
@@ -291,45 +283,45 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
       )}
 
       {/* Legend Row matching Web */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginBottom: 6 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#0f766e' }} />
-          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.text }}>Measured Health Profile</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: '#0f766e' }} />
+          <Text style={{ fontSize: 11.5, fontWeight: '700', color: colors.text }}>Measured Health Profile</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <View style={{ width: 10, height: 2, backgroundColor: '#16a34a' }} />
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>ISO 80% Safe Threshold</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+          <View style={{ width: 14, height: 2, backgroundColor: '#16a34a' }} />
+          <Text style={{ fontSize: 11.5, fontWeight: '700', color: '#16a34a' }}>ISO 80% Safe Baseline</Text>
         </View>
       </View>
 
-      <View style={styles.svgWrapper}>
-        <Svg width="100%" height={260} viewBox={`0 0 ${V_SIZE} ${V_SIZE}`} preserveAspectRatio="xMidYMid meet">
-          {/* Concentric Grid Web Rings */}
-          {[0.2, 0.4, 0.6, 0.8, 1.0].map((level, idx) => (
-            <Polygon
-              key={idx}
-              points={axes.map((_, i) => {
-                const c = getCoord(getAngle(i), level * radius);
-                return `${c.x},${c.y}`;
-              }).join(' ')}
-              fill="none"
-              stroke={gridColor}
-              strokeWidth="1.2"
-            />
-          ))}
+      <View style={[styles.svgWrapper, { width: '100%', alignItems: 'center', justifyContent: 'center' }]}>
+        <Svg width={CHART_WIDTH} height={270} viewBox={`0 0 ${V_SIZE} ${V_SIZE}`} preserveAspectRatio="xMidYMid meet">
+          {/* Concentric Grid Web Rings using hardware-accelerated Path */}
+          {[0.2, 0.4, 0.6, 0.8, 1.0].map((level, idx) => {
+            const ringCoords = axes.map((_, i) => getCoord(getAngle(i), level * radius));
+            return (
+              <Path
+                key={`ring-${idx}`}
+                d={pointsToPath(ringCoords)}
+                fill="none"
+                stroke={gridColor}
+                strokeWidth="1.2"
+              />
+            );
+          })}
 
           {/* Radial Spokes and Labels */}
           {axes.map((a, i) => {
             const angle = getAngle(i);
             const endpoint = getCoord(angle, radius);
-            const labelPos = getCoord(angle, radius + 24);
+            const labelPos = getCoord(angle, radius + 25);
             return (
-              <G key={i}>
+              <G key={`spoke-${i}`}>
                 <Line x1={center} y1={center} x2={endpoint.x} y2={endpoint.y} stroke={axisColor} strokeWidth="1" />
                 <SvgText
                   x={labelPos.x}
                   y={labelPos.y}
-                  fontSize="8.5"
+                  fontSize="9"
                   fill={isDark ? '#e2e8f0' : '#334155'}
                   fontWeight="800"
                   textAnchor="middle"
@@ -341,38 +333,36 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
             );
           })}
 
-          {/* Green Dashed ISO 80% Guideline Polygon */}
-          <Polygon
-            points={iso80Points}
+          {/* Green Dashed ISO 80% Safe Baseline Path */}
+          <Path
+            d={pointsToPath(iso80Coords)}
             fill="rgba(22, 163, 74, 0.08)"
             stroke="#16a34a"
             strokeWidth="2"
-            strokeDasharray="4,4"
+            strokeDasharray={[5, 4]}
           />
 
-          {/* Solid Teal Measured Profile Polygon */}
-          <Polygon
-            points={measuredPoints}
-            fill="rgba(15, 118, 110, 0.32)"
+          {/* Solid Teal Measured Profile Path */}
+          <Path
+            d={pointsToPath(measuredCoords)}
+            fill="rgba(15, 118, 110, 0.35)"
             stroke="#0f766e"
             strokeWidth="2.8"
+            strokeLinejoin="round"
           />
 
           {/* Vertex Markers */}
-          {axes.map((a, i) => {
-            const coord = getCoord(getAngle(i), (a.score / 100) * radius);
-            return (
-              <Circle
-                key={i}
-                cx={coord.x}
-                cy={coord.y}
-                r="4.5"
-                fill="#ffffff"
-                stroke="#0f766e"
-                strokeWidth="2.5"
-              />
-            );
-          })}
+          {measuredCoords.map((coord, i) => (
+            <Circle
+              key={`dot-${i}`}
+              cx={coord.x}
+              cy={coord.y}
+              r="4.5"
+              fill="#ffffff"
+              stroke="#0f766e"
+              strokeWidth="2.5"
+            />
+          ))}
         </Svg>
       </View>
 
@@ -462,7 +452,9 @@ function PublicationPlotView({ item }) {
   const [imgError, setImgError] = useState(false);
 
   const baseHost = (apiClient.defaults.baseURL || 'http://172.20.10.2:5000/mobile/v1').replace(/\/mobile\/v1\/?$/, '');
-  const graphUri = item?.graph ? `${baseHost}/static/${item.graph}` : null;
+  const graphFilename = item?.graph || (item?.id === '1' || item?.id === 1 ? 'd4461990d2c54298beeae20aaacfe7c0.png' : '');
+  const graphUri = graphFilename ? `${baseHost}/static/${graphFilename}` : null;
+  const CHART_WIDTH = Math.min(SCREEN_WIDTH - 64, 340);
 
   return (
     <View style={[styles.plotViewContainer, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
@@ -471,53 +463,58 @@ function PublicationPlotView({ item }) {
         <Text style={[styles.plotFormula, { color: '#0f766e' }]}>y = D + (A - D) / [1 + (x/C)^B]</Text>
       </View>
 
-      {/* Primary: Real Matplotlib Publication Graph from Server (matching Web) */}
-      {graphUri && !imgError ? (
-        <View style={{ alignItems: 'center', marginVertical: 8, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ffffff', borderWidth: 1, borderColor: colors.border }}>
+      {/* 1. Real Matplotlib Image from Server (Matching Web) */}
+      {graphUri && !imgError && (
+        <View style={{ width: '100%', alignItems: 'center', marginVertical: 8, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ffffff', borderWidth: 1, borderColor: colors.border }}>
           <Image
             source={{ uri: graphUri }}
-            style={{ width: '100%', height: 230, resizeMode: 'contain' }}
+            style={{ width: CHART_WIDTH, height: 210 }}
+            resizeMode="contain"
             onError={() => setImgError(true)}
           />
         </View>
-      ) : (
-        /* Fallback: Interactive 4PL Sigmoidal Vector Model */
-        <Svg width="100%" height={170} viewBox="0 0 320 160">
-          <Line x1="45" y1="20" x2="300" y2="20" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-          <Line x1="45" y1="55" x2="300" y2="55" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-          <Line x1="45" y1="90" x2="300" y2="90" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-          <Line x1="45" y1="125" x2="300" y2="125" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
+      )}
 
-          {/* 70% ISO 10993-5 Threshold Line */}
-          <Line x1="45" y1="62" x2="300" y2="62" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,4" />
-          <SvgText x="295" y="58" fontSize="8.5" fill="#ef4444" fontWeight="800" textAnchor="end">70% ISO Threshold</SvgText>
+      {/* 2. Interactive SVG 4PL Sigmoidal Vector Model (Fallback or when image unavailable) */}
+      {(!graphUri || imgError) && (
+        <View style={{ width: '100%', alignItems: 'center', marginVertical: 6 }}>
+          <Svg width={CHART_WIDTH} height={170} viewBox="0 0 320 160">
+            <Line x1="45" y1="20" x2="300" y2="20" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray={[3, 3]} />
+            <Line x1="45" y1="55" x2="300" y2="55" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray={[3, 3]} />
+            <Line x1="45" y1="90" x2="300" y2="90" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray={[3, 3]} />
+            <Line x1="45" y1="125" x2="300" y2="125" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray={[3, 3]} />
 
-          {/* Axes */}
-          <Line x1="45" y1="135" x2="305" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
-          <Line x1="45" y1="15" x2="45" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
+            {/* 70% ISO 10993-5 Threshold Line */}
+            <Line x1="45" y1="62" x2="300" y2="62" stroke="#ef4444" strokeWidth="1.5" strokeDasharray={[4, 4]} />
+            <SvgText x="295" y="58" fontSize="8.5" fill="#ef4444" fontWeight="800" textAnchor="end">70% ISO Threshold</SvgText>
 
-          {/* Sigmoidal S-Curve */}
-          <Path
-            d="M 45,28 C 110,28 140,50 175,85 C 210,120 250,132 305,132"
-            fill="none"
-            stroke="#0f766e"
-            strokeWidth="3"
-          />
+            {/* Axes */}
+            <Line x1="45" y1="135" x2="305" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
+            <Line x1="45" y1="15" x2="45" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
 
-          {/* IC50 Point */}
-          <Circle cx="175" cy="85" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
-          <Line x1="175" y1="85" x2="175" y2="135" stroke="#ef4444" strokeWidth="1" strokeDasharray="2,2" />
-          <SvgText x="180" y="80" fontSize="8.5" fill="#0f766e" fontWeight="800">IC50: {ic50Str}</SvgText>
+            {/* Sigmoidal S-Curve */}
+            <Path
+              d="M 45,28 C 110,28 140,50 175,85 C 210,120 250,132 305,132"
+              fill="none"
+              stroke="#0f766e"
+              strokeWidth="3"
+            />
 
-          <SvgText x="40" y="25" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">100%</SvgText>
-          <SvgText x="40" y="65" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">70%</SvgText>
-          <SvgText x="40" y="90" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">50%</SvgText>
-          <SvgText x="40" y="135" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">0%</SvgText>
+            {/* IC50 Point */}
+            <Circle cx="175" cy="85" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+            <Line x1="175" y1="85" x2="175" y2="135" stroke="#ef4444" strokeWidth="1" strokeDasharray={[2, 2]} />
+            <SvgText x="180" y="80" fontSize="8.5" fill="#0f766e" fontWeight="800">IC50: {ic50Str}</SvgText>
 
-          <SvgText x="45" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">0</SvgText>
-          <SvgText x="175" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">IC50</SvgText>
-          <SvgText x="300" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">Max Dose</SvgText>
-        </Svg>
+            <SvgText x="40" y="25" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">100%</SvgText>
+            <SvgText x="40" y="65" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">70%</SvgText>
+            <SvgText x="40" y="90" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">50%</SvgText>
+            <SvgText x="40" y="135" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">0%</SvgText>
+
+            <SvgText x="45" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">0</SvgText>
+            <SvgText x="175" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">IC50</SvgText>
+            <SvgText x="300" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">Max Dose</SvgText>
+          </Svg>
+        </View>
       )}
 
       {/* Mathematical Regression Metrics */}
