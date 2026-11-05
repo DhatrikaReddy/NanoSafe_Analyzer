@@ -29,6 +29,9 @@
     },
     "ios": {
       "supportsTablet": true
-    }
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }
