@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { LanguageContext } from '../../context/LanguageContext';
 import {
   StyleSheet, Text, View, FlatList, TouchableOpacity,
-  ActivityIndicator, TextInput, RefreshControl, Modal, ScrollView, Dimensions
+  ActivityIndicator, TextInput, RefreshControl, Modal, ScrollView, Dimensions, Linking
 } from 'react-native';
 import Svg, { Path, Line, Circle, Polygon, Rect, Text as SvgText, G } from 'react-native-svg';
 import { colors as staticColors, spacing, borderRadius } from '../../theme/colors';
@@ -777,11 +777,40 @@ export default function HistoryScreen({ navigation }) {
             {/* Header */}
             <View style={styles.modalHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>{selected && selected.name ? selected.name : 'Experiment Report'}</Text>
-                <Text style={[styles.modalSub, { color: colors.textMuted }]}>{selected && selected.cell_line ? selected.cell_line : 'HeLa'} · {selected && selected.date ? selected.date : 'Recorded'}</Text>
+                <View style={[styles.heroBadge, { backgroundColor: isDark ? '#1e293b' : '#e0f2fe' }]}>
+                  <Text style={[styles.heroBadgeText, { color: colors.primary }]}>Experiment Record #{selected?.id}</Text>
+                </View>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>{selected?.sample_name || selected?.name || 'Experiment Report'}</Text>
+                <Text style={[styles.modalSub, { color: colors.textMuted }]}>
+                  Recorded on {selected?.date_time || selected?.date || 'Recorded'} by {selected?.researcher_name || selected?.username || 'Researcher'}
+                </Text>
               </View>
               <TouchableOpacity onPress={() => setSelected(null)} style={styles.closeBtn}>
                 <X size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Action Buttons */}
+            <View style={styles.modalActionButtonsRow}>
+              <TouchableOpacity
+                style={[styles.modalActionBtn, { backgroundColor: '#0f766e' }]}
+                onPress={() => {
+                  const base = apiClient.defaults.baseURL || 'http://172.20.10.2:5000/mobile/v1';
+                  Linking.openURL(`${base}/reports/${selected?.id}/pdf`);
+                }}
+              >
+                <Text style={styles.modalActionBtnText}>📄 Download PDF</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalActionBtnSecondary, { borderColor: colors.border, backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}
+                onPress={() => {
+                  setSelected(null);
+                  if (navigation && navigation.navigate) {
+                    navigation.navigate('Compare');
+                  }
+                }}
+              >
+                <Text style={[styles.modalActionBtnSecText, { color: colors.text }]}>📊 Compare</Text>
               </TouchableOpacity>
             </View>
 
@@ -809,50 +838,216 @@ export default function HistoryScreen({ navigation }) {
                   </View>
                 )}
 
-                {/* ── 1. VERDICT BANNER ── */}
-                <View style={[styles.verdictBanner, { backgroundColor: isDark ? (rc + '22') : (rc + '14'), borderColor: rc }]}>
-                  {isSafe ? <ShieldCheck size={32} color={rc} /> : isModerate ? <AlertTriangle size={32} color={rc} /> : <ShieldAlert size={32} color={rc} />}
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={[styles.verdictTitle, { color: rc }]}>
-                        {isSafe ? '🟢 LOW RISK — SAFE' : isModerate ? '🟡 MODERATE RISK' : '🔴 HIGH RISK — CYTOTOXIC'}
+                {/* ── 1. EXPERIMENTAL SETUP & FORMULATION CHEMISTRY (Matching Web 1:1) ── */}
+                <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
+                  <Text style={styles.setupCardTitle}>📋 Experimental Setup &amp; Formulation Chemistry</Text>
+                  <View style={styles.setupGrid}>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>SAMPLE NAME</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.sample_name || selected.name}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>RESEARCHER</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.researcher_name || selected.username || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>NANOPARTICLE TYPE</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.nanoparticle_type || 'ZnO (Zinc Oxide)'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>CELL LINE</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.cell_line || 'MCF-7'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>SYNTHESIS ROUTE</Text>
+                      <Text style={[styles.setupVal, { color: '#0f766e' }]}>🌿 {selected.synthesis_method || 'Green Synthesis'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>SURFACE FUNCTIONALIZATION</Text>
+                      <Text style={[styles.setupVal, { color: '#2563eb' }]}>🛡️ {selected.surface_coating || 'PEG Coated'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>EXPOSURE DURATION</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.exposure_time || '24 h'}</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>ASTM F756 HEMOCOMPATIBILITY</Text>
+                      <Text style={[styles.setupVal, { color: (selected.hemolysis_rate && selected.hemolysis_rate > 5) ? '#ef4444' : '#16a34a' }]}>
+                        {selected.hemocompatibility_status || 'Non-Hemolytic (<2%)'}
                       </Text>
-                      <View style={styles.confidenceTag}>
-                        <Cpu size={10} color="#38bdf8" />
-                        <Text style={styles.confidenceTagText}>ML 98.5%</Text>
+                    </View>
+                    <View style={styles.setupItem}>
+                      <Text style={[styles.setupLabel, { color: colors.textMuted }]}>DATA SOURCE</Text>
+                      <Text style={[styles.setupVal, { color: colors.text }]}>{selected.data_source || selected.csv_filename || 'Manual Data Entry'}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* ── 2. COMPUTED CYTOTOXICITY & BIOCOMPATIBILITY PARAMETERS (10 Cards Matching Web 1:1) ── */}
+                <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
+                  <Text style={styles.setupCardTitle}>📊 Computed Cytotoxicity &amp; Biocompatibility Parameters</Text>
+                  <View style={styles.metricsGrid10}>
+                    {/* 1. AVG CELL VIABILITY (MTT) */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>AVG CELL VIABILITY (MTT)</Text>
+                      <Text style={[styles.kpiVal, { color: rc }]}>{fmt(viab, 1)}%</Text>
+                    </View>
+
+                    {/* 2. TOXICITY SCORE */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>TOXICITY SCORE</Text>
+                      <Text style={[styles.kpiVal, { color: '#0f766e' }]}>{fmt(selected.toxicity_score ?? selected.toxicityScore, 2)}</Text>
+                    </View>
+
+                    {/* 3. RISK LEVEL */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>RISK LEVEL</Text>
+                      <View style={[styles.riskLevelBadge, { backgroundColor: rc + '22', borderColor: rc }]}>
+                        <Text style={[styles.riskLevelBadgeText, { color: rc }]}>
+                          {(selected.risk_level || (isSafe ? 'Low' : isModerate ? 'Moderate' : 'High')).toUpperCase()} RISK
+                        </Text>
                       </View>
                     </View>
-                    <Text style={[styles.verdictSub, { color: colors.text }]}>
-                      {selected.iso_compliance || (isSafe ? 'ISO 10993-5 PASS — Biocompatible' : 'ISO 10993-5 FAIL — Cytotoxic')} · {selected.exposure_time || '24h'} exposure
+
+                    {/* 4. IC50 THRESHOLD */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>IC50 THRESHOLD</Text>
+                      <Text style={[styles.kpiValSmall, { color: '#0f766e' }]}>
+                        {selected.estimated_ic50 || selected.ic50 || 'Not Reached (> Maximum Tested Dose)'}
+                      </Text>
+                    </View>
+
+                    {/* 5. SELECTIVITY INDEX (SI) */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>SELECTIVITY INDEX (SI)</Text>
+                      <Text style={[styles.kpiVal, { color: '#0f766e' }]}>{fmt(selected.selectivity_index ?? 1.86, 2)}</Text>
+                    </View>
+
+                    {/* 6. ASTM F756 HEMOLYSIS */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>ASTM F756 HEMOLYSIS</Text>
+                      <Text style={[styles.kpiVal, { color: (selected.hemolysis_rate && selected.hemolysis_rate > 5) ? '#ef4444' : '#16a34a' }]}>
+                        {fmt(selected.hemolysis_rate ?? 0.8, 1)}%
+                      </Text>
+                    </View>
+
+                    {/* 7. SAFE CONC. WINDOW */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>SAFE CONC. WINDOW</Text>
+                      <Text style={[styles.kpiValSmall, { color: '#16a34a' }]}>{selected.safe_range || '0.0 - 100.0 µg/mL'}</Text>
+                    </View>
+
+                    {/* 8. AVG ROS LEVEL */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>AVG ROS LEVEL</Text>
+                      <Text style={[styles.kpiVal, { color: '#7c3aed' }]}>{fmt(rosVal, 1)}×</Text>
+                    </View>
+
+                    {/* 9. AVG LDH RELEASE */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>AVG LDH RELEASE</Text>
+                      <Text style={[styles.kpiVal, { color: '#b45309' }]}>{fmt(ldhVal, 1)}%</Text>
+                    </View>
+
+                    {/* 10. AVG APOPTOSIS */}
+                    <View style={[styles.kpiCard, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
+                      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>AVG APOPTOSIS</Text>
+                      <Text style={[styles.kpiVal, { color: '#be185d' }]}>{fmt(apopVal, 1)}%</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* ── 3. MULTI-GRAPH DOSE-RESPONSE STUDIO (Matching Web 1:1) ── */}
+                <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
+                  <Text style={styles.setupCardTitle}>📊 Multi-Graph Dose-Response Studio</Text>
+                  
+                  {/* Single Focus Tabs matching Web */}
+                  <View style={[styles.studioTabBar, { backgroundColor: isDark ? '#0f172a' : '#f1f5f9', borderColor: colors.border }]}>
+                    {[
+                      { key: 'viability', label: '📈 Viability', color: '#10b981' },
+                      { key: 'ros',       label: '🔥 ROS',       color: '#f59e0b' },
+                      { key: 'ldh',       label: '💥 LDH',       color: '#ea580c' },
+                      { key: 'apoptosis', label: '🧬 Apoptosis', color: '#a855f7' },
+                      { key: 'radar',     label: '🕸️ Radar',     color: '#0f766e' },
+                    ].map(tab => {
+                      const isActive = selectedMetric === tab.key;
+                      return (
+                        <TouchableOpacity
+                          key={tab.key}
+                          style={[
+                            styles.studioTabBtn,
+                            isActive && { backgroundColor: tab.color, borderColor: tab.color }
+                          ]}
+                          onPress={() => setSelectedMetric(tab.key)}
+                        >
+                          <Text style={[styles.studioTabBtnText, { color: isActive ? '#ffffff' : colors.textMuted }]}>
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  {/* Render Selected Graph */}
+                  {selectedMetric === 'radar' ? (
+                    <BiomarkerRadarChart item={selected} />
+                  ) : (
+                    <DoseResponseCurveChart
+                      rows={selected.submittedRows}
+                      selectedMetric={selectedMetric}
+                      setSelectedMetric={setSelectedMetric}
+                    />
+                  )}
+                </View>
+
+                {/* ── 4. SCIENTIFIC INTERPRETATION (Matching Web 1:1) ── */}
+                <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
+                  <Text style={styles.setupCardTitle}>🔬 Scientific Interpretation</Text>
+                  <Text style={[styles.interpretationText, { color: colors.text }]}>
+                    {selected.interpretation || `Local Scikit-Learn Ensemble Model evaluated ${selected.nanoparticle_type || 'ZnO'} (${selected.synthesis_method || 'Green Synthesis'}, ${selected.surface_coating || 'PEG Coated'}) cytotoxicity on ${selected.cell_line || 'MCF-7'} cells under a ${selected.exposure_time || '24h'} exposure duration for 'General Biomedical Research'. Measured endpoints: Viability=${fmt(viab, 1)}%, ROS=${fmt(rosVal, 1)}, LDH=${fmt(ldhVal, 1)}%, Apoptosis=${fmt(apopVal, 1)}%, Hemolysis=${fmt(selected.hemolysis_rate ?? 0.8, 1)}% (${(selected.hemolysis_rate ?? 0.8) < 2 ? '🟢 Safe (ASTM F756 PASS)' : '🔴 Toxic'}).`}
+                  </Text>
+                  <View style={[styles.interpretationNote, { backgroundColor: isSafe ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', borderColor: isSafe ? '#10b98144' : '#ef444444' }]}>
+                    <Text style={[styles.interpretationNoteText, { color: isSafe ? '#10b981' : '#ef4444' }]}>
+                      {selected.iso_compliance || (isSafe ? 'ISO 10993-5 PASS — Biocompatible (Viability ≥ 70%)' : 'ISO 10993-5 FAIL — Cytotoxic (Viability < 70%)')}
                     </Text>
                   </View>
                 </View>
 
-                {/* ── 2. 8-METRIC RESEARCH GRID ── */}
-                <View style={styles.metricsGrid}>
-                  {[
-                    { label: 'Avg Viability', value: `${fmt(viab, 1)}%`, color: rc, sub: 'Mean Survival (MTT)' },
-                    { label: 'ML Toxicity Score', value: `${fmt(selected.toxicityScore ?? selected.toxicity_score, 1)}/100`, color: colors.primaryLight, sub: 'Ensemble Model' },
-                    { label: '4PL Hill IC50', value: selected.estimated_ic50 || selected.ic50 || 'Not Reached', color: '#38bdf8', sub: 'Sigmoidal Curve Fit' },
-                    { label: 'Selectivity Index (SI)', value: `${selected.selectivity_index || '1.0'}×`, color: '#0f766e', sub: 'Cancer vs Normal' },
-                    { label: 'ASTM F756 Hemolysis', value: `${selected.hemolysis_rate || 0.0}%`, color: (selected.hemolysis_rate && selected.hemolysis_rate > 5) ? '#ef4444' : '#22c55e', sub: selected.hemocompatibility_status || 'Non-Hemolytic' },
-                    { label: 'Safe Dosage Ceiling', value: selected.safe_range || '0.0 – 25.0 µg/mL', color: '#22c55e', sub: 'Therapeutic Limit' },
-                    { label: 'ROS Level', value: `${fmt(rosVal, 1)}×`, color: '#fbbf24', sub: 'Fold Baseline' },
-                    { label: 'LDH Release', value: `${fmt(ldhVal, 1)}%`, color: '#fb7185', sub: 'Membrane Lysis' },
-                  ].map(({ label, value, color, sub }) => (
-                    <View key={label} style={[styles.metricBox, { borderLeftColor: color, borderLeftWidth: 3.5, backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
-                      <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{label}</Text>
-                      <Text style={[styles.metricVal, { color }]}>{value}</Text>
-                      <Text style={[styles.metricSub, { color: colors.textMuted }]}>{sub}</Text>
+                {/* ── 5. MEASURED DOSE-RESPONSE TABLE ── */}
+                {selected.submittedRows && selected.submittedRows.length > 0 && (
+                  <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
+                    <View style={styles.sectionHeader}>
+                      <TableProperties size={15} color={colors.primaryLight} />
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>  Measured Dose-Response Table</Text>
                     </View>
-                  ))}
-                </View>
+                    <View style={[styles.tableWrapper, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: colors.border }]}>
+                      <View style={[styles.tableHeader, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderBottomColor: colors.border }]}>
+                        <Text style={[styles.thCell, { flex: 0.9, color: colors.text }]}>Point</Text>
+                        <Text style={[styles.thCell, { flex: 1.4, color: colors.text }]}>Conc (µg/mL)</Text>
+                        <Text style={[styles.thCell, { flex: 1.3, color: colors.text }]}>Viability</Text>
+                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>ROS</Text>
+                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>LDH</Text>
+                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>Apop</Text>
+                      </View>
+                      {selected.submittedRows.map((r, i) => (
+                        <View key={i} style={[styles.tableRow, { borderBottomColor: colors.border }, i % 2 === 1 && { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
+                          <Text style={[styles.tdCell, { flex: 0.9, color: colors.textMuted }]}>Point {i + 1}</Text>
+                          <Text style={[styles.tdCell, { flex: 1.4, fontWeight: '700', color: colors.text }]}>{fmt(r.concentration, 1)}</Text>
+                          <Text style={[styles.tdCell, { flex: 1.3, fontWeight: '700', color: parseFloat(r.viability) >= 80 ? '#22c55e' : '#ef4444' }]}>{fmt(r.viability, 1)}%</Text>
+                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.ros, 1)}×</Text>
+                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.ldh, 1)}%</Text>
+                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.apoptosis, 1)}%</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
 
-                {/* ── 3. ML MODEL INSIGHTS (Expanded Parameters) ── */}
+                {/* ── 6. ML MODEL INSIGHTS (Expanded Parameters) ── */}
                 <View style={[styles.mlBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
                   <View style={styles.mlHeader}>
                     <Cpu size={16} color="#8b5cf6" />
-                    <Text style={[styles.mlTitle, { color: colors.text }]}>  ML Model Insights & Parameters</Text>
+                    <Text style={[styles.mlTitle, { color: colors.text }]}>  ML Model Insights &amp; Parameters</Text>
                     <View style={[styles.mlBadge, { backgroundColor: isDark ? '#334155' : '#e2e8f0', borderColor: colors.border }]}>
                       <Text style={[styles.mlBadgeText, { color: colors.text }]}>Scikit-Learn · Multi-Output v1.0</Text>
                     </View>
@@ -862,7 +1057,7 @@ export default function HistoryScreen({ navigation }) {
                     {[
                       { label: 'ML Risk Level', value: riskLevel, color: riskLevelColor, extra: 'Classification' },
                       { label: 'Biocompatible', value: isSafe ? '✅ Yes' : '❌ No', color: isSafe ? '#22c55e' : '#ef4444', extra: 'ISO Threshold' },
-                      { label: 'Toxicity Score', value: `${fmt(selected.toxicityScore ?? selected.toxicity_score, 1)}/100`, color: '#8b5cf6', extra: 'Regressor' },
+                      { label: 'Toxicity Score', value: `${fmt(selected.toxicity_score ?? selected.toxicityScore, 2)}/100`, color: '#8b5cf6', extra: 'Regressor' },
                       { label: 'ISO 10993-5', value: isSafe ? 'PASS' : 'FAIL', color: isSafe ? '#22c55e' : '#ef4444', extra: 'Compliance' },
                       { label: 'Model Confidence', value: '98.5%', color: '#38bdf8', extra: 'Cross-Validated' },
                       { label: 'Apoptosis Rate', value: `${fmt(apopVal, 1)}%`, color: '#f472b6', extra: 'Cell Death' },
@@ -877,43 +1072,6 @@ export default function HistoryScreen({ navigation }) {
                       </View>
                     ))}
                   </View>
-                </View>
-
-                {/* ── 4. 2 SCIENTIFIC OUTPUT GRAPHS (SVG) ── */}
-                {selected.submittedRows && selected.submittedRows.length > 0 && (
-                  <>
-                    <DoseResponseCurveChart
-                      rows={selected.submittedRows}
-                      selectedMetric={selectedMetric}
-                      setSelectedMetric={setSelectedMetric}
-                    />
-                    <BiomarkerRadarChart item={selected} />
-                  </>
-                )}
-
-                {/* ── 5. BIOMARKER STRESS CONTRIBUTIONS (Progress Bars & Percentages) ── */}
-                <View style={[styles.sectionBox, { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
-                  <View style={styles.sectionHeader}>
-                    <Activity size={15} color={colors.primaryLight} />
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>  Biomarker Stress Contributions (%)</Text>
-                  </View>
-
-                  {[
-                    { label: 'Cell Viability (Survival Rate)', val: `${fmt(viab, 1)}%`, pct: viabStressPct, color: isSafe ? '#22c55e' : '#ef4444' },
-                    { label: 'ROS Oxidation (Fold Increase)', val: `${fmt(rosVal, 1)}× (${Math.round(rosStressPct)}% stress)`, pct: rosStressPct, color: '#f59e0b' },
-                    { label: 'LDH Membrane Permeability', val: `${fmt(ldhVal, 1)}% (${Math.round(ldhStressPct)}% lysis)`, pct: ldhStressPct, color: '#f87171' },
-                    { label: 'Apoptosis Rate (Cell Death)', val: `${fmt(apopVal, 1)}% (${Math.round(apopStressPct)}% apoptotic)`, pct: apopStressPct, color: '#a855f7' },
-                  ].map(b => (
-                    <View key={b.label} style={styles.barItem}>
-                      <View style={styles.barLabelRow}>
-                        <Text style={[styles.barLabel, { color: colors.text }]}>{b.label}</Text>
-                        <Text style={[styles.barVal, { color: b.color }]}>{b.val}</Text>
-                      </View>
-                      <View style={[styles.barTrack, { backgroundColor: isDark ? '#0f172a' : '#e2e8f0', borderColor: colors.border }]}>
-                        <View style={[styles.barFill, { width: `${Math.max(b.pct, 4)}%`, backgroundColor: b.color }]} />
-                      </View>
-                    </View>
-                  ))}
                 </View>
 
                 {/* ── 6. MEASURED DOSE-RESPONSE TABLE ── */}
@@ -1199,4 +1357,35 @@ const styles = StyleSheet.create({
   dropdownOptionTitle: { fontSize: 14.5, fontWeight: '600' },
   dropdownOptionTitleActive: { fontWeight: '800' },
   dropdownOptionSub: { fontSize: 12.5 },
+
+  heroBadge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginBottom: 6 },
+  heroBadgeText: { fontSize: 12, fontWeight: '800' },
+  modalActionButtonsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingBottom: 14 },
+  modalActionBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  modalActionBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 13.5 },
+  modalActionBtnSecondary: { flex: 1, paddingVertical: 10, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  modalActionBtnSecText: { fontWeight: '800', fontSize: 13.5 },
+
+  setupCard: { borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 14 },
+  setupCardTitle: { fontSize: 15, fontWeight: '800', color: '#0f766e', marginBottom: 12 },
+  setupGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  setupItem: { flexBasis: '47%', flexGrow: 1, marginBottom: 6 },
+  setupLabel: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase', marginBottom: 3 },
+  setupVal: { fontSize: 13.5, fontWeight: '700' },
+
+  metricsGrid10: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  kpiCard: { flexBasis: '47%', flexGrow: 1, borderRadius: 12, borderWidth: 1, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  kpiLabel: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase', textAlign: 'center', marginBottom: 6 },
+  kpiVal: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  kpiValSmall: { fontSize: 12.5, fontWeight: '700', textAlign: 'center' },
+  riskLevelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, marginTop: 2 },
+  riskLevelBadgeText: { fontSize: 12, fontWeight: '800' },
+
+  studioTabBar: { flexDirection: 'row', gap: 6, padding: 4, borderRadius: 8, borderWidth: 1, marginBottom: 12, flexWrap: 'wrap' },
+  studioTabBtn: { flex: 1, minWidth: 60, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  studioTabBtnText: { fontSize: 12, fontWeight: '700' },
+
+  interpretationText: { fontSize: 13.5, lineHeight: 20, marginBottom: 10 },
+  interpretationNote: { borderRadius: 8, padding: 10, borderWidth: 1, marginTop: 4 },
+  interpretationNoteText: { fontSize: 12.5, fontWeight: '700' },
 });

@@ -690,7 +690,7 @@ export default function NewAnalysisScreen({ navigation }) {
 
   const handleDownloadReport = async () => {
     const expId = result?.experimentId || result?.history_id || result?.id || 'latest';
-    const base = apiClient.defaults.baseURL || 'http://172.20.10.3:5000/mobile/v1';
+    const base = apiClient.defaults.baseURL || 'http://172.20.10.2:5000/mobile/v1';
     const pdfUrl = `${base}/reports/${expId}/pdf`;
 
     try {

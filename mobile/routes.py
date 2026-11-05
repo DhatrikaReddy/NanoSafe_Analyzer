@@ -362,19 +362,52 @@ def history():
     res = []
     for h in records:
         submitted_rows = []
-        if h.tables_html and (h.tables_html.startswith("[") or h.tables_html.startswith("{")):
-            try:
-                parsed = json.loads(h.tables_html)
-                if isinstance(parsed, list):
-                    submitted_rows = parsed
-            except Exception:
-                submitted_rows = []
+        if h.tables_html:
+            s_tables = h.tables_html.strip()
+            if s_tables.startswith("[") or s_tables.startswith("{"):
+                try:
+                    parsed = json.loads(s_tables)
+                    if isinstance(parsed, list):
+                        submitted_rows = parsed
+                except Exception:
+                    submitted_rows = []
+            elif "<table" in s_tables:
+                try:
+                    import pandas as pd
+                    import io
+                    dfs = pd.read_html(io.StringIO(s_tables))
+                    if dfs and len(dfs) > 0:
+                        df = dfs[0]
+                        for _, row in df.iterrows():
+                            r_dict = {}
+                            for col in df.columns:
+                                c_clean = str(col).lower().replace(" ", "_")
+                                val_str = str(row[col])
+                                if "conc" in c_clean:
+                                    r_dict["concentration"] = val_str
+                                elif "viab" in c_clean:
+                                    r_dict["viability"] = val_str
+                                elif "ros" in c_clean:
+                                    r_dict["ros"] = val_str
+                                elif "ldh" in c_clean:
+                                    r_dict["ldh"] = val_str
+                                elif "apop" in c_clean:
+                                    r_dict["apoptosis"] = val_str
+                                elif "hemo" in c_clean:
+                                    r_dict["hemolysis"] = val_str
+                            if "concentration" in r_dict:
+                                submitted_rows.append(r_dict)
+                except Exception:
+                    pass
 
         c_val = float(h.concentration or 25.0)
         v_val = float(h.cell_viability or 80.0)
         r_val = float(h.ros or 1.8)
         l_val = float(h.ldh or 4.5)
         a_val = float(h.apoptosis or 3.2)
+        hemo_val = float(h.hemolysis_rate or 0.0)
+        si_val = float(h.selectivity_index or 1.0)
+        tox_val = float(h.toxicity_score or 0.0)
 
         if not submitted_rows:
             # Generate representative dose response points for graph visualization if not explicitly stored
@@ -389,6 +422,11 @@ def history():
         is_safe = (v_val >= 80.0)
         is_mod = (50.0 <= v_val < 80.0)
         risk = h.risk_level or ("Low" if is_safe else ("Moderate" if is_mod else "High"))
+        synth_clean = (h.synthesis_method or "Green_Synthesis").replace("_", " ")
+        coat_clean = (h.surface_coating or "Bare_ZnO").replace("_", " ")
+        hemo_status = h.hemocompatibility_status or ("Non-Hemolytic (<2%)" if hemo_val < 2.0 else "Hemolytic (>5%)")
+        researcher = h.researcher_name or h.username or "Researcher"
+        data_source = h.csv_filename or "Manual Data Entry"
 
         res.append({
             "id": str(h.id),
@@ -396,11 +434,11 @@ def history():
             "sample_name": h.sample_name or f"Experiment #{h.id}",
             "date": str(h.date_time or "").split(" ")[0],
             "date_time": str(h.date_time or ""),
-            "toxicityScore": round(float(h.toxicity_score or (12.0 if is_safe else (45.0 if is_mod else 78.0))), 1),
-            "toxicity_score": round(float(h.toxicity_score or (12.0 if is_safe else (45.0 if is_mod else 78.0))), 1),
+            "toxicityScore": round(tox_val, 2),
+            "toxicity_score": round(tox_val, 2),
             "result": risk,
             "risk_level": risk,
-            "cell_line": h.cell_line or "HeLa",
+            "cell_line": h.cell_line or "MCF-7",
             "cell_viability": round(v_val, 1),
             "viability": round(v_val, 1),
             "viability_pct": round(v_val, 1),
@@ -411,11 +449,21 @@ def history():
             "ldh_avg": round(l_val, 1),
             "apoptosis": round(a_val, 1),
             "apoptosis_avg": round(a_val, 1),
-            "estimated_ic50": h.estimated_ic50 or "Not Reached",
-            "ic50": h.estimated_ic50 or "Not Reached",
-            "safe_range": h.safe_range or "0.0 – 25.0 µg/mL",
-            "exposure_time": h.exposure_time or "24h",
-            "nanoparticle_type": h.nanoparticle_type or "Zinc Oxide (ZnO)",
+            "hemolysis_rate": round(hemo_val, 2),
+            "hemolysis": round(hemo_val, 2),
+            "hemocompatibility_status": hemo_status,
+            "selectivity_index": round(si_val, 2),
+            "synthesis_method": synth_clean,
+            "surface_coating": coat_clean,
+            "researcher_name": researcher,
+            "username": h.username or researcher,
+            "data_source": data_source,
+            "csv_filename": data_source,
+            "estimated_ic50": h.estimated_ic50 or "Not Reached (> Maximum Tested Dose)",
+            "ic50": h.estimated_ic50 or "Not Reached (> Maximum Tested Dose)",
+            "safe_range": h.safe_range or "0.0 - 100.0 µg/mL",
+            "exposure_time": h.exposure_time or "24 h",
+            "nanoparticle_type": h.nanoparticle_type or "ZnO (Zinc Oxide)",
             "interpretation": h.interpretation or "",
             "is_biocompatible": is_safe,
             "iso_compliance": "ISO 10993-5 PASS — Biocompatible" if is_safe else "ISO 10993-5 FAIL — Cytotoxic",
