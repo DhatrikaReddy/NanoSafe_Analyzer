@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { LanguageContext } from '../../context/LanguageContext';
 import {
   StyleSheet, Text, View, FlatList, TouchableOpacity,
-  ActivityIndicator, TextInput, RefreshControl, Modal, ScrollView, Dimensions, Linking
+  ActivityIndicator, TextInput, RefreshControl, Modal, ScrollView, Dimensions, Linking, Image
 } from 'react-native';
 import Svg, { Path, Line, Circle, Polygon, Rect, Text as SvgText, G } from 'react-native-svg';
 import { colors as staticColors, spacing, borderRadius } from '../../theme/colors';
@@ -224,65 +224,92 @@ function DoseResponseCurveChart({ rows = [], selectedMetric = 'viability', setSe
   );
 }
 
-// 2. MULTI-BIOMARKER RADAR CHART COMPONENT (SVG)
+// 2. MULTI-BIOMARKER RADAR CHART COMPONENT (5-AXIS MATCHING WEB 1:1)
 // =========================================================================
 function BiomarkerRadarChart({ item, hideHeader = false }) {
   const { colors, isDark } = useContext(ThemeContext);
   const textColor = isDark ? '#ffffff' : '#0f172a';
   const gridColor = isDark ? '#475569' : '#cbd5e1';
   const axisColor = isDark ? '#64748b' : '#94a3b8';
-  const V_SIZE = 300;
+  const V_SIZE = 320;
   const center = V_SIZE / 2;
-  const radius = 68;
+  const radius = 92;
 
-  const viabVal = parseFloat(item.cell_viability || item.viability || 80);
-  const rosVal = parseFloat(item.ros || item.ros_avg || 1.8);
-  const ldhVal = parseFloat(item.ldh || item.ldh_avg || 4.5);
-  const apopVal = parseFloat(item.apoptosis || item.apoptosis_avg || 3.2);
+  const viabVal = parseFloat(item?.cell_viability ?? item?.viability ?? 74.5);
+  const rosVal = parseFloat(item?.ros ?? item?.ros_avg ?? 50.0);
+  const ldhVal = parseFloat(item?.ldh ?? item?.ldh_avg ?? 23.5);
+  const apopVal = parseFloat(item?.apoptosis ?? item?.apoptosis_avg ?? 30.0);
+  const hemoVal = parseFloat(item?.hemolysis_rate ?? item?.hemolysis ?? 0.8);
 
-  const vViab = Math.min(Math.max(viabVal, 0), 100);
-  const vRos = Math.min(Math.max(100 - (rosVal / 8.0) * 100, 0), 100);
-  const vLdh = Math.min(Math.max(100 - ldhVal * 2, 0), 100);
-  const vApop = Math.min(Math.max(100 - apopVal * 2.5, 0), 100);
+  // Calibrated Scores matching Web (history_detail.html lines 890-895)
+  const vScore = Math.max(0, Math.min(100, viabVal));
+  const rosScore = Math.max(0, Math.min(100, 100 - (rosVal - 1.0) * 20));
+  const ldhScore = Math.max(0, Math.min(100, 100 - ldhVal * 3));
+  const apopScore = Math.max(0, Math.min(100, 100 - apopVal * 4));
+  const hemoScore = Math.max(0, Math.min(100, 100 - hemoVal * 10));
 
   const axes = [
-    { label: 'Viability', score: vViab, angle: -Math.PI / 2, raw: `${fmt(viabVal, 1)}%` },
-    { label: 'ROS Balance', score: vRos, angle: 0, raw: `${fmt(rosVal, 1)}×` },
-    { label: 'Membrane Intact', score: vLdh, angle: Math.PI / 2, raw: `${fmt(ldhVal, 1)}%` },
-    { label: 'Anti-Apoptosis', score: vApop, angle: Math.PI, raw: `${fmt(apopVal, 1)}%` },
+    { label: 'Viability (MTT)', score: vScore, raw: `${fmt(viabVal, 1)}%` },
+    { label: 'ROS Defense', score: rosScore, raw: `${fmt(rosVal, 1)}×` },
+    { label: 'Membrane (LDH)', score: ldhScore, raw: `${fmt(ldhVal, 1)}%` },
+    { label: 'Survival (Apop)', score: apopScore, raw: `${fmt(apopVal, 1)}%` },
+    { label: 'Blood Safety', score: hemoScore, raw: `${fmt(hemoVal, 1)}%` },
   ];
+
+  const numAxes = axes.length;
+  const getAngle = (i) => -Math.PI / 2 + (i * 2 * Math.PI) / numAxes;
 
   const getCoord = (angle, dist) => ({
     x: center + dist * Math.cos(angle),
     y: center + dist * Math.sin(angle),
   });
 
-  const radarPolygonPoints = axes
-    .map(a => {
-      const coord = getCoord(a.angle, (a.score / 100) * radius);
+  const measuredPoints = axes
+    .map((a, i) => {
+      const coord = getCoord(getAngle(i), (a.score / 100) * radius);
+      return `${coord.x},${coord.y}`;
+    })
+    .join(' ');
+
+  const iso80Points = axes
+    .map((_, i) => {
+      const coord = getCoord(getAngle(i), 0.8 * radius);
       return `${coord.x},${coord.y}`;
     })
     .join(' ');
 
   const isSafe = viabVal >= 80;
-  const themeColor = isSafe ? '#22c55e' : viabVal >= 50 ? '#f59e0b' : '#ef4444';
+  const themeColor = '#0f766e';
 
   return (
     <View style={[styles.chartContainer, { backgroundColor: isDark ? '#1e293b' : '#f8fafc', borderColor: colors.border }]}>
       {!hideHeader && (
         <View style={styles.chartHeader}>
           <Text style={[styles.chartTitle, { color: colors.text }]}>🕸️ Multi-Biomarker Safety Radar</Text>
-          <Text style={[styles.chartSub, { color: colors.textMuted }]}>Omnidirectional cytocompatibility profile across 4 axes</Text>
+          <Text style={[styles.chartSub, { color: colors.textMuted }]}>Omnidirectional cytocompatibility profile across 5 axes</Text>
         </View>
       )}
 
+      {/* Legend Row matching Web */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 14, marginBottom: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#0f766e' }} />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.text }}>Measured Health Profile</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <View style={{ width: 10, height: 2, backgroundColor: '#16a34a' }} />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#16a34a' }}>ISO 80% Safe Threshold</Text>
+        </View>
+      </View>
+
       <View style={styles.svgWrapper}>
-        <Svg width="100%" height={230} viewBox={`0 0 ${V_SIZE} ${V_SIZE}`} preserveAspectRatio="xMidYMid meet">
-          {[0.25, 0.5, 0.75, 1.0].map((level, idx) => (
+        <Svg width="100%" height={260} viewBox={`0 0 ${V_SIZE} ${V_SIZE}`} preserveAspectRatio="xMidYMid meet">
+          {/* Concentric Grid Web Rings */}
+          {[0.2, 0.4, 0.6, 0.8, 1.0].map((level, idx) => (
             <Polygon
               key={idx}
-              points={axes.map(a => {
-                const c = getCoord(a.angle, level * radius);
+              points={axes.map((_, i) => {
+                const c = getCoord(getAngle(i), level * radius);
                 return `${c.x},${c.y}`;
               }).join(' ')}
               fill="none"
@@ -291,18 +318,20 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
             />
           ))}
 
-          {axes.map((a, idx) => {
-            const endpoint = getCoord(a.angle, radius);
-            const labelPos = getCoord(a.angle, radius + 22);
+          {/* Radial Spokes and Labels */}
+          {axes.map((a, i) => {
+            const angle = getAngle(i);
+            const endpoint = getCoord(angle, radius);
+            const labelPos = getCoord(angle, radius + 24);
             return (
-              <G key={idx}>
+              <G key={i}>
                 <Line x1={center} y1={center} x2={endpoint.x} y2={endpoint.y} stroke={axisColor} strokeWidth="1" />
                 <SvgText
                   x={labelPos.x}
                   y={labelPos.y}
                   fontSize="8.5"
-                  fill={isDark ? '#cbd5e1' : '#475569'}
-                  fontWeight="700"
+                  fill={isDark ? '#e2e8f0' : '#334155'}
+                  fontWeight="800"
                   textAnchor="middle"
                   alignmentBaseline="middle"
                 >
@@ -312,35 +341,47 @@ function BiomarkerRadarChart({ item, hideHeader = false }) {
             );
           })}
 
+          {/* Green Dashed ISO 80% Guideline Polygon */}
           <Polygon
-            points={radarPolygonPoints}
-            fill={themeColor + '33'}
-            stroke={themeColor}
-            strokeWidth="2.5"
+            points={iso80Points}
+            fill="rgba(22, 163, 74, 0.08)"
+            stroke="#16a34a"
+            strokeWidth="2"
+            strokeDasharray="4,4"
           />
 
-          {axes.map((a, idx) => {
-            const coord = getCoord(a.angle, (a.score / 100) * radius);
+          {/* Solid Teal Measured Profile Polygon */}
+          <Polygon
+            points={measuredPoints}
+            fill="rgba(15, 118, 110, 0.32)"
+            stroke="#0f766e"
+            strokeWidth="2.8"
+          />
+
+          {/* Vertex Markers */}
+          {axes.map((a, i) => {
+            const coord = getCoord(getAngle(i), (a.score / 100) * radius);
             return (
               <Circle
-                key={idx}
+                key={i}
                 cx={coord.x}
                 cy={coord.y}
                 r="4.5"
-                fill="#090d16"
-                stroke={themeColor}
-                strokeWidth="2"
+                fill="#ffffff"
+                stroke="#0f766e"
+                strokeWidth="2.5"
               />
             );
           })}
         </Svg>
       </View>
 
+      {/* 5 Chips Grid below chart */}
       <View style={styles.radarChipsGrid}>
         {axes.map((a, i) => (
           <View key={i} style={[styles.radarChip, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: colors.border }]}>
             <Text style={[styles.radarChipLabel, { color: colors.text }]}>{a.label}:</Text>
-            <Text style={[styles.radarChipVal, { color: themeColor }]}>{a.raw}</Text>
+            <Text style={[styles.radarChipVal, { color: '#0f766e' }]}>{a.raw}</Text>
           </View>
         ))}
       </View>
@@ -413,56 +454,73 @@ function MiniCurveChart({ rows = [], metricKey = 'viability', label = 'Viability
 }
 
 // =========================================================================
-// 4. PUBLICATION PLOT VIEW (FOR PLOT TAB)
+// 4. PUBLICATION PLOT VIEW (FOR PLOT TAB - MATCHING WEB 1:1)
 // =========================================================================
 function PublicationPlotView({ item }) {
   const { colors, isDark } = useContext(ThemeContext);
-  const ic50Str = item.estimated_ic50 || item.ic50 || 'Not Reached (> Max Tested Dose)';
+  const ic50Str = item?.estimated_ic50 || item?.ic50 || 'Not Reached (> Max Tested Dose)';
+  const [imgError, setImgError] = useState(false);
+
+  const baseHost = (apiClient.defaults.baseURL || 'http://172.20.10.2:5000/mobile/v1').replace(/\/mobile\/v1\/?$/, '');
+  const graphUri = item?.graph ? `${baseHost}/static/${item.graph}` : null;
 
   return (
     <View style={[styles.plotViewContainer, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: colors.border }]}>
       <View style={styles.plotHeaderRow}>
-        <Text style={[styles.plotTitle, { color: colors.text }]}>🔬 4PL Publication Sigmoidal Model</Text>
+        <Text style={[styles.plotTitle, { color: colors.text }]}>🔬 Publication Matplotlib 4PL Sigmoidal Model</Text>
         <Text style={[styles.plotFormula, { color: '#0f766e' }]}>y = D + (A - D) / [1 + (x/C)^B]</Text>
       </View>
 
-      <Svg width="100%" height={170} viewBox="0 0 320 160">
-        <Line x1="45" y1="20" x2="300" y2="20" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-        <Line x1="45" y1="55" x2="300" y2="55" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-        <Line x1="45" y1="90" x2="300" y2="90" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
-        <Line x1="45" y1="125" x2="300" y2="125" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
+      {/* Primary: Real Matplotlib Publication Graph from Server (matching Web) */}
+      {graphUri && !imgError ? (
+        <View style={{ alignItems: 'center', marginVertical: 8, borderRadius: 10, overflow: 'hidden', backgroundColor: '#ffffff', borderWidth: 1, borderColor: colors.border }}>
+          <Image
+            source={{ uri: graphUri }}
+            style={{ width: '100%', height: 230, resizeMode: 'contain' }}
+            onError={() => setImgError(true)}
+          />
+        </View>
+      ) : (
+        /* Fallback: Interactive 4PL Sigmoidal Vector Model */
+        <Svg width="100%" height={170} viewBox="0 0 320 160">
+          <Line x1="45" y1="20" x2="300" y2="20" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
+          <Line x1="45" y1="55" x2="300" y2="55" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
+          <Line x1="45" y1="90" x2="300" y2="90" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
+          <Line x1="45" y1="125" x2="300" y2="125" stroke={isDark ? '#334155' : '#e2e8f0'} strokeDasharray="3,3" />
 
-        {/* 70% ISO 10993-5 Threshold Line */}
-        <Line x1="45" y1="62" x2="300" y2="62" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,4" />
-        <SvgText x="295" y="58" fontSize="8.5" fill="#ef4444" fontWeight="800" textAnchor="end">70% ISO Threshold</SvgText>
+          {/* 70% ISO 10993-5 Threshold Line */}
+          <Line x1="45" y1="62" x2="300" y2="62" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,4" />
+          <SvgText x="295" y="58" fontSize="8.5" fill="#ef4444" fontWeight="800" textAnchor="end">70% ISO Threshold</SvgText>
 
-        {/* Axes */}
-        <Line x1="45" y1="135" x2="305" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
-        <Line x1="45" y1="15" x2="45" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
+          {/* Axes */}
+          <Line x1="45" y1="135" x2="305" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
+          <Line x1="45" y1="15" x2="45" y2="135" stroke={isDark ? '#64748b' : '#94a3b8'} strokeWidth="1.5" />
 
-        {/* Sigmoidal S-Curve */}
-        <Path
-          d="M 45,28 C 110,28 140,50 175,85 C 210,120 250,132 305,132"
-          fill="none"
-          stroke="#0f766e"
-          strokeWidth="3"
-        />
+          {/* Sigmoidal S-Curve */}
+          <Path
+            d="M 45,28 C 110,28 140,50 175,85 C 210,120 250,132 305,132"
+            fill="none"
+            stroke="#0f766e"
+            strokeWidth="3"
+          />
 
-        {/* IC50 Point */}
-        <Circle cx="175" cy="85" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
-        <Line x1="175" y1="85" x2="175" y2="135" stroke="#ef4444" strokeWidth="1" strokeDasharray="2,2" />
-        <SvgText x="180" y="80" fontSize="8.5" fill="#0f766e" fontWeight="800">IC50: {ic50Str}</SvgText>
+          {/* IC50 Point */}
+          <Circle cx="175" cy="85" r="5" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+          <Line x1="175" y1="85" x2="175" y2="135" stroke="#ef4444" strokeWidth="1" strokeDasharray="2,2" />
+          <SvgText x="180" y="80" fontSize="8.5" fill="#0f766e" fontWeight="800">IC50: {ic50Str}</SvgText>
 
-        <SvgText x="40" y="25" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">100%</SvgText>
-        <SvgText x="40" y="65" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">70%</SvgText>
-        <SvgText x="40" y="90" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">50%</SvgText>
-        <SvgText x="40" y="135" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">0%</SvgText>
+          <SvgText x="40" y="25" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">100%</SvgText>
+          <SvgText x="40" y="65" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">70%</SvgText>
+          <SvgText x="40" y="90" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">50%</SvgText>
+          <SvgText x="40" y="135" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="end">0%</SvgText>
 
-        <SvgText x="45" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">0</SvgText>
-        <SvgText x="175" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">IC50</SvgText>
-        <SvgText x="300" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">Max Dose</SvgText>
-      </Svg>
+          <SvgText x="45" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">0</SvgText>
+          <SvgText x="175" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">IC50</SvgText>
+          <SvgText x="300" y="148" fontSize="8" fill={isDark ? '#94a3b8' : '#64748b'} textAnchor="middle">Max Dose</SvgText>
+        </Svg>
+      )}
 
+      {/* Mathematical Regression Metrics */}
       <View style={styles.plotMetaRow}>
         <View style={styles.plotMetaItem}>
           <Text style={[styles.plotMetaLabel, { color: colors.textMuted }]}>HILL SLOPE (B)</Text>
@@ -1212,7 +1270,7 @@ export default function HistoryScreen({ navigation }) {
                   </View>
                 </View>
 
-                {/* ── 5. MEASURED DOSE-RESPONSE TABLE (Shown ONCE!) ── */}
+                {/* ── 5. MEASURED DOSE-RESPONSE TABLE (Shown ONCE - 100% Web Parity) ── */}
                 {selected.submittedRows && selected.submittedRows.length > 0 && (
                   <View style={[styles.setupCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.border }]}>
                     <View style={styles.sectionHeader}>
@@ -1220,24 +1278,30 @@ export default function HistoryScreen({ navigation }) {
                       <Text style={[styles.sectionTitle, { color: colors.text }]}>  📑 Data Table</Text>
                     </View>
                     <View style={[styles.tableWrapper, { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: colors.border }]}>
-                      <View style={[styles.tableHeader, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderBottomColor: colors.border }]}>
-                        <Text style={[styles.thCell, { flex: 0.9, color: colors.text }]}>Point</Text>
-                        <Text style={[styles.thCell, { flex: 1.4, color: colors.text }]}>Conc (µg/mL)</Text>
-                        <Text style={[styles.thCell, { flex: 1.3, color: colors.text }]}>Viability</Text>
-                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>ROS</Text>
-                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>LDH</Text>
-                        <Text style={[styles.thCell, { flex: 1, color: colors.text }]}>Apop</Text>
-                      </View>
-                      {selected.submittedRows.map((r, i) => (
-                        <View key={i} style={[styles.tableRow, { borderBottomColor: colors.border }, i % 2 === 1 && { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
-                          <Text style={[styles.tdCell, { flex: 0.9, color: colors.textMuted }]}>Point {i + 1}</Text>
-                          <Text style={[styles.tdCell, { flex: 1.4, fontWeight: '700', color: colors.text }]}>{fmt(r.concentration, 1)}</Text>
-                          <Text style={[styles.tdCell, { flex: 1.3, fontWeight: '700', color: parseFloat(r.viability) >= 80 ? '#22c55e' : '#ef4444' }]}>{fmt(r.viability, 1)}%</Text>
-                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.ros, 1)}×</Text>
-                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.ldh, 1)}%</Text>
-                          <Text style={[styles.tdCell, { flex: 1, color: colors.text }]}>{fmt(r.apoptosis, 1)}%</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View style={{ minWidth: 540 }}>
+                          <View style={[styles.tableHeader, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderBottomColor: colors.border }]}>
+                            <Text style={[styles.thCell, { width: 55, color: colors.text }]}>Point</Text>
+                            <Text style={[styles.thCell, { width: 95, color: colors.text }]}>Conc (µg/mL)</Text>
+                            <Text style={[styles.thCell, { width: 85, color: colors.text }]}>Viability</Text>
+                            <Text style={[styles.thCell, { width: 75, color: colors.text }]}>ROS</Text>
+                            <Text style={[styles.thCell, { width: 75, color: colors.text }]}>LDH</Text>
+                            <Text style={[styles.thCell, { width: 75, color: colors.text }]}>Apoptosis</Text>
+                            <Text style={[styles.thCell, { width: 80, color: colors.text }]}>Hemolysis</Text>
+                          </View>
+                          {selected.submittedRows.map((r, i) => (
+                            <View key={i} style={[styles.tableRow, { borderBottomColor: colors.border }, i % 2 === 1 && { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}>
+                              <Text style={[styles.tdCell, { width: 55, color: colors.textMuted }]}>Point {i + 1}</Text>
+                              <Text style={[styles.tdCell, { width: 95, fontWeight: '700', color: colors.text }]}>{fmt(r.concentration ?? r.Concentration, 1)}</Text>
+                              <Text style={[styles.tdCell, { width: 85, fontWeight: '700', color: parseFloat(r.viability ?? r['Cell Viability']) >= 80 ? '#22c55e' : '#ef4444' }]}>{fmt(r.viability ?? r['Cell Viability'], 1)}%</Text>
+                              <Text style={[styles.tdCell, { width: 75, color: colors.text }]}>{fmt(r.ros ?? r['ROS Level'], 1)}×</Text>
+                              <Text style={[styles.tdCell, { width: 75, color: colors.text }]}>{fmt(r.ldh ?? r['LDH Release'], 1)}%</Text>
+                              <Text style={[styles.tdCell, { width: 75, color: colors.text }]}>{fmt(r.apoptosis ?? r.Apoptosis, 1)}%</Text>
+                              <Text style={[styles.tdCell, { width: 80, color: '#16a34a', fontWeight: '700' }]}>{fmt(r.hemolysis ?? r.Hemolysis ?? selected.hemolysis_rate ?? 0.8, 1)}%</Text>
+                            </View>
+                          ))}
                         </View>
-                      ))}
+                      </ScrollView>
                     </View>
                   </View>
                 )}

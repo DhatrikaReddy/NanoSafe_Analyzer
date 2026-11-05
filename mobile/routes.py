@@ -358,6 +358,7 @@ def api_change_password():
 def history():
     uid = request.uid
     import json
+    import re
     records = History.query.filter_by(user_id=uid).order_by(History.id.desc()).all()
     res = []
     for h in records:
@@ -373,28 +374,26 @@ def history():
                     submitted_rows = []
             elif "<table" in s_tables:
                 try:
-                    import pandas as pd
-                    import io
-                    dfs = pd.read_html(io.StringIO(s_tables))
-                    if dfs and len(dfs) > 0:
-                        df = dfs[0]
-                        for _, row in df.iterrows():
+                    headers = [re.sub(r'<[^>]+>', '', th).strip() for th in re.findall(r'<th[^>]*>(.*?)</th>', s_tables, re.I | re.S)]
+                    for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', s_tables, re.I | re.S):
+                        tds = [re.sub(r'<[^>]+>', '', td).strip() for td in re.findall(r'<td[^>]*>(.*?)</td>', tr, re.I | re.S)]
+                        if tds:
                             r_dict = {}
-                            for col in df.columns:
-                                c_clean = str(col).lower().replace(" ", "_")
-                                val_str = str(row[col])
-                                if "conc" in c_clean:
-                                    r_dict["concentration"] = val_str
-                                elif "viab" in c_clean:
-                                    r_dict["viability"] = val_str
-                                elif "ros" in c_clean:
-                                    r_dict["ros"] = val_str
-                                elif "ldh" in c_clean:
-                                    r_dict["ldh"] = val_str
-                                elif "apop" in c_clean:
-                                    r_dict["apoptosis"] = val_str
-                                elif "hemo" in c_clean:
-                                    r_dict["hemolysis"] = val_str
+                            for head, val in zip(headers, tds):
+                                r_dict[head] = val
+                                h_clean = head.lower().replace(" ", "_")
+                                if "conc" in h_clean:
+                                    r_dict["concentration"] = val
+                                elif "viab" in h_clean:
+                                    r_dict["viability"] = val
+                                elif "ros" in h_clean:
+                                    r_dict["ros"] = val
+                                elif "ldh" in h_clean:
+                                    r_dict["ldh"] = val
+                                elif "apop" in h_clean:
+                                    r_dict["apoptosis"] = val
+                                elif "hemo" in h_clean:
+                                    r_dict["hemolysis"] = val
                             if "concentration" in r_dict:
                                 submitted_rows.append(r_dict)
                 except Exception:
@@ -408,6 +407,7 @@ def history():
         hemo_val = float(h.hemolysis_rate or 0.0)
         si_val = float(h.selectivity_index or 1.0)
         tox_val = float(h.toxicity_score or 0.0)
+        graph_filename = os.path.basename(h.graph_path) if h.graph_path else ""
 
         if not submitted_rows:
             # Generate representative dose response points for graph visualization if not explicitly stored
@@ -476,6 +476,10 @@ def history():
             "studyGroup": h.study_group or "",
             "study_group": h.study_group or "",
             "isGeneralScreening": not bool(h.participant_id),
+            "graph": graph_filename,
+            "graph_url": f"/static/{graph_filename}" if graph_filename else "",
+            "graph_path": h.graph_path or "",
+            "tables_html": h.tables_html or "",
         })
     return jsonify(res), 200
 
