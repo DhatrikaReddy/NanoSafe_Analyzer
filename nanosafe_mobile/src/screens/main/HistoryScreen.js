@@ -1175,7 +1175,12 @@ export default function HistoryScreen({ navigation }) {
                   {studioView === 'single' ? (
                     <>
                       {/* Single Focus Tabs matching Web: Viability, ROS, LDH, Apoptosis, Radar, Plot */}
-                      <View style={[styles.studioTabBar, { backgroundColor: isDark ? '#0f172a' : '#f1f5f9', borderColor: colors.border }]}>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={[styles.studioTabBarScroll, { borderColor: colors.border, backgroundColor: isDark ? '#0f172a' : '#f1f5f9' }]}
+                        contentContainerStyle={styles.studioTabBarContent}
+                      >
                         {[
                           { key: 'viability', label: '📈 Viability', color: '#10b981' },
                           { key: 'ros',       label: '🔥 ROS',       color: '#f59e0b' },
@@ -1189,7 +1194,7 @@ export default function HistoryScreen({ navigation }) {
                             <TouchableOpacity
                               key={tab.key}
                               style={[
-                                styles.studioTabBtn,
+                                styles.studioTabBtnFixed,
                                 isActive && { backgroundColor: tab.color, borderColor: tab.color }
                               ]}
                               onPress={() => setSelectedMetric(tab.key)}
@@ -1200,7 +1205,7 @@ export default function HistoryScreen({ navigation }) {
                             </TouchableOpacity>
                           );
                         })}
-                      </View>
+                      </ScrollView>
 
                       {/* Render Selected Single Focus Graph */}
                       {selectedMetric === 'radar' ? (
@@ -1539,6 +1544,9 @@ const styles = StyleSheet.create({
   studioTabBar: { flexDirection: 'row', gap: 6, padding: 4, borderRadius: 8, borderWidth: 1, marginBottom: 12, flexWrap: 'wrap' },
   studioTabBtn: { flex: 1, minWidth: 60, paddingVertical: 6, paddingHorizontal: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   studioTabBtnText: { fontSize: 12, fontWeight: '700' },
+  studioTabBarScroll: { borderRadius: 8, borderWidth: 1, marginBottom: 12 },
+  studioTabBarContent: { flexDirection: 'row', gap: 6, padding: 4 },
+  studioTabBtnFixed: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'transparent' },
 
   interpretationText: { fontSize: 13.5, lineHeight: 20, marginBottom: 10 },
   interpretationNote: { borderRadius: 8, padding: 10, borderWidth: 1, marginTop: 4 },
